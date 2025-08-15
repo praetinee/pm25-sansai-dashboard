@@ -114,49 +114,16 @@ with col2:
     st.subheader("ค่า PM2.5 เฉลี่ยรายวัน (ทั้งเดือน)")
     daily_data['date'] = pd.to_datetime(daily_data['date'])
     daily_data['day'] = daily_data['date'].dt.day
-    html_calendar = """
-    <style>
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 5px;
-            font-family: 'Sarabun', sans-serif;
-            text-align: center;
-        }
-        .day-header {
-            font-weight: bold;
-            padding: 10px;
-        }
-        .day-box {
-            border: 1px solid #ccc;
-            padding: 15px;
-            border-radius: 5px;
-            min-height: 80px;
-            position: relative;
-        }
-        .day-number {
-            font-size: 1.5em;
-            font-weight: bold;
-            position: absolute;
-            top: 5px;
-            left: 5px;
-        }
-        .day-value {
-            font-size: 1em;
-            position: absolute;
-            bottom: 5px;
-            right: 5px;
-        }
-    </style>
-    <div class="calendar-grid">
-        <div class="day-header">อา</div><div class="day-header">จ</div><div class="day-header">อ</div><div class="day-header">พ</div><div class="day-header">พฤ</div><div class="day-header">ศ</div><div class="day-header">ส</div>
-    """
-    # แก้ไขการคำนวณวันแรกของเดือนให้ถูกต้อง
+    
+    # สร้าง HTML สำหรับปฏิทินที่แสดงผลได้ถูกต้องใน Streamlit
+    html_calendar = "<div style='display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; font-family: Sarabun, sans-serif; text-align: center;'>"
+    day_headers = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"]
+    for header in day_headers:
+        html_calendar += f"<div style='font-weight: bold; padding: 10px;'>{header}</div>"
+
+    # คำนวณวันแรกของเดือนให้ถูกต้อง
     first_day_of_month_weekday = daily_data['date'].iloc[0].weekday()
-    # weekday() returns 0 for Monday, 6 for Sunday.
-    # To start week on Sunday, we need to adjust the index.
-    # Sunday (6) should be index 0, Monday (0) should be index 1, etc.
-    # (weekday() + 1) % 7 will do this. e.g. (6+1)%7 = 0. (0+1)%7 = 1.
+    # weekday() returns 0 for Monday, 6 for Sunday. We need to adjust it for Sunday=0
     first_day_of_month_index = (first_day_of_month_weekday + 1) % 7
 
     for _ in range(first_day_of_month_index):
@@ -166,13 +133,14 @@ with col2:
         color = daily_data[daily_data['day'] == day]['color'].iloc[0]
         pm25_avg = daily_data[daily_data['day'] == day]['pm25_avg'].iloc[0]
         html_calendar += f"""
-        <div class="day-box" style="background-color:{color};">
-            <div class="day-number">{day}</div>
-            <div class="day-value">{pm25_avg}</div>
+        <div style='border: 1px solid #ccc; padding: 15px; border-radius: 5px; min-height: 80px; position: relative; background-color:{color};'>
+            <div style='font-size: 1.5em; font-weight: bold; position: absolute; top: 5px; left: 5px;'>{day}</div>
+            <div style='font-size: 1em; position: absolute; bottom: 5px; right: 5px;'>{pm25_avg}</div>
         </div>
         """
     html_calendar += "</div>"
     st.markdown(html_calendar, unsafe_allow_html=True)
+
 
 st.markdown("---")
 
