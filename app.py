@@ -24,6 +24,10 @@ st.markdown("""
 
 # --- 2. กำหนดเกณฑ์และสีตามมาตรฐาน CCDC ---
 def get_color_and_status(pm25_value):
+    """
+    ตรวจสอบค่า PM2.5 และคืนค่าสีและสถานะ
+    ตามเกณฑ์ของ CCDC (กรมควบคุมโรค)
+    """
     if pm25_value <= 25:
         return 'green', 'ดีมาก'
     elif pm25_value <= 37:
@@ -37,6 +41,10 @@ def get_color_and_status(pm25_value):
 
 # --- 3. สร้างข้อมูลจำลอง (ในสถานการณ์จริงจะดึงจากแหล่งข้อมูลจริง) ---
 def generate_dummy_data():
+    """
+    สร้างข้อมูลจำลองสำหรับค่า PM2.5 รายชั่วโมงและรายวัน
+    เพื่อใช้ในการแสดงผล
+    """
     today_date = datetime.date.today()
     today_datetime = datetime.datetime.now()
 
@@ -76,14 +84,15 @@ color, status = get_color_and_status(current_pm25)
 st.markdown(f"### ค่า PM2.5 ปัจจุบัน: <span style='color:{color};'>**{current_pm25} µg/m³**</span> (สถานะ: **{status}**)", unsafe_allow_html=True)
 st.markdown("---")
 
-# กราฟแท่ง PM2.5 รายชั่วโมง
+# กราฟแท่ง PM2.5 รายชั่วโมง (แก้ไขโค้ดส่วนนี้แล้ว)
 st.subheader("ค่า PM2.5 รายชั่วโมง (วันนี้)")
 hourly_data['hour'] = hourly_data['timestamp'].dt.hour
-st.bar_chart(hourly_data.set_index('hour')['pm25'], color=hourly_data['color'])
+# แก้ไข: ระบุคอลัมน์ 'pm25' สำหรับแกน y และ 'color' สำหรับการระบายสี
+st.bar_chart(hourly_data.set_index('hour'), y='pm25', color='color')
 
 st.markdown("---")
 
-# ปฏิทิน PM2.5 รายวัน
+# ปฏิทิน PM2.5 รายวัน (แก้ไขโค้ดส่วนนี้แล้ว)
 st.subheader("ค่า PM2.5 เฉลี่ยรายวัน (ทั้งเดือน)")
 daily_data['day'] = daily_data['date'].dt.day
 html_calendar = """
@@ -123,8 +132,8 @@ html_calendar = """
 <div class="calendar-grid">
     <div class="day-header">อา</div><div class="day-header">จ</div><div class="day-header">อ</div><div class="day-header">พ</div><div class="day-header">พฤ</div><div class="day-header">ศ</div><div class="day-header">ส</div>
 """
-# หาว่าวันแรกของเดือนเป็นวันอะไรเพื่อเว้นช่องว่าง
-first_day_of_month = daily_data['date'].iloc[0].weekday()
+# แก้ไข: คำนวณวันแรกของเดือนให้ถูกต้อง (วันอาทิตย์=0, จันทร์=1, ...)
+first_day_of_month = (daily_data['date'].iloc[0].weekday() + 1) % 7
 for _ in range(first_day_of_month):
     html_calendar += "<div></div>"
 
