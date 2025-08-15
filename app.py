@@ -112,35 +112,41 @@ with col1:
 
 with col2:
     st.subheader("ค่า PM2.5 เฉลี่ยรายวัน (ทั้งเดือน)")
+    today_date = datetime.date.today()
     daily_data['date'] = pd.to_datetime(daily_data['date'])
     daily_data['day'] = daily_data['date'].dt.day
     
-    # สร้าง HTML สำหรับปฏิทินที่แสดงผลได้ถูกต้องใน Streamlit
     html_calendar = "<div style='display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; font-family: Sarabun, sans-serif; text-align: center;'>"
     day_headers = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"]
     for header in day_headers:
         html_calendar += f"<div style='font-weight: bold; padding: 10px;'>{header}</div>"
 
-    # คำนวณวันแรกของเดือนให้ถูกต้อง
     first_day_of_month_weekday = daily_data['date'].iloc[0].weekday()
-    # weekday() returns 0 for Monday, 6 for Sunday.
-    # To start the week with Sunday, we adjust the index.
-    # We want Sunday (6) to be at index 0, Monday (0) to be at index 1, etc.
     first_day_of_month_index = (first_day_of_month_weekday + 1) % 7
 
     for _ in range(first_day_of_month_index):
         html_calendar += "<div></div>"
 
     for day in range(1, len(daily_data) + 1):
-        color = daily_data[daily_data['day'] == day]['color'].iloc[0]
-        pm25_avg = daily_data[daily_data['day'] == day]['pm25_avg'].iloc[0]
-        
-        html_calendar += f"""
-        <div style='border: 1px solid #ccc; padding: 15px; border-radius: 5px; min-height: 80px; position: relative; background-color:{color};'>
-            <div style='font-size: 1.5em; font-weight: bold; position: absolute; top: 5px; left: 5px;'>{day}</div>
-            <div style='font-size: 1em; position: absolute; bottom: 5px; right: 5px;'>{pm25_avg}</div>
-        </div>
-        """
+        day_date = daily_data[daily_data['day'] == day]['date'].iloc[0].date()
+        if day_date > today_date:
+            # ถ้าวันในปฏิทินยังมาไม่ถึง ให้แสดงเป็นสีเทาและโปร่งใส
+            html_calendar += f"""
+            <div style='border: 1px solid #ccc; padding: 15px; border-radius: 5px; min-height: 80px; position: relative; background-color:#f0f2f6; opacity:0.5;'>
+                <div style='font-size: 1.5em; font-weight: bold; position: absolute; top: 5px; left: 5px;'>{day}</div>
+                <div style='font-size: 1em; position: absolute; bottom: 5px; right: 5px; visibility:hidden;'>{pm25_avg}</div>
+            </div>
+            """
+        else:
+            # ถ้าถึงวันนั้นแล้ว ให้แสดงค่าและสีตามปกติ
+            color = daily_data[daily_data['day'] == day]['color'].iloc[0]
+            pm25_avg = daily_data[daily_data['day'] == day]['pm25_avg'].iloc[0]
+            html_calendar += f"""
+            <div style='border: 1px solid #ccc; padding: 15px; border-radius: 5px; min-height: 80px; position: relative; background-color:{color};'>
+                <div style='font-size: 1.5em; font-weight: bold; position: absolute; top: 5px; left: 5px;'>{day}</div>
+                <div style='font-size: 1em; position: absolute; bottom: 5px; right: 5px;'>{pm25_avg}</div>
+            </div>
+            """
     
     html_calendar += "</div>"
     st.markdown(html_calendar, unsafe_allow_html=True)
