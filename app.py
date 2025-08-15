@@ -4,7 +4,25 @@ import datetime
 import calendar
 import random
 
-# --- 1. กำหนดเกณฑ์และสีตามมาตรฐาน CCDC ---
+# --- 1. การตั้งค่าหน้าเพจและฟอนต์ ---
+st.set_page_config(
+    page_title="รายงานเฝ้าระวัง PM2.5 อำเภอสันทราย",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# เพิ่ม CSS เพื่อเปลี่ยนฟอนต์เป็น Sarabun
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
+    html, body, [class*="css"]  {
+        font-family: 'Sarabun', sans-serif;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+
+# --- 2. กำหนดเกณฑ์และสีตามมาตรฐาน CCDC ---
 def get_color_and_status(pm25_value):
     if pm25_value <= 25:
         return 'green', 'ดีมาก'
@@ -17,20 +35,22 @@ def get_color_and_status(pm25_value):
     else:
         return 'purple', 'มีผลกระทบต่อสุขภาพ'
 
-# --- 2. สร้างข้อมูลจำลอง (ในสถานการณ์จริงจะดึงจากแหล่งข้อมูลจริง) ---
+# --- 3. สร้างข้อมูลจำลอง (ในสถานการณ์จริงจะดึงจากแหล่งข้อมูลจริง) ---
 def generate_dummy_data():
-    today = datetime.date.today()
+    today_date = datetime.date.today()
+    today_datetime = datetime.datetime.now()
+
     # ข้อมูล PM2.5 รายชั่วโมง (จำลอง)
     hourly_data = {
-        'timestamp': [today + datetime.timedelta(hours=i) for i in range(24)],
+        'timestamp': [today_datetime.replace(hour=i, minute=0, second=0, microsecond=0) for i in range(24)],
         'pm25': [random.randint(15, 80) for _ in range(24)]
     }
     hourly_df = pd.DataFrame(hourly_data)
     hourly_df['color'] = hourly_df['pm25'].apply(lambda x: get_color_and_status(x)[0])
 
     # ข้อมูล PM2.5 เฉลี่ยรายวัน (จำลอง)
-    current_year = today.year
-    current_month = today.month
+    current_year = today_date.year
+    current_month = today_date.month
     num_days = calendar.monthrange(current_year, current_month)[1]
     daily_data = {
         'date': [datetime.date(current_year, current_month, d) for d in range(1, num_days + 1)],
@@ -38,16 +58,12 @@ def generate_dummy_data():
     }
     daily_df = pd.DataFrame(daily_data)
     daily_df['color'] = daily_df['pm25_avg'].apply(lambda x: get_color_and_status(x)[0])
+
     return hourly_df, daily_df
 
 hourly_data, daily_data = generate_dummy_data()
 
-# --- 3. การออกแบบหน้าเพจด้วย Streamlit ---
-st.set_page_config(
-    page_title="รายงานเฝ้าระวัง PM2.5 อำเภอสันทราย",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# --- 4. การออกแบบหน้าเพจด้วย Streamlit ---
 
 # หัวข้อ
 st.title("รายงานเฝ้าระวัง PM2.5 อำเภอสันทราย")
@@ -76,7 +92,7 @@ html_calendar = """
         display: grid;
         grid-template-columns: repeat(7, 1fr);
         gap: 5px;
-        font-family: sans-serif;
+        font-family: 'Sarabun', sans-serif;
         text-align: center;
     }
     .day-header {
@@ -107,6 +123,11 @@ html_calendar = """
 <div class="calendar-grid">
     <div class="day-header">อา</div><div class="day-header">จ</div><div class="day-header">อ</div><div class="day-header">พ</div><div class="day-header">พฤ</div><div class="day-header">ศ</div><div class="day-header">ส</div>
 """
+# หาว่าวันแรกของเดือนเป็นวันอะไรเพื่อเว้นช่องว่าง
+first_day_of_month = daily_data['date'].iloc[0].weekday()
+for _ in range(first_day_of_month):
+    html_calendar += "<div></div>"
+
 for day in range(1, len(daily_data) + 1):
     color = daily_data[daily_data['day'] == day]['color'].iloc[0]
     pm25_avg = daily_data[daily_data['day'] == day]['pm25_avg'].iloc[0]
