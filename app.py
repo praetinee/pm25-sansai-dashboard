@@ -121,6 +121,7 @@ with col2:
     for header in day_headers:
         html_calendar += f"<div style='font-weight: bold; padding: 10px;'>{header}</div>"
 
+    # คำนวณวันแรกของเดือนให้ถูกต้อง
     first_day_of_month_weekday = daily_data['date'].iloc[0].weekday()
     # weekday() returns 0 for Monday, 6 for Sunday.
     # To start the week with Sunday, we adjust the index.
@@ -134,13 +135,12 @@ with col2:
         color = daily_data[daily_data['day'] == day]['color'].iloc[0]
         pm25_avg = daily_data[daily_data['day'] == day]['pm25_avg'].iloc[0]
         
-        # ใช้ st.markdown แสดงผลแต่ละวันแยกกันเพื่อให้แสดงผลอย่างถูกต้อง
-        st.markdown(f"""
+        html_calendar += f"""
         <div style='border: 1px solid #ccc; padding: 15px; border-radius: 5px; min-height: 80px; position: relative; background-color:{color};'>
             <div style='font-size: 1.5em; font-weight: bold; position: absolute; top: 5px; left: 5px;'>{day}</div>
             <div style='font-size: 1em; position: absolute; bottom: 5px; right: 5px;'>{pm25_avg}</div>
         </div>
-        """, unsafe_allow_html=True)
+        """
     
     html_calendar += "</div>"
     st.markdown(html_calendar, unsafe_allow_html=True)
