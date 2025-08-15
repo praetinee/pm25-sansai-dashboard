@@ -11,12 +11,14 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# เพิ่ม CSS เพื่อเปลี่ยนฟอนต์เป็น Sarabun
+# เพิ่ม CSS เพื่อเปลี่ยนฟอนต์เป็น Sarabun ให้ครอบคลุมทุกองค์ประกอบ
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
-    html, body, [class*="css"]  {
-        font-family: 'Sarabun', sans-serif;
+    
+    /* Apply Sarabun font to all text elements in the Streamlit app */
+    html, body, [class*="css"], .stApp, p, div, span, h1, h2, h3, h4, h5, h6 {
+        font-family: 'Sarabun', sans-serif !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -84,16 +86,17 @@ color, status = get_color_and_status(current_pm25)
 st.markdown(f"### ค่า PM2.5 ปัจจุบัน: <span style='color:{color};'>**{current_pm25} µg/m³**</span> (สถานะ: **{status}**)", unsafe_allow_html=True)
 st.markdown("---")
 
-# กราฟแท่ง PM2.5 รายชั่วโมง (แก้ไขโค้ดส่วนนี้แล้ว)
+# กราฟแท่ง PM2.5 รายชั่วโมง
 st.subheader("ค่า PM2.5 รายชั่วโมง (วันนี้)")
 hourly_data['hour'] = hourly_data['timestamp'].dt.hour
-# แก้ไข: ระบุคอลัมน์ 'pm25' สำหรับแกน y และ 'color' สำหรับการระบายสี
 st.bar_chart(hourly_data.set_index('hour'), y='pm25', color='color')
 
 st.markdown("---")
 
-# ปฏิทิน PM2.5 รายวัน (แก้ไขโค้ดส่วนนี้แล้ว)
+# ปฏิทิน PM2.5 รายวัน
 st.subheader("ค่า PM2.5 เฉลี่ยรายวัน (ทั้งเดือน)")
+# แก้ไข: แปลงข้อมูลในคอลัมน์ 'date' ให้เป็น datetime เพื่อให้ใช้ .dt ได้
+daily_data['date'] = pd.to_datetime(daily_data['date'])
 daily_data['day'] = daily_data['date'].dt.day
 html_calendar = """
 <style>
@@ -132,8 +135,8 @@ html_calendar = """
 <div class="calendar-grid">
     <div class="day-header">อา</div><div class="day-header">จ</div><div class="day-header">อ</div><div class="day-header">พ</div><div class="day-header">พฤ</div><div class="day-header">ศ</div><div class="day-header">ส</div>
 """
-# แก้ไข: คำนวณวันแรกของเดือนให้ถูกต้อง (วันอาทิตย์=0, จันทร์=1, ...)
-first_day_of_month = (daily_data['date'].iloc[0].weekday() + 1) % 7
+# คำนวณวันแรกของเดือนให้ถูกต้อง (วันจันทร์=0, อังคาร=1, ...)
+first_day_of_month = daily_data['date'].iloc[0].weekday()
 for _ in range(first_day_of_month):
     html_calendar += "<div></div>"
 
