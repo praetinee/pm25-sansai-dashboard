@@ -20,6 +20,15 @@ st.markdown("""
     html, body, [class*="css"], .stApp, p, div, span, h1, h2, h3, h4, h5, h6 {
         font-family: 'Sarabun', sans-serif !important;
     }
+    
+    /* Custom styling for the main metric */
+    .stMetric > div[data-testid="stMetricValue"] {
+        font-size: 3rem;
+        font-weight: bold;
+    }
+    .stMetric > div[data-testid="stMetricLabel"] > div {
+        font-size: 1.2rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -27,19 +36,19 @@ st.markdown("""
 # --- 2. กำหนดเกณฑ์และสีตามมาตรฐาน CCDC ---
 def get_color_and_status(pm25_value):
     """
-    ตรวจสอบค่า PM2.5 และคืนค่าสีและสถานะ
+    ตรวจสอบค่า PM2.5 และคืนค่าสีและสถานะ (พร้อม emoji)
     ตามเกณฑ์ของ CCDC (กรมควบคุมโรค)
     """
     if pm25_value <= 25:
-        return 'green', 'ดีมาก'
+        return 'green', '🟢 ดีมาก'
     elif pm25_value <= 37:
-        return 'yellow', 'ดี'
+        return 'yellow', '🟡 ดี'
     elif pm25_value <= 50:
-        return 'orange', 'ปานกลาง'
+        return 'orange', '🟠 ปานกลาง'
     elif pm25_value <= 75:
-        return 'red', 'เริ่มมีผลกระทบต่อสุขภาพ'
+        return 'red', '🔴 เริ่มมีผลกระทบต่อสุขภาพ'
     else:
-        return 'purple', 'มีผลกระทบต่อสุขภาพ'
+        return 'purple', '🟣 มีผลกระทบต่อสุขภาพ'
 
 # --- 3. สร้างข้อมูลจำลอง (ในสถานการณ์จริงจะดึงจากแหล่งข้อมูลจริง) ---
 def generate_dummy_data():
@@ -75,107 +84,111 @@ hourly_data, daily_data = generate_dummy_data()
 
 # --- 4. การออกแบบหน้าเพจด้วย Streamlit ---
 
-# หัวข้อ
+# หัวข้อและอัปเดตล่าสุด
 st.title("รายงานเฝ้าระวัง PM2.5 อำเภอสันทราย")
 st.markdown(f"**อัปเดตล่าสุด: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}**")
 st.markdown("---")
 
-# ค่า PM2.5 ปัจจุบัน
+# ค่า PM2.5 ปัจจุบัน (ใช้ st.metric เพื่อการแสดงผลที่โดดเด่น)
 current_pm25 = hourly_data['pm25'].iloc[-1]
 color, status = get_color_and_status(current_pm25)
-st.markdown(f"### ค่า PM2.5 ปัจจุบัน: <span style='color:{color};'>**{current_pm25} µg/m³**</span> (สถานะ: **{status}**)", unsafe_allow_html=True)
-st.markdown("---")
-
-# กราฟแท่ง PM2.5 รายชั่วโมง
-st.subheader("ค่า PM2.5 รายชั่วโมง (วันนี้)")
-hourly_data['hour'] = hourly_data['timestamp'].dt.hour
-st.bar_chart(hourly_data.set_index('hour'), y='pm25', color='color')
+st.metric(label=f"สถานะ PM2.5 ปัจจุบัน", value=f"{current_pm25} µg/m³", delta=status, delta_color=color)
 
 st.markdown("---")
 
-# ปฏิทิน PM2.5 รายวัน
-st.subheader("ค่า PM2.5 เฉลี่ยรายวัน (ทั้งเดือน)")
-# แก้ไข: แปลงข้อมูลในคอลัมน์ 'date' ให้เป็น datetime เพื่อให้ใช้ .dt ได้
-daily_data['date'] = pd.to_datetime(daily_data['date'])
-daily_data['day'] = daily_data['date'].dt.day
-html_calendar = """
-<style>
-    .calendar-grid {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 5px;
-        font-family: 'Sarabun', sans-serif;
-        text-align: center;
-    }
-    .day-header {
-        font-weight: bold;
-        padding: 10px;
-    }
-    .day-box {
-        border: 1px solid #ccc;
-        padding: 15px;
-        border-radius: 5px;
-        min-height: 80px;
-        position: relative;
-    }
-    .day-number {
-        font-size: 1.5em;
-        font-weight: bold;
-        position: absolute;
-        top: 5px;
-        left: 5px;
-    }
-    .day-value {
-        font-size: 1em;
-        position: absolute;
-        bottom: 5px;
-        right: 5px;
-    }
-</style>
-<div class="calendar-grid">
-    <div class="day-header">อา</div><div class="day-header">จ</div><div class="day-header">อ</div><div class="day-header">พ</div><div class="day-header">พฤ</div><div class="day-header">ศ</div><div class="day-header">ส</div>
-"""
-# คำนวณวันแรกของเดือนให้ถูกต้อง (วันจันทร์=0, อังคาร=1, ...)
-first_day_of_month = daily_data['date'].iloc[0].weekday()
-for _ in range(first_day_of_month):
-    html_calendar += "<div></div>"
+# กราฟแท่ง PM2.5 รายชั่วโมงและปฏิทินรายวัน
+col1, col2 = st.columns(2)
 
-for day in range(1, len(daily_data) + 1):
-    color = daily_data[daily_data['day'] == day]['color'].iloc[0]
-    pm25_avg = daily_data[daily_data['day'] == day]['pm25_avg'].iloc[0]
-    html_calendar += f"""
-    <div class="day-box" style="background-color:{color};">
-        <div class="day-number">{day}</div>
-        <div class="day-value">{pm25_avg}</div>
-    </div>
+with col1:
+    st.subheader("ค่า PM2.5 รายชั่วโมง (วันนี้)")
+    hourly_data['hour'] = hourly_data['timestamp'].dt.hour
+    st.bar_chart(hourly_data.set_index('hour'), y='pm25', color='color')
+
+with col2:
+    st.subheader("ค่า PM2.5 เฉลี่ยรายวัน (ทั้งเดือน)")
+    # แก้ไข: แปลงข้อมูลในคอลัมน์ 'date' ให้เป็น datetime เพื่อให้ใช้ .dt ได้
+    daily_data['date'] = pd.to_datetime(daily_data['date'])
+    daily_data['day'] = daily_data['date'].dt.day
+    html_calendar = """
+    <style>
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            font-family: 'Sarabun', sans-serif;
+            text-align: center;
+        }
+        .day-header {
+            font-weight: bold;
+            padding: 10px;
+        }
+        .day-box {
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 5px;
+            min-height: 80px;
+            position: relative;
+        }
+        .day-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            position: absolute;
+            top: 5px;
+            left: 5px;
+        }
+        .day-value {
+            font-size: 1em;
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+        }
+    </style>
+    <div class="calendar-grid">
+        <div class="day-header">อา</div><div class="day-header">จ</div><div class="day-header">อ</div><div class="day-header">พ</div><div class="day-header">พฤ</div><div class="day-header">ศ</div><div class="day-header">ส</div>
     """
-html_calendar += "</div>"
-st.markdown(html_calendar, unsafe_allow_html=True)
+    first_day_of_month = daily_data['date'].iloc[0].weekday()
+    for _ in range(first_day_of_month):
+        html_calendar += "<div></div>"
+
+    for day in range(1, len(daily_data) + 1):
+        color = daily_data[daily_data['day'] == day]['color'].iloc[0]
+        pm25_avg = daily_data[daily_data['day'] == day]['pm25_avg'].iloc[0]
+        html_calendar += f"""
+        <div class="day-box" style="background-color:{color};">
+            <div class="day-number">{day}</div>
+            <div class="day-value">{pm25_avg}</div>
+        </div>
+        """
+    html_calendar += "</div>"
+    st.markdown(html_calendar, unsafe_allow_html=True)
 
 st.markdown("---")
 
-# คำแนะนำการปฏิบัติตัว
-def get_recommendations(pm25_value, is_vulnerable):
-    if pm25_value <= 25:
-        return "อากาศดีมาก สามารถทำกิจกรรมกลางแจ้งได้ตามปกติ"
-    elif pm25_value <= 37:
-        return "อากาศดี สามารถทำกิจกรรมกลางแจ้งได้ตามปกติ"
-    elif pm25_value <= 50:
-        return "อากาศปานกลาง กลุ่มเปราะบางควรเฝ้าระวังอาการ"
-    elif pm25_value <= 75:
-        if is_vulnerable:
-            return "อากาศเริ่มมีผลกระทบต่อสุขภาพ กลุ่มเปราะบางควรงดกิจกรรมกลางแจ้ง และสวมหน้ากากป้องกัน"
+# คำแนะนำการปฏิบัติตัว (ใช้ expander เพื่อให้หน้าเพจดูเรียบร้อย)
+with st.expander("คำแนะนำการปฏิบัติตัว 🩺"):
+    st.write("สำหรับประชาชนทั่วไป:")
+    def get_recommendations_general(pm25_value):
+        if pm25_value <= 25:
+            return "สามารถทำกิจกรรมกลางแจ้งได้ตามปกติ"
+        elif pm25_value <= 37:
+            return "สามารถทำกิจกรรมกลางแจ้งได้ตามปกติ"
+        elif pm25_value <= 50:
+            return "ควรเฝ้าระวังอาการ"
+        elif pm25_value <= 75:
+            return "ควรงดกิจกรรมกลางแจ้งที่ใช้แรงมาก"
         else:
-            return "อากาศเริ่มมีผลกระทบต่อสุขภาพ ควรงดกิจกรรมกลางแจ้งที่ใช้แรงมาก"
-    else:
-        if is_vulnerable:
-            return "อากาศมีผลกระทบต่อสุขภาพ ควรงดกิจกรรมกลางแจ้งโดยเด็ดขาด และอยู่ในอาคารที่ปิดมิดชิด"
-        else:
-            return "อากาศมีผลกระทบต่อสุขภาพ ควรงดกิจกรรมกลางแจ้ง และสวมหน้ากากป้องกัน"
+            return "ควรงดกิจกรรมกลางแจ้ง และสวมหน้ากากป้องกัน"
+    st.markdown(f"**{get_recommendations_general(current_pm25)}**")
 
-st.subheader("คำแนะนำการปฏิบัติตัว")
-st.write(f"สำหรับประชาชนทั่วไป: **{get_recommendations(current_pm25, False)}**")
-st.write(f"สำหรับกลุ่มเปราะบาง: **{get_recommendations(current_pm25, True)}**")
+    st.write("สำหรับกลุ่มเปราะบาง (ผู้สูงอายุ, เด็ก, ผู้มีโรคประจำตัว, หญิงตั้งครรภ์):")
+    def get_recommendations_vulnerable(pm25_value):
+        if pm25_value <= 50:
+            return "ควรเฝ้าระวังอาการ"
+        elif pm25_value <= 75:
+            return "ควรงดกิจกรรมกลางแจ้ง และสวมหน้ากากป้องกัน"
+        else:
+            return "ควรงดกิจกรรมกลางแจ้งโดยเด็ดขาด และอยู่ในอาคารที่ปิดมิดชิด"
+    st.markdown(f"**{get_recommendations_vulnerable(current_pm25)}**")
 
 st.markdown("---")
 
