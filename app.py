@@ -89,10 +89,16 @@ st.title("รายงานเฝ้าระวัง PM2.5 อำเภอส
 st.markdown(f"**อัปเดตล่าสุด: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}**")
 st.markdown("---")
 
-# ค่า PM2.5 ปัจจุบัน (ใช้ st.metric เพื่อการแสดงผลที่โดดเด่น)
+# ค่า PM2.5 ปัจจุบัน (ใช้ st.markdown และ HTML/CSS แทน st.metric)
 current_pm25 = hourly_data['pm25'].iloc[-1]
 color, status = get_color_and_status(current_pm25)
-st.metric(label=f"สถานะ PM2.5 ปัจจุบัน", value=f"{current_pm25} µg/m³", delta=status, delta_color=color)
+st.markdown(f"""
+<div style="text-align: left;">
+    <div style="font-size: 1.2rem; color: #888;">สถานะ PM2.5 ปัจจุบัน</div>
+    <div style="font-size: 3rem; font-weight: bold; margin-bottom: 0.5rem;">{current_pm25} µg/m³</div>
+    <div style="color: {color}; font-size: 1.2rem;">{status}</div>
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -106,7 +112,6 @@ with col1:
 
 with col2:
     st.subheader("ค่า PM2.5 เฉลี่ยรายวัน (ทั้งเดือน)")
-    # แก้ไข: แปลงข้อมูลในคอลัมน์ 'date' ให้เป็น datetime เพื่อให้ใช้ .dt ได้
     daily_data['date'] = pd.to_datetime(daily_data['date'])
     daily_data['day'] = daily_data['date'].dt.day
     html_calendar = """
