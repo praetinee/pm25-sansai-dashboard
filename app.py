@@ -44,7 +44,7 @@ def get_color_and_status(pm25_value):
     elif pm25_value <= 37:
         return 'yellow', '🟡 ดี'
     elif pm25_value <= 50:
-        return 'orange', '� ปานกลาง'
+        return 'orange', '🟠 ปานกลาง'
     elif pm25_value <= 75:
         return 'red', '🔴 เริ่มมีผลกระทบต่อสุขภาพ'
     else:
@@ -151,20 +151,14 @@ with col2:
     <div class="calendar-grid">
         <div class="day-header">อา</div><div class="day-header">จ</div><div class="day-header">อ</div><div class="day-header">พ</div><div class="day-header">พฤ</div><div class="day-header">ศ</div><div class="day-header">ส</div>
     """
-    first_day_of_month = daily_data['date'].iloc[0].weekday()
-    # ปรับปรุงการคำนวณ: weekday() จะคืนค่า 0-6 (จันทร์-อาทิตย์) เราจึงต้องเพิ่ม 1 และใช้ modulo 7 เพื่อให้วันอาทิตย์เป็นวันแรกของสัปดาห์
-    # ถ้าวันแรกของเดือนเป็นวันอาทิตย์ (6) จะได้ (6+1)%7 = 0
-    # ถ้าวันแรกของเดือนเป็นวันจันทร์ (0) จะได้ (0+1)%7 = 1
-    # ...
-    # ถ้าวันแรกของเดือนเป็นวันเสาร์ (5) จะได้ (5+1)%7 = 6
-    # ดังนั้นจึงต้องปรับการวนลูปให้ถูกต้องตามวันแรกของเดือน
-    
-    first_day_of_month_index = (daily_data['date'].iloc[0].weekday() + 1) % 7
-    if first_day_of_month_index == 0:
-        first_day_of_month_index = 6
-    else:
-        first_day_of_month_index -= 1
-        
+    # แก้ไขการคำนวณวันแรกของเดือนให้ถูกต้อง
+    first_day_of_month_weekday = daily_data['date'].iloc[0].weekday()
+    # weekday() returns 0 for Monday, 6 for Sunday.
+    # To start week on Sunday, we need to adjust the index.
+    # Sunday (6) should be index 0, Monday (0) should be index 1, etc.
+    # (weekday() + 1) % 7 will do this. e.g. (6+1)%7 = 0. (0+1)%7 = 1.
+    first_day_of_month_index = (first_day_of_month_weekday + 1) % 7
+
     for _ in range(first_day_of_month_index):
         html_calendar += "<div></div>"
 
@@ -219,4 +213,3 @@ patient_data = {
 }
 patient_df = pd.DataFrame(patient_data)
 st.bar_chart(patient_df.set_index('วันที่')['จำนวนผู้ป่วย'])
-�
