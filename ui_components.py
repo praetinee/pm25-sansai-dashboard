@@ -183,11 +183,11 @@ def display_24hr_chart(df, lang, t):
         text=day_data['PM2.5'].apply(lambda x: f'{x:.1f}'), textposition='outside'))
     fig_24hr.update_layout(
         font=dict(family="Sarabun"),
-        xaxis_title=None, y_axis_title=t[lang]['pm25_unit'],
+        yaxis_title=t[lang]['pm25_unit'],
         plot_bgcolor='rgba(0,0,0,0)', template="plotly_white",
         margin=dict(l=20, r=20, t=40, b=20),
-        xaxis=dict(gridcolor='var(--border-color, #e9e9e9)', showticklabels=True, tickformat='%H:%M', tickangle=-45, title_font=dict(family="Sarabun"), tickfont=dict(family="Sarabun")),
-        yaxis=dict(gridcolor='var(--border-color, #e9e9e9)', title_font=dict(family="Sarabun"), tickfont=dict(family="Sarabun")),
+        xaxis=dict(gridcolor='var(--border-color, #e9e9e9)', showticklabels=True, tickformat='%H:%M', tickangle=-45),
+        yaxis=dict(gridcolor='var(--border-color, #e9e9e9)'),
         showlegend=False, uniformtext_minsize=8, uniformtext_mode='hide')
     st.plotly_chart(fig_24hr, use_container_width=True)
 
@@ -282,8 +282,6 @@ def display_historical_data(df, lang, t):
                 font=dict(family="Sarabun"),
                 xaxis_title="วันที่" if lang == 'th' else "Date", 
                 yaxis_title=t[lang]['avg_pm25_unit'],
-                xaxis=dict(title_font=dict(family="Sarabun"), tickfont=dict(family="Sarabun")),
-                yaxis=dict(title_font=dict(family="Sarabun"), tickfont=dict(family="Sarabun")),
                 template="plotly_white", plot_bgcolor='rgba(0,0,0,0)', showlegend=False)
             st.plotly_chart(fig_hist, use_container_width=True)
 
