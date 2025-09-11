@@ -1,345 +1,298 @@
 import streamlit as st
 import pandas as pd
-import datetime
-import calendar
-import random
+import numpy as np
+import plotly.graph_objects as go
 import plotly.express as px
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from datetime import datetime, timedelta
+from streamlit_gsheets.gsheets_connection import GSheetsConnection
 
-# --- 1. การตั้งค่าหน้าเพจและฟอนต์ ---
+# =================================================================================
+# Page Configuration (ตั้งค่าหน้าเว็บ)
+# =================================================================================
 st.set_page_config(
-    page_title="รายงานเฝ้าระวัง PM2.5 อำเภอสันทราย",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    page_title="รายงานคุณภาพอากาศ อ.สันทราย",
+    page_icon="🌬️",
+    layout="wide"
 )
 
-# เพิ่ม CSS เพื่อเปลี่ยนฟอนต์เป็น Sarabun ให้ครอบคลุมทุกองค์ประกอบ
+# =================================================================================
+# Custom CSS for styling (ปรับแต่งหน้าตาเว็บให้สวยงาม)
+# =================================================================================
 st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
-    
-    /* Apply Sarabun font to all text elements in the Streamlit app */
-    html, body, [class*="css"], .stApp, p, div, span, h1, h2, h3, h4, h5, h6, label {
-        font-family: 'Sarabun', sans-serif !important;
+    <style>
+    /* เปลี่ยน font */
+    html, body, [class*="st-"] {
+        font-family: 'IBM Plex Sans Thai', sans-serif;
     }
-    
-    /* Custom styling for the main metric */
-    .stMetric > div[data-testid="stMetricValue"] {
-        font-size: 3rem;
-        font-weight: bold;
+    /* การ์ดแสดงผลหลัก */
+    .main-metric-card {
+        background-color: #FFFFFF;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        border: 1px solid #EAEAEA;
     }
-    .stMetric > div[data-testid="stMetricLabel"] > div {
-        font-size: 1.2rem;
+    /* หัวข้อ */
+    h1, h2, h3 {
+        color: #2c3e50;
     }
-    /* Hide Streamlit's default menu and footer */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-</style>
+    /* ซ่อน header และ footer ของ Streamlit */
+    .st-emotion-cache-18ni7ap, .st-emotion-cache-h4xjwg {
+        display: none;
+    }
+    </style>
 """, unsafe_allow_html=True)
 
 
-# --- 2. กำหนดเกณฑ์และสีตามมาตรฐาน CCDC และคำแนะนำ ---
-def get_color_and_status(pm25_value):
-    """
-    ตรวจสอบค่า PM2.5 และคืนค่าสีและสถานะ (พร้อม emoji)
-    ตามเกณฑ์ของ CCDC (กรมควบคุมโรค)
-    """
-    if pm25_value <= 25:
-        return 'green', '#5CB85C', '🟢 ดีมาก'
-    elif pm25_value <= 37:
-        return 'yellow', '#F0AD4E', '🟡 ดี'
-    elif pm25_value <= 50:
-        return 'orange', '#F89825', '🟠 ปานกลาง'
-    elif pm25_value <= 75:
-        return 'red', '#D9534F', '🔴 เริ่มมีผลกระทบต่อสุขภาพ'
+# =================================================================================
+# Data Loading and Processing (ส่วนจัดการข้อมูล)
+# =================================================================================
+
+# --- ส่วนนี้จำลองการสร้างข้อมูลขึ้นมา (ตอนนี้ไม่ได้ใช้แล้ว) ---
+# @st.cache_data(ttl=600) 
+# def create_mock_data():
+#     """สร้างข้อมูล PM2.5 จำลองย้อนหลัง 45 วัน"""
+#     now = datetime.now()
+#     timestamps = pd.to_datetime(pd.date_range(start=now - timedelta(days=45), end=now, freq='H'))
+#     base_values = 15 + 10 * np.sin(np.linspace(0, 8 * np.pi, len(timestamps)))
+#     seasonal_trend = 1.2 ** (np.sin(np.linspace(0, 2*np.pi, len(timestamps))) * 2)
+#     noise = np.random.normal(0, 5, len(timestamps))
+#     pm25_values = np.abs(base_values * seasonal_trend + noise) + np.random.randint(0, 50, len(timestamps)) * (np.sin(np.linspace(0, 0.5*np.pi, len(timestamps)))**2)
+#     pm25_values = np.clip(pm25_values, 5, 250) 
+#     
+#     df = pd.DataFrame({
+#         'timestamp': timestamps,
+#         'pm25': pm25_values.astype(int)
+#     })
+#     return df
+
+# --- ส่วนนี้คือส่วนที่คุณจะใช้เชื่อมต่อ Google Sheet จริง ---
+# 1. ไปที่ secrets.toml ของ Streamlit แล้วเพิ่มข้อมูลการเชื่อมต่อ
+# [connections.gsheets]
+# spreadsheet = "https://docs.google.com/spreadsheets/d/1-Une9oA0-ln6ApbhwaXFNpkniAvX7g1K9pNR800MJwQ/" 
+#
+@st.cache_data(ttl=600) # โหลดข้อมูลใหม่ทุก 10 นาที
+def load_data_from_gsheet():
+    """โหลดข้อมูลจาก Google Sheet"""
+    conn = st.connection("gsheets", type=GSheetsConnection)
+    # อ่านข้อมูลจากชีทชื่อ "PM2.5 Log" และเลือกคอลัมน์ "Datetime" กับ "PM2.5"
+    df = conn.read(worksheet="PM2.5 Log", usecols=["Datetime", "PM2.5"]) 
+    df.dropna(inplace=True) # ลบแถวที่ข้อมูลไม่ครบ
+    # เปลี่ยนชื่อคอลัมน์ให้ตรงกับที่โค้ดส่วนอื่นใช้
+    df.columns = ['timestamp', 'pm25']
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    df['pm25'] = pd.to_numeric(df['pm25'])
+    df = df.sort_values('timestamp')
+    return df
+
+# เรียกใช้ฟังก์ชันโหลดข้อมูลจาก Google Sheet
+# df = create_mock_data() # คอมเมนต์ส่วนข้อมูลจำลองออก
+df = load_data_from_gsheet() # เปิดใช้งานส่วนโหลดข้อมูลจริง
+
+# =================================================================================
+# Helper Functions (ฟังก์ชันช่วยคำนวณ)
+# =================================================================================
+
+def get_aqi_category(pm25):
+    """แปลงค่า PM2.5 เป็นระดับ AQI, สี, และคำแนะนำ (อ้างอิงกรมควบคุมมลพิษ)"""
+    if pm25 <= 25:
+        return "ดีมาก", "#3498db", "คุณภาพอากาศดีมาก สามารถทำกิจกรรมกลางแจ้งได้ตามปกติ" # ฟ้า
+    elif pm25 <= 37:
+        return "ดี", "#2ecc71", "คุณภาพอากาศดี สามารถทำกิจกรรมกลางแจ้งได้ตามปกติ" # เขียว
+    elif pm25 <= 50:
+        return "ปานกลาง", "#f1c40f", "ประชาชนทั่วไป: ทำกิจกรรมกลางแจ้งได้ปกติ / ผู้มีความเสี่ยง: ควรลดระยะเวลาทำกิจกรรมกลางแจ้ง" # เหลือง
+    elif pm25 <= 90:
+        return "เริ่มมีผลกระทบต่อสุขภาพ", "#f39c12", "ประชาชนทั่วไป: ควรลดระยะเวลาทำกิจกรรมกลางแจ้ง / ผู้มีความเสี่ยง: ควรงดกิจกรรมกลางแจ้ง" # ส้ม
     else:
-        return 'purple', '#8A2BE2', '🟣 มีผลกระทบต่อสุขภาพ'
+        return "มีผลกระทบต่อสุขภาพ", "#e74c3c", "ทุกคนควรงดกิจกรรมกลางแจ้ง และใช้อุปกรณ์ป้องกันตนเองหากจำเป็น" # แดง
 
-def get_recommendations_general(pm25_value):
-    """
-    คืนค่าคำแนะนำสำหรับประชาชนทั่วไปตามค่า PM2.5
-    """
-    if pm25_value <= 25:
-        return "สามารถทำกิจกรรมกลางแจ้งได้ตามปกติ"
-    elif pm25_value <= 37:
-        return "สามารถทำกิจกรรมกลางแจ้งได้ตามปกติ"
-    elif pm25_value <= 50:
-        return "ควรเฝ้าระวังอาการ"
-    elif pm25_value <= 75:
-        return "ควรงดกิจกรรมกลางแจ้งที่ใช้แรงมาก"
-    else:
-        return "ควรงดกิจกรรมกลางแจ้ง และสวมหน้ากากป้องกัน"
+# =================================================================================
+# Main Application UI (ส่วนแสดงผลของแอป)
+# =================================================================================
 
-def get_recommendations_vulnerable(pm25_value):
-    """
-    คืนค่าคำแนะนำสำหรับกลุ่มเปราะบางตามค่า PM2.5
-    """
-    if pm25_value <= 50:
-        return "ควรเฝ้าระวังอาการ"
-    elif pm25_value <= 75:
-        return "ควรงดกิจกรรมกลางแจ้ง และสวมหน้ากากป้องกัน"
-    else:
-        return "ควรงดกิจกรรมกลางแจ้งโดยเด็ดขาด และอยู่ในอาคารที่ปิดมิดชิด"
+# --- Header ---
+st.title("🌬️ รายงานคุณภาพอากาศ อ.สันทราย จ.เชียงใหม่")
+latest_timestamp = df['timestamp'].iloc[-1].strftime("%d %B %Y, %H:%M น.")
+st.markdown(f"ข้อมูลล่าสุดเมื่อ: **{latest_timestamp}**")
 
+st.divider()
 
-# --- 3. ดึงข้อมูลจาก Google Sheets ---
-# เพื่อให้โค้ดนี้ทำงานได้ คุณต้องสร้างไฟล์ `credentials.json`
-# และแชร์ Google Sheet กับอีเมลของ service account ในไฟล์นั้น
-def fetch_data_from_google_sheets():
-    """
-    เชื่อมต่อและดึงข้อมูล PM2.5 จาก Google Sheets
-    """
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
-    client = gspread.authorize(creds)
+# --- Real-time AQI Display (ส่วนแสดงผลเรียลไทม์) ---
+latest_pm25 = df['pm25'].iloc[-1]
+category, color, advice = get_aqi_category(latest_pm25)
 
-    # เปิด Google Sheet ด้วย URL หรือชื่อไฟล์
-    # URL: https://docs.google.com/spreadsheets/d/1-Une9oA0-ln6ApbhwaXFNpkniAvX7g1K9pNR800MJwQ/edit?gid=1935007940#gid=1935007940
-    sheet_id = "1-Une9oA0-ln6ApbhwaXFNpkniAvX7g1K9pNR800MJwQ"
-    sheet = client.open_by_key(sheet_id).worksheet("PM2.5 Log")
+col1, col2 = st.columns([1, 2])
 
-    # ดึงข้อมูลทั้งหมดจากชีต
-    data = sheet.get_all_records()
-    df = pd.DataFrame(data)
+with col1:
+    with st.container(border=True):
+        st.markdown("<h3 style='text-align: center;'>ค่า PM2.5 ปัจจุบัน</h3>", unsafe_allow_html=True)
+        
+        fig_gauge = go.Figure(go.Indicator(
+            mode = "gauge+number",
+            value = latest_pm25,
+            number = {'font': {'size': 60, 'color': color}},
+            domain = {'x': [0, 1], 'y': [0, 1]},
+            title = {'text': "μg/m³", 'font': {'size': 24}},
+            gauge = {
+                'axis': {'range': [0, 150], 'tickwidth': 1, 'tickcolor': "darkblue"},
+                'bar': {'color': color},
+                'bgcolor': "white",
+                'borderwidth': 2,
+                'bordercolor': "#ccc",
+                'steps': [
+                    {'range': [0, 25], 'color': '#3498db'},
+                    {'range': [25, 37], 'color': '#2ecc71'},
+                    {'range': [37, 50], 'color': '#f1c40f'},
+                    {'range': [50, 90], 'color': '#f39c12'},
+                    {'range': [90, 150], 'color': '#e74c3c'}],
+            }))
+        fig_gauge.update_layout(height=250, margin=dict(l=20, r=20, t=40, b=20))
+        st.plotly_chart(fig_gauge, use_container_width=True)
 
-    # จัดการข้อมูล: แปลงวันที่และค่า PM2.5 เป็นประเภทที่เหมาะสม
-    df['timestamp'] = pd.to_datetime(df['timestamp'], format='%Y-%m-%d %H:%M:%S')
-    df['pm25'] = pd.to_numeric(df['pm25'], errors='coerce')
-    df.dropna(subset=['pm25'], inplace=True)
-    
-    # กรองข้อมูลเฉพาะวันนี้
-    today_date = datetime.date.today()
-    hourly_df = df[df['timestamp'].dt.date == today_date].copy()
-    hourly_df['status_color'] = hourly_df['pm25'].apply(lambda x: get_color_and_status(x)[1])
-    
-    # คำนวณค่าเฉลี่ยรายวัน
-    daily_df = df.set_index('timestamp').resample('D').mean().reset_index()
-    daily_df['status_color'] = daily_df['pm25'].apply(lambda x: get_color_and_status(x)[1])
-    daily_df.rename(columns={'timestamp': 'date', 'pm25': 'pm25_avg'}, inplace=True)
-
-    return hourly_df, daily_df
-
-# ใช้ Streamlit cache เพื่อไม่ให้ต้องดึงข้อมูลใหม่ทุกครั้งที่หน้ารีเฟรช
-@st.cache_data
-def get_data_cached():
-    try:
-        return fetch_data_from_google_sheets()
-    except Exception as e:
-        st.error(f"เกิดข้อผิดพลาดในการดึงข้อมูลจาก Google Sheets: {e}")
-        # ในกรณีที่ดึงข้อมูลไม่ได้ ให้ใช้ข้อมูลจำลองแทน
-        today_date = datetime.date.today()
-        today_datetime = datetime.datetime.now()
-        hourly_data = {
-            'timestamp': [today_datetime.replace(hour=i, minute=0, second=0, microsecond=0) for i in range(24)],
-            'pm25': [random.randint(15, 80) for _ in range(24)]
-        }
-        hourly_df = pd.DataFrame(hourly_data)
-        hourly_df['status_color'] = hourly_df['pm25'].apply(lambda x: get_color_and_status(x)[1])
-
-        current_year = today_date.year
-        current_month = today_date.month
-        num_days = calendar.monthrange(current_year, current_month)[1]
-        daily_data = {
-            'date': [datetime.date(current_year, current_month, d) for d in range(1, num_days + 1)],
-            'pm25_avg': [random.randint(15, 80) for _ in range(num_days)]
-        }
-        daily_df = pd.DataFrame(daily_data)
-        daily_df['status_color'] = daily_df['pm25_avg'].apply(lambda x: get_color_and_status(x)[1])
-        return hourly_df, daily_df
-
-hourly_data, daily_data = get_data_cached()
-
-
-# --- 4. การออกแบบหน้าเพจด้วย Streamlit ---
-
-# หัวข้อและอัปเดตล่าสุด
-st.title("รายงานเฝ้าระวัง PM2.5 อำเภอสันทราย")
-st.markdown(f"**อัปเดตล่าสุด: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}**")
-st.markdown("---")
-
-# ค่า PM2.5 ปัจจุบันและสถานะ
-if not hourly_data.empty:
-    current_pm25 = hourly_data['pm25'].iloc[-1]
-else:
-    current_pm25 = 0 # Default value if no data
-_, color_hex, status = get_color_and_status(current_pm25)
-
-st.header("สถานะ PM2.5 ปัจจุบัน")
-
-col_metric, col_status_text = st.columns([1, 2])
-
-with col_metric:
-    st.markdown(f"""
-        <div style="
-            background-color: {color_hex};
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            color: white;
-            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
-            ">
-            <div style="font-size: 1.5rem; font-weight: bold;">ค่า PM2.5</div>
-            <div style="font-size: 4rem; font-weight: bold;">{current_pm25}</div>
-            <div style="font-size: 1rem;">µg/m³</div>
+with col2:
+    with st.container(border=True):
+        st.markdown(f"""
+        <div style='padding: 10px; border-radius: 10px;'>
+            <h3 style='margin:0; color: #2c3e50;'>คุณภาพอากาศ: 
+                <span style='background-color:{color}; color:white; padding: 5px 10px; border-radius: 5px;'>{category}</span>
+            </h3>
+            <br>
+            <h4>คำแนะนำในการปฏิบัติตัว:</h4>
+            <p style='font-size: 1.1em;'>{advice}</p>
         </div>
-    """, unsafe_allow_html=True)
-with col_status_text:
-    st.markdown(f"""
-        <div style="padding: 20px;">
-            <div style="font-size: 2rem; font-weight: bold; color: {color_hex};">{status}</div>
-            <div style="font-size: 1.2rem;">
-                คุณภาพอากาศในอำเภอสันทรายขณะนี้อยู่ในระดับ **{status}**
-            </div>
-            <div style="font-size: 1.2rem; margin-top: 10px;">
-                คำแนะนำ: **{get_recommendations_general(current_pm25)}**
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+        st.info("ℹ️ ค่ามาตรฐาน PM2.5 ของประเทศไทยใน 24 ชั่วโมง คือ 37.5 µg/m³ (ประกาศ กพ. 2566)", icon="ℹ️")
 
-st.markdown("---")
 
-# กราฟ PM2.5 รายชั่วโมงและข้อมูลสรุป
-st.subheader("แนวโน้ม PM2.5 วันนี้")
-col_chart, col_summary = st.columns([2, 1])
+st.divider()
 
-with col_chart:
-    if not hourly_data.empty:
-        hourly_data['hour'] = hourly_data['timestamp'].dt.hour
-        fig = px.bar(
-            hourly_data, 
-            x='hour', 
-            y='pm25', 
-            color='status_color',
-            color_discrete_map={
-                '#5CB85C': '#5CB85C',
-                '#F0AD4E': '#F0AD4E',
-                '#F89825': '#F89825',
-                '#D9534F': '#D9534F',
-                '#8A2BE2': '#8A2BE2'
-            },
-            labels={'pm25': 'ค่า PM2.5 (µg/m³)', 'hour': 'ชั่วโมง'},
-            title="ค่า PM2.5 รายชั่วโมง (วันนี้)",
-            template="plotly_white"
+# --- Tabs for different views (แท็บแสดงข้อมูลในมุมมองต่างๆ) ---
+tab1, tab2, tab3 = st.tabs(["📊 กราฟแนวโน้ม 24 ชั่วโมง", "🗓️ ปฏิทินคุณภาพอากาศ", "🌍 แผนที่และข้อมูล"])
+
+with tab1:
+    st.subheader("กราฟแนวโน้มคุณภาพอากาศใน 24 ชั่วโมงล่าสุด")
+    
+    # Filter data for the last 24 hours
+    df_24h = df[df['timestamp'] >= (datetime.now() - timedelta(hours=24))]
+
+    if not df_24h.empty:
+        fig_24h = px.line(df_24h, x='timestamp', y='pm25', 
+                        labels={'timestamp': 'เวลา', 'pm25': 'ค่า PM2.5 (μg/m³)'},
+                        template="plotly_white")
+        
+        # Add threshold line (เส้นค่ามาตรฐาน)
+        fig_24h.add_hline(y=37.5, line_dash="dot",
+                        annotation_text="ค่ามาตรฐาน",
+                        annotation_position="bottom right",
+                        line_color="orange")
+        
+        fig_24h.update_traces(line_color='#2c3e50', line_width=3)
+        fig_24h.update_layout(
+            xaxis_title="",
+            yaxis_title="ค่า PM2.5 (μg/m³)",
+            font=dict(family="IBM Plex Sans Thai, sans-serif")
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig_24h, use_container_width=True)
     else:
-        st.warning("ไม่พบข้อมูลรายชั่วโมงสำหรับวันนี้")
+        st.warning("ไม่มีข้อมูลเพียงพอสำหรับ 24 ชั่วโมงล่าสุด")
 
-with col_summary:
-    st.markdown("##### ข้อมูลสรุปวันนี้")
-    if not hourly_data.empty:
-        st.metric(label="ค่าเฉลี่ย PM2.5", value=f"{hourly_data['pm25'].mean():.2f} µg/m³")
-        st.metric(label="ค่าสูงสุด", value=f"{hourly_data['pm25'].max()} µg/m³")
-        st.metric(label="ค่าต่ำสุด", value=f"{hourly_data['pm25'].min()} µg/m³")
+
+with tab2:
+    st.subheader("ปฏิทินคุณภาพอากาศ (ค่าเฉลี่ยรายวัน)")
+
+    # Resample to daily average
+    df_daily = df.set_index('timestamp').resample('D')['pm25'].mean().round(0).reset_index()
+    df_daily = df_daily[df_daily['timestamp'] >= (datetime.now() - timedelta(days=35))] # แสดงผลประมาณ 1 เดือน
+
+    if not df_daily.empty:
+        # Create calendar data
+        start_date = df_daily['timestamp'].min()
+        # Adjust start date to be a Monday
+        start_date -= timedelta(days=start_date.weekday())
+        
+        dates = pd.date_range(start=start_date, periods=42) # 6 weeks
+        
+        calendar_data = pd.DataFrame({'date': dates})
+        calendar_data['day_of_week'] = calendar_data['date'].dt.day_name()
+        calendar_data['week_of_month'] = calendar_data['date'].dt.isocalendar().week
+        calendar_data['day_num'] = calendar_data['date'].dt.day
+        
+        # Map PM2.5 values
+        calendar_data = pd.merge(calendar_data, df_daily, left_on='date', right_on='timestamp', how='left')
+        
+        # Create text and color info
+        calendar_data['text'] = calendar_data['day_num'].astype(str) + '<br><b>' + calendar_data['pm25'].fillna('').astype(str) + '</b>'
+        calendar_data['color'] = calendar_data['pm25'].apply(lambda x: get_aqi_category(x)[1] if pd.notna(x) else 'rgba(0,0,0,0)')
+
+        # Pivot for heatmap
+        weekdays_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        calendar_data['day_of_week'] = pd.Categorical(calendar_data['day_of_week'], categories=weekdays_order, ordered=True)
+        calendar_pivot = calendar_data.pivot_table(values='pm25', index='day_of_week', columns='week_of_month')
+
+        # Create heatmap figure
+        fig_cal = go.Figure(data=go.Heatmap(
+            z=calendar_pivot.values,
+            x=calendar_pivot.columns,
+            y=calendar_pivot.index,
+            xgap=3, ygap=3,
+            colorscale=[[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,0)']], # Transparent background
+            showscale=False
+        ))
+
+        # Add day numbers and PM2.5 values as annotations
+        annotations = []
+        for _, row in calendar_data.iterrows():
+            if pd.notna(row['pm25']):
+                annotations.append(go.layout.Annotation(
+                    x=row['week_of_month'], y=row['day_of_week'],
+                    text=f"<b>{row['day_num']}</b><br>{int(row['pm25'])}",
+                    showarrow=False,
+                    font=dict(color='white' if row['pm25'] > 50 else 'black', size=10),
+                ))
+
+        # Add shapes for colored backgrounds
+        shapes = []
+        for _, row in calendar_data.iterrows():
+            if pd.notna(row['pm25']):
+                shapes.append(go.layout.Shape(
+                    type="rect",
+                    x0=row['week_of_month'] - 0.5, x1=row['week_of_month'] + 0.5,
+                    y0=row['day_of_week'], y1=row['day_of_week'],
+                    line=dict(width=0),
+                    fillcolor=row['color'],
+                    layer='below'
+                ))
+
+        fig_cal.update_layout(
+            shapes=shapes,
+            annotations=annotations,
+            xaxis_title="สัปดาห์",
+            yaxis_title="",
+            template="plotly_white",
+            xaxis=dict(tickmode='array', tickvals=list(calendar_pivot.columns), ticktext=[f'W{w}' for w in calendar_pivot.columns]),
+            yaxis=dict(showgrid=False, autorange="reversed"),
+            height=300,
+            margin=dict(l=20, r=20, t=20, b=20)
+        )
+
+        st.plotly_chart(fig_cal, use_container_width=True)
     else:
-        st.info("ไม่สามารถคำนวณข้อมูลสรุปได้")
+        st.warning("ไม่มีข้อมูลเพียงพอสำหรับสร้างปฏิทิน")
+
+
+with tab3:
+    st.subheader("ตำแหน่งที่ตั้งและข้อมูลดิบ")
     
-st.markdown("---")
+    col_map, col_data = st.columns(2)
+    with col_map:
+        # พิกัดของอำเภอสันทราย (โดยประมาณ)
+        sansai_coords = pd.DataFrame({'lat': [18.8655], 'lon': [99.0435]})
+        st.map(sansai_coords, zoom=11)
+    
+    with col_data:
+        st.write("ข้อมูลล่าสุด 10 รายการ:")
+        st.dataframe(df.tail(10).sort_index(ascending=False), use_container_width=True)
 
-# ปฏิทินรายเดือนที่ปรับปรุงแล้ว
-st.subheader("ค่า PM2.5 เฉลี่ยรายวัน (ทั้งเดือน)")
-if not daily_data.empty:
-    daily_data['date'] = pd.to_datetime(daily_data['date'])
-    daily_data['day'] = daily_data['date'].dt.day
-    daily_data['weekday'] = daily_data['date'].dt.day_name()
-    daily_data['month'] = daily_data['date'].dt.month
+st.divider()
+st.caption("พัฒนาโดย คู่หูเขียนโค้ด (Coding Copilot) | ข้อมูลคุณภาพอากาศอ้างอิงตามเกณฑ์ของกรมควบคุมมลพิษ ประเทศไทย")
 
-    # Get today's date to handle future days
-    today_date = datetime.date.today()
-
-    # Create the calendar HTML
-    month_name = daily_data['date'].iloc[0].strftime('%B %Y')
-    html_calendar = f"""
-        <div style="font-family: Sarabun, sans-serif;">
-            <h4 style="text-align: center; margin-bottom: 10px;">เดือน {daily_data['date'].iloc[0].strftime('%B %Y').replace('January', 'มกราคม').replace('February', 'กุมภาพันธ์').replace('March', 'มีนาคม').replace('April', 'เมษายน').replace('May', 'พฤษภาคม').replace('June', 'มิถุนายน').replace('July', 'กรกฎาคม').replace('August', 'สิงหาคม').replace('September', 'กันยายน').replace('October', 'ตุลาคม').replace('November', 'พฤศจิกายน').replace('December', 'ธันวาคม')}</h4>
-            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; font-family: Sarabun, sans-serif;">
-    """
-
-    day_headers = ["จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์", "อาทิตย์"]
-    day_headers_short = ["จ", "อ", "พ", "พฤ", "ศ", "ส", "อา"]
-
-    for header in day_headers_short:
-        html_calendar += f"<div style='font-weight: bold; padding: 10px; background-color: #f0f2f6; border-radius: 5px;'>{header}</div>"
-
-    # Calculate the starting day of the month
-    first_day_of_month_weekday = daily_data['date'].iloc[0].weekday()
-    for _ in range(first_day_of_month_weekday):
-        html_calendar += "<div></div>"
-
-    for _, row in daily_data.iterrows():
-        day = row['day']
-        pm25_avg = row['pm25_avg']
-        color = row['status_color']
-        
-        current_day_date = row['date'].date()
-        
-        if current_day_date > today_date:
-            # For future dates, make it grey and transparent
-            html_calendar += f"""
-            <div style='
-                border: 1px solid #ccc; 
-                padding: 10px; 
-                border-radius: 5px; 
-                min-height: 80px; 
-                position: relative; 
-                background-color: #f0f2f6; 
-                opacity: 0.5;
-                color: #999;
-            '>
-                <div style='font-size: 1.5em; font-weight: bold; text-align: left;'>{day}</div>
-                <div style='font-size: 1em; position: absolute; bottom: 5px; right: 5px; visibility:hidden;'>-</div>
-            </div>
-            """
-        else:
-            # For past and current dates, show the data
-            html_calendar += f"""
-            <div style='
-                border: 1px solid #ccc; 
-                padding: 10px; 
-                border-radius: 5px; 
-                min-height: 80px; 
-                position: relative; 
-                background-color: {color};
-                color: white;
-                box-shadow: 0 2px 4px 0 rgba(0,0,0,0.1);
-            '>
-                <div style='font-size: 1.5em; font-weight: bold; text-align: left;'>{day}</div>
-                <div style='font-size: 1em; position: absolute; bottom: 5px; right: 5px;'>{pm25_avg:.0f}</div>
-            </div>
-            """
-
-    html_calendar += "</div></div>"
-    st.markdown(html_calendar, unsafe_allow_html=True)
-else:
-    st.warning("ไม่พบข้อมูลรายวันสำหรับเดือนนี้")
-
-st.markdown("---")
-
-# คำแนะนำการปฏิบัติตัว
-with st.expander("คำแนะนำการปฏิบัติตัว 🩺", expanded=True):
-    st.markdown("สำหรับประชาชนทั่วไป:")
-    st.markdown(f"**{get_recommendations_general(current_pm25)}**")
-
-    st.markdown("สำหรับกลุ่มเปราะบาง (ผู้สูงอายุ, เด็ก, ผู้มีโรคประจำตัว, หญิงตั้งครรภ์):")
-    st.markdown(f"**{get_recommendations_vulnerable(current_pm25)}**")
-
-st.markdown("---")
-
-# ข้อมูลผู้ป่วย (จำลอง)
-st.subheader("เฝ้าระวังผู้ป่วยที่เกี่ยวข้องกับ PM2.5")
-st.write("จำนวนผู้ป่วยที่เข้ารับการรักษาในรอบ 7 วันที่ผ่านมา:")
-patient_data = {
-    'วันที่': [f'วันที่ {i}' for i in range(1, 8)],
-    'จำนวนผู้ป่วย': [random.randint(5, 30) for _ in range(7)]
-}
-patient_df = pd.DataFrame(patient_data)
-fig_patient = px.bar(
-    patient_df,
-    x='วันที่',
-    y='จำนวนผู้ป่วย',
-    labels={'จำนวนผู้ป่วย': 'จำนวนผู้ป่วย', 'วันที่': 'วันที่'},
-    title="จำนวนผู้ป่วยที่เกี่ยวข้องกับ PM2.5",
-    template="plotly_white"
-)
-st.plotly_chart(fig_patient, use_container_width=True)
