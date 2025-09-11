@@ -195,12 +195,10 @@ def display_24hr_chart(df, lang, t):
 def display_monthly_calendar(df, lang, t):
     st.subheader(t[lang]['monthly_calendar_header'])
     
-    # Month/Year selector
     unique_months = df['Datetime'].dt.to_period('M').unique()
     month_options = sorted([period.strftime('%B %Y') if lang == 'en' else f"{t['th']['month_names'][period.month-1]} {period.year + 543}" for period in unique_months], reverse=True)
     selected_month_str = st.selectbox(t[lang]['date_picker_label'], options=month_options)
 
-    # Convert selection back to year and month
     if lang == 'th':
         month_name, year_str = selected_month_str.split()
         month = t['th']['month_names'].index(month_name) + 1
@@ -292,9 +290,7 @@ def display_historical_data(df, lang, t):
 
 def display_knowledge_base(lang, t):
     st.subheader(t[lang]['knowledge_header'])
-    
     content = t[lang]['knowledge_content']
-    
     for item in content:
         with st.expander(item['title']):
             st.markdown(item['body'])
