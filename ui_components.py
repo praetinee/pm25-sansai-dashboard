@@ -5,8 +5,59 @@ import calendar
 import pandas as pd
 from utils import get_aqi_level
 
+def inject_custom_css():
+    """Injects custom CSS to make the app responsive and theme-aware."""
+    st.markdown("""
+        <style>
+            /* General Card Style */
+            .card {
+                padding: 20px;
+                border-radius: 15px;
+                background-color: var(--secondary-background-color);
+                border: 1px solid var(--border-color, #dfe6e9);
+                height: 100%;
+            }
+
+            /* Calendar Styles */
+            .calendar-day {
+                padding: 10px;
+                border-radius: 5px;
+                text-align: center;
+                min-height: 80px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+            .calendar-day-header {
+                font-size: 1rem;
+                font-weight: bold;
+            }
+            .calendar-day-value {
+                font-size: 0.9rem;
+            }
+            
+            /* Legend Box for AQI */
+            .legend-box {
+                display: flex;
+                align-items: center;
+                font-size: 1.1rem;
+                margin-bottom: 8px;
+            }
+            .legend-color {
+                height: 20px;
+                width: 20px;
+                border-radius: 5px;
+                margin-right: 10px;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
 def display_realtime_pm(df):
     """Displays the current PM2.5 value and advice with a modern UI."""
+    # Inject CSS on first render of a component
+    inject_custom_css()
+    
     latest_pm25 = df['PM2.5'][0]
     level, color, emoji, advice = get_aqi_level(latest_pm25)
 
@@ -16,7 +67,7 @@ def display_realtime_pm(df):
         st.subheader("ค่า PM2.5 ปัจจุบัน")
         st.markdown(
             f"""
-            <div style="background-color: {color}; padding: 25px; border-radius: 15px; text-align: center; color: white; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);">
+            <div style="background-color: {color}; padding: 25px; border-radius: 15px; text-align: center; color: white; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2); height: 100%;">
                 <h1 style="font-size: 4.5rem; margin: 0; text-shadow: 2px 2px 4px #000000;">{latest_pm25:.1f}</h1>
                 <p style="font-size: 1.5rem; margin: 0;">μg/m³</p>
                 <h2 style="margin-top: 15px;">{level} {emoji}</h2>
@@ -27,14 +78,10 @@ def display_realtime_pm(df):
 
     with col2:
         st.subheader("คำแนะนำในการปฏิบัติตัว")
-        st.markdown(f"<div style='padding: 20px; border-radius: 15px; background-color: #f0f2f6; border: 1px solid #dfe6e9; height: 100%;'>{advice}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card'>{advice}</div>", unsafe_allow_html=True)
         
     with st.expander("ℹ️ ดูเกณฑ์ดัชนีคุณภาพอากาศ"):
         st.markdown("""
-            <style>
-                .legend-box {{ display: flex; align-items: center; font-size: 1.1rem; margin-bottom: 8px; }}
-                .legend-color {{ height: 20px; width: 20px; border-radius: 5px; margin-right: 10px; }}
-            </style>
             <div class="legend-box"><div class="legend-color" style="background-color: #0099FF;"></div><b>ดีมาก:</b> 0 - 15.0 μg/m³</div>
             <div class="legend-box"><div class="legend-color" style="background-color: #2ECC71;"></div><b>ดี:</b> 15.1 - 25.0 μg/m³</div>
             <div class="legend-box"><div class="legend-color" style="background-color: #F1C40F;"></div><b>ปานกลาง:</b> 25.1 - 37.5 μg/m³</div>
@@ -63,8 +110,8 @@ def display_24hr_chart(df):
         plot_bgcolor='rgba(0,0,0,0)', 
         template="plotly_white",
         margin=dict(l=20, r=20, t=40, b=20),
-        xaxis=dict(gridcolor='#e9e9e9'),
-        yaxis=dict(gridcolor='#e9e9e9')
+        xaxis=dict(gridcolor='var(--border-color, #e9e9e9)'),
+        yaxis=dict(gridcolor='var(--border-color, #e9e9e9)')
     )
     st.plotly_chart(fig_24hr, use_container_width=True)
 
@@ -78,7 +125,6 @@ def display_monthly_calendar(df):
 
     latest_date = daily_avg_pm25['date'].max() if not daily_avg_pm25.empty else datetime.now()
     
-    # Let user select month and year
     selected_date = st.date_input(
         "เลือกเดือนและปีที่ต้องการดู",
         value=latest_date,
@@ -88,7 +134,6 @@ def display_monthly_calendar(df):
     )
     
     year, month = selected_date.year, selected_date.month
-
     month_data = daily_avg_pm25[
         (daily_avg_pm25['date'].dt.year == year) & (daily_avg_pm25['date'].dt.month == month)
     ]
@@ -112,23 +157,20 @@ def display_monthly_calendar(df):
                 day_data = month_data[month_data['date'].dt.day == day]
                 if not day_data.empty:
                     pm_value = day_data['PM2.5'].iloc[0]
-                    level, color, emoji, _ = get_aqi_level(pm_value)
+                    _, color, _, _ = get_aqi_level(pm_value)
                     cols[i].markdown(f"""
-                    <div style="background-color: {color}; color: {'black' if color == '#F1C40F' else 'white'}; 
-                                padding: 10px; border-radius: 5px; text-align: center; height: 80px;">
-                        <div style="font-size: 1.2rem; font-weight: bold;">{day}</div>
-                        <div style="font-size: 0.9rem;">{pm_value:.1f}</div>
+                    <div class="calendar-day" style="background-color: {color}; color: {'black' if color == '#F1C40F' else 'white'};">
+                        <div class="calendar-day-header">{day}</div>
+                        <div class="calendar-day-value">{pm_value:.1f}</div>
                     </div>
                     """, unsafe_allow_html=True)
                 else:
                     cols[i].markdown(f"""
-                    <div style="background-color: #f0f2f6; color: #a9a9a9; 
-                                padding: 10px; border-radius: 5px; text-align: center; height: 80px;">
-                        <div style="font-size: 1.2rem; font-weight: bold;">{day}</div>
-                        <div style="font-size: 0.9rem;">N/A</div>
+                    <div class="calendar-day" style="background-color: var(--secondary-background-color); color: var(--text-color);">
+                        <div class="calendar-day-header">{day}</div>
+                        <div class="calendar-day-value">N/A</div>
                     </div>
                     """, unsafe_allow_html=True)
-
 
 def display_historical_data(df):
     """Displays the historical data section within a collapsible expander with a modern look."""
