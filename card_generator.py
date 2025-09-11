@@ -19,59 +19,58 @@ def draw_mask_icon(draw, center_x, y, size=48, color="#333333"):
     """Draws the custom mask icon using Pillow with standardized stroke width."""
     offset_x = center_x - size / 2
     offset_y = y
-    stroke_width = 2 # Standardized stroke width
+    stroke_width = 2
+    s = size / 24 # Scale factor from 24x24 viewBox
 
-    def scale_point(px, py):
-        return (px / 64 * size + offset_x, py / 64 * size + offset_y)
+    def p(px, py):
+        return (px * s + offset_x, py * s + offset_y)
+    
+    # Replicate the drawing based on the standardized SVG paths
+    draw.line([p(4, 9), p(12, 4), p(20, 9)], fill=color, width=stroke_width)
+    draw.line([p(20, 9), p(21, 14), p(20, 18)], fill=color, width=stroke_width)
+    draw.line([p(20, 18), p(12, 22), p(4, 18)], fill=color, width=stroke_width)
+    draw.line([p(4, 18), p(3, 14), p(4, 9)], fill=color, width=stroke_width)
 
-    # Replicate the drawing based on the provided SVG paths
-    draw.line([scale_point(12, 24), scale_point(32, 10), scale_point(52, 24)], fill=color, width=stroke_width)
-    draw.line([scale_point(52, 24), scale_point(54, 36), scale_point(52, 44)], fill=color, width=stroke_width)
-    draw.line([scale_point(52, 44), scale_point(32, 58), scale_point(12, 44)], fill=color, width=stroke_width)
-    draw.line([scale_point(12, 44), scale_point(10, 36), scale_point(12, 24)], fill=color, width=stroke_width)
+    draw.line([p(4, 11), p(0, 13), p(4, 16)], fill=color, width=stroke_width)
+    draw.line([p(20, 11), p(24, 13), p(20, 16)], fill=color, width=stroke_width)
     
-    # Ear loops
-    draw.line([scale_point(12, 28), scale_point(2, 32), scale_point(12, 40)], fill=color, width=stroke_width)
-    draw.line([scale_point(52, 28), scale_point(62, 32), scale_point(52, 40)], fill=color, width=stroke_width)
-    
-    # Folds (thinner)
     fold_width = stroke_width - 1 if stroke_width > 1 else 1
-    draw.line([scale_point(16, 30), scale_point(32, 26), scale_point(48, 30)], fill=color, width=fold_width)
-    draw.line([scale_point(16, 36), scale_point(32, 32), scale_point(48, 36)], fill=color, width=fold_width)
-    draw.line([scale_point(16, 42), scale_point(32, 38), scale_point(48, 42)], fill=color, width=fold_width)
+    draw.line([p(6, 11), p(12, 9.5), p(18, 11)], fill=color, width=fold_width)
+    draw.line([p(6, 14), p(12, 12.5), p(18, 14)], fill=color, width=fold_width)
+    draw.line([p(6, 17), p(12, 15.5), p(18, 17)], fill=color, width=fold_width)
 
 
 def draw_activity_icon(draw, center_x, y, size=48, color="#333333"):
     """Draws the custom bicycle icon using Pillow with standardized stroke width."""
     offset_x = center_x - size / 2
     offset_y = y
-    stroke_width = 2 # Standardized stroke width
+    stroke_width = 2
+    s = size / 24 # Scale factor from 24x24 viewBox
 
     def p(px, py):
-        return (px / 64 * size + offset_x, py / 64 * size + offset_y)
-
+        return (px * s + offset_x, py * s + offset_y)
+    
     # Wheels
-    r = 8 / 64 * size
-    draw.ellipse([(p(18-8, 44-8)), (p(18+8, 44+8))], outline=color, width=stroke_width)
-    draw.ellipse([(p(46-8, 44-8)), (p(46+8, 44+8))], outline=color, width=stroke_width)
+    r = 3 * s
+    draw.ellipse([(p(6.75-3, 16.5-3)), (p(6.75+3, 16.5+3))], outline=color, width=stroke_width)
+    draw.ellipse([(p(17.25-3, 16.5-3)), (p(17.25+3, 16.5+3))], outline=color, width=stroke_width)
     
     # Frame
-    draw.polygon([p(18, 44), p(30, 32), p(40, 44)], outline=color, width=stroke_width)
+    draw.polygon([p(6.75, 16.5), p(11.25, 12), p(15, 16.5)], outline=color, width=stroke_width)
     
     # Seat and handle
-    draw.line([p(30, 32), p(30, 24)], fill=color, width=stroke_width)
-    draw.line([p(28, 24), p(34, 24)], fill=color, width=stroke_width)
-    draw.line([p(40, 44), p(44, 30), p(52, 28)], fill=color, width=stroke_width)
+    draw.line([p(11.25, 12), p(11.25, 9)], fill=color, width=stroke_width)
+    draw.line([p(10.5, 9), p(12.75, 9)], fill=color, width=stroke_width)
+    draw.line([p(15, 16.5), p(16.5, 11.25), p(19.5, 10.5)], fill=color, width=stroke_width)
 
 
 def draw_indoors_icon(draw, center_x, y, size=48, color="#333333"):
     """Draws the house icon using Pillow."""
-    s = size / 24 # Scale factor from 24x24 viewBox
-    w = 2 # Reference stroke width
+    s = size / 24 
+    w = 2 
     offset_x = center_x - size / 2
     offset_y = y
     
-    # Redefined for cleaner drawing
     house_outline = [
         (3*s + offset_x, 9*s + offset_y),
         (12*s + offset_x, 2*s + offset_y),
