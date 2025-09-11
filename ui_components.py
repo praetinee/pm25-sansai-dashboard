@@ -18,34 +18,40 @@ def inject_custom_css():
                 height: 100%;
             }
 
-            /* Calendar Styles */
+            /* NEW Calendar Styles */
             .calendar-day {
+                background-color: var(--secondary-background-color);
+                border-radius: 10px;
                 padding: 10px;
-                border-radius: 8px; /* More rounded corners */
                 text-align: center;
-                min-height: 85px;
+                min-height: 90px;
                 display: flex;
                 flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Subtle shadow */
-                transition: transform 0.2s ease-in-out; /* Hover effect */
+                justify-content: space-between;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+                transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+                border-bottom: 5px solid transparent; /* Default transparent border */
             }
             .calendar-day:hover {
-                transform: translateY(-3px); /* Lift on hover */
+                transform: translateY(-5px);
+                box-shadow: 0 8px 12px rgba(0,0,0,0.1);
             }
             .calendar-day-header {
-                font-size: 1.1rem; /* Bolder day number */
-                font-weight: 600;
+                align-self: flex-start; /* Day number to the top-left */
+                font-size: 0.9rem;
+                font-weight: 500;
+                opacity: 0.8;
             }
             .calendar-day-value {
-                font-size: 1rem; /* Bolder value */
-                font-weight: 500;
+                font-size: 1.5rem; /* Bigger value */
+                font-weight: 700;
+                line-height: 1;
             }
             .calendar-day-na { /* Style for N/A days */
                  background-color: var(--secondary-background-color);
                  color: var(--text-color);
-                 opacity: 0.6;
+                 opacity: 0.5;
+                 box-shadow: none;
             }
             
             /* Legend Box for AQI */
@@ -143,7 +149,7 @@ def display_24hr_chart(df):
     st.plotly_chart(fig_24hr, use_container_width=True)
 
 def display_monthly_calendar(df):
-    """Displays the monthly PM2.5 calendar heatmap."""
+    """Displays the monthly PM2.5 calendar heatmap with a new modern design."""
     st.subheader("ปฏิทินค่าฝุ่น PM2.5 รายวัน")
     df_calendar = df.copy()
     df_calendar['date'] = df_calendar['Datetime'].dt.date
@@ -170,10 +176,10 @@ def display_monthly_calendar(df):
 
     st.markdown(f"#### {month_name} {year}")
     
-    days_header = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    days_header = ["จันทร์", "อังคาร", "พุธ", "พฤหัส", "ศุกร์", "เสาร์", "อาทิตย์"]
     cols = st.columns(7)
     for i, day_name in enumerate(days_header):
-        cols[i].markdown(f"<div style='text-align: center; font-weight: bold;'>{day_name}</div>", unsafe_allow_html=True)
+        cols[i].markdown(f"<div style='text-align: center; font-weight: bold; opacity: 0.7;'>{day_name}</div>", unsafe_allow_html=True)
 
     for week in cal:
         cols = st.columns(7)
@@ -185,18 +191,21 @@ def display_monthly_calendar(df):
                 if not day_data.empty:
                     pm_value = day_data['PM2.5'].iloc[0]
                     _, color, _, _ = get_aqi_level(pm_value)
+                    # Use border-bottom as color accent
                     cols[i].markdown(f"""
-                    <div class="calendar-day" style="background-color: {color}; color: {'black' if color == '#F1C40F' else 'white'};">
+                    <div class="calendar-day" style="border-bottom-color: {color};">
                         <div class="calendar-day-header">{day}</div>
                         <div class="calendar-day-value">{pm_value:.1f}</div>
                     </div>
                     """, unsafe_allow_html=True)
                 else:
+                    # N/A day style
                     cols[i].markdown(f"""
                     <div class="calendar-day calendar-day-na">
                         <div class="calendar-day-header">{day}</div>
                     </div>
                     """, unsafe_allow_html=True)
+
 
 def display_historical_data(df):
     """Displays the historical data section within a collapsible expander with a modern look."""
