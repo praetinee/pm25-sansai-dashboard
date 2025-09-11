@@ -15,29 +15,31 @@ def get_font(url):
         st.error(f"Font download failed: {e}")
         return None
 
-# --- Helper functions for drawing icons ---
-def draw_mask_icon(draw, center_x, y, size=50, color="#555555"):
+# --- Helper functions for drawing icons (New Minimalist Style) ---
+def draw_mask_icon(draw, center_x, y, size=50, color="#333333"):
     s = size / 2
-    draw.rounded_rectangle((center_x - s, y, center_x + s, y + s * 1.2), radius=s/4, outline=color, width=3)
-    draw.line((center_x - s, y + s*0.4, center_x - s - s*0.4, y + s*0.2), fill=color, width=3)
-    draw.line((center_x + s, y + s*0.4, center_x + s + s*0.4, y + s*0.2), fill=color, width=3)
+    width = 4
+    draw.line([(center_x - s, y + s*0.2), (center_x + s, y + s*0.2)], fill=color, width=width)
+    draw.line([(center_x - s, y + s*1.2), (center_x + s, y + s*1.2)], fill=color, width=width)
+    draw.arc([center_x - s, y + s*0.2, center_x, y + s*1.2], 90, 180, fill=color, width=width)
+    draw.arc([center_x, y + s*0.2, center_x + s, y + s*1.2], 0, 90, fill=color, width=width)
+    draw.line((center_x - s, y + s*0.3, center_x - s * 1.5, y), fill=color, width=width-1)
+    draw.line((center_x + s, y + s*0.3, center_x + s * 1.5, y), fill=color, width=width-1)
 
-def draw_activity_icon(draw, center_x, y, size=50, color="#555555"):
+def draw_activity_icon(draw, center_x, y, size=50, color="#333333"):
     s = size / 2
-    draw.ellipse((center_x - s*0.3, y, center_x + s*0.3, y + s*0.6), outline=color, width=3) # Head
-    draw.line((center_x, y + s*0.6, center_x, y + s*1.4), fill=color, width=3) # Body
-    draw.line((center_x, y + s*0.8, center_x + s*0.8, y + s*0.5), fill=color, width=3) # Arm
-    draw.line((center_x, y + s*1.4, center_x - s*0.7, y + s*1.9), fill=color, width=3) # Back Leg
-    draw.line((center_x, y + s*1.4, center_x + s*0.7, y + s*1.9), fill=color, width=3) # Front Leg
+    width = 4
+    draw.ellipse((center_x - s*0.3, y, center_x + s*0.3, y + s*0.6), outline=color, width=width)
+    draw.line((center_x, y + s*0.6, center_x, y + s*1.5), fill=color, width=width)
+    draw.line((center_x - s*0.7, y + s*0.7, center_x, y + s*1.0, center_x + s*0.7, y + s*0.7), fill=color, width=width)
+    draw.line((center_x - s*0.6, y + s*2.0), (center_x, y + s*1.5), (center_x + s*0.6, y + s*2.0), fill=color, width=width)
 
-def draw_indoors_icon(draw, center_x, y, size=50, color="#555555"):
+def draw_indoors_icon(draw, center_x, y, size=50, color="#333333"):
     s = size / 2
-    points = [
-        (center_x - s, y + s*0.5), (center_x, y), (center_x + s, y + s*0.5),
-        (center_x + s, y + s*1.8), (center_x - s, y + s*1.8), (center_x - s, y + s*0.5)
-    ]
-    draw.polygon(points, outline=color, width=3)
-    draw.rectangle((center_x - s*0.2, y + s*1.1, center_x + s*0.2, y + s*1.8), outline=color, width=3)
+    width = 4
+    draw.line([(center_x - s, y + s*0.6), (center_x, y), (center_x + s, y + s*0.6)], fill=color, width=width)
+    draw.rectangle((center_x - s*0.8, y + s*0.6, center_x + s*0.8, y + s*1.8), outline=color, width=width)
+    draw.rectangle((center_x - s*0.5, y + s*0.9, center_x, y + s*1.4), outline=color, width=width-1)
 
 def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lang, t):
     """Generates a new, modern, and clean report card image."""
