@@ -1,7 +1,8 @@
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import requests
 from io import BytesIO
 import streamlit as st
+import textwrap
 
 @st.cache_data
 def get_font(url):
@@ -13,6 +14,30 @@ def get_font(url):
     except requests.exceptions.RequestException as e:
         st.error(f"Font download failed: {e}")
         return None
+
+# --- Helper functions for drawing icons ---
+def draw_mask_icon(draw, center_x, y, size=50, color="#555555"):
+    s = size / 2
+    draw.rounded_rectangle((center_x - s, y, center_x + s, y + s * 1.2), radius=s/4, outline=color, width=3)
+    draw.line((center_x - s, y + s*0.4, center_x - s - s*0.4, y + s*0.2), fill=color, width=3)
+    draw.line((center_x + s, y + s*0.4, center_x + s + s*0.4, y + s*0.2), fill=color, width=3)
+
+def draw_activity_icon(draw, center_x, y, size=50, color="#555555"):
+    s = size / 2
+    draw.ellipse((center_x - s*0.3, y, center_x + s*0.3, y + s*0.6), outline=color, width=3) # Head
+    draw.line((center_x, y + s*0.6, center_x, y + s*1.4), fill=color, width=3) # Body
+    draw.line((center_x, y + s*0.8, center_x + s*0.8, y + s*0.5), fill=color, width=3) # Arm
+    draw.line((center_x, y + s*1.4, center_x - s*0.7, y + s*1.9), fill=color, width=3) # Back Leg
+    draw.line((center_x, y + s*1.4, center_x + s*0.7, y + s*1.9), fill=color, width=3) # Front Leg
+
+def draw_indoors_icon(draw, center_x, y, size=50, color="#555555"):
+    s = size / 2
+    points = [
+        (center_x - s, y + s*0.5), (center_x, y), (center_x + s, y + s*0.5),
+        (center_x + s, y + s*1.8), (center_x - s, y + s*1.8), (center_x - s, y + s*0.5)
+    ]
+    draw.polygon(points, outline=color, width=3)
+    draw.rectangle((center_x - s*0.2, y + s*1.1, center_x + s*0.2, y + s*1.8), outline=color, width=3)
 
 def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lang, t):
     """Generates a new, modern, and clean report card image."""
@@ -35,15 +60,16 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
 
     font_header = create_font(font_bold_bytes, 36)
     font_date = create_font(font_reg_bytes, 24)
-    font_pm_value = create_font(font_bold_bytes, 150)
+    font_pm_value = create_font(font_bold_bytes, 130) # Slightly smaller
     font_unit = create_font(font_reg_bytes, 30)
     font_level = create_font(font_bold_bytes, 40)
-    font_advice_header = create_font(font_bold_bytes, 26)
-    font_advice = create_font(font_reg_bytes, 22)
+    font_advice_cat = create_font(font_bold_bytes, 22)
+    font_advice_body = create_font(font_reg_bytes, 18)
+    font_risk = create_font(font_reg_bytes, 20)
     font_footer = create_font(font_light_bytes, 16)
     font_legend = create_font(font_reg_bytes, 20)
     font_legend_small = create_font(font_reg_bytes, 18)
-    
+
     # --- Card Creation ---
     width, height = 800, 1000
     base_color = tuple(int(color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
@@ -59,38 +85,58 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     box_y_start = 150
     draw.rounded_rectangle([(20, box_y_start), (width - 20, height - 20)], radius=20, fill="#FFFFFF")
 
-    # --- PM2.5 Value (Adjusted Vertical Positions) ---
-    draw.text((width/2, box_y_start + 180), f"{latest_pm25:.1f}", font=font_pm_value, anchor="ms", fill="#111111")
-    draw.text((width/2, box_y_start + 260), "μg/m³", font=font_unit, anchor="ms", fill="#555555")
-    draw.text((width/2, box_y_start + 320), f"{level}", font=font_level, anchor="ms", fill="#111111")
+    # --- PM2.5 Value ---
+    draw.text((width/2, box_y_start + 140), f"{latest_pm25:.1f}", font=font_pm_value, anchor="ms", fill="#111111")
+    draw.text((width/2, box_y_start + 210), "μg/m³", font=font_unit, anchor="ms", fill="#555555")
+    draw.text((width/2, box_y_start + 260), f"{level}", font=font_level, anchor="ms", fill="#111111")
     
-    draw.line([(60, box_y_start + 360), (width - 60, box_y_start + 360)], fill="#EEEEEE", width=2)
+    draw.line([(60, box_y_start + 310), (width - 60, box_y_start + 310)], fill="#EEEEEE", width=2)
     
-    # --- Advice Section (with vertical centering) ---
-    advice_text = advice.replace('<br>', '\n').replace('<strong>', '').replace('</strong>', '')
-    lines = [line.strip() for line in advice_text.split('\n') if line.strip()]
+    # --- Actionable Advice Section ---
+    advice_details = advice # The advice object is now passed directly
+    advice_y_start = box_y_start + 330
+    
+    categories = [
+        ('mask', t[lang]['advice_cat_mask'], draw_mask_icon),
+        ('activity', t[lang]['advice_cat_activity'], draw_activity_icon),
+        ('indoors', t[lang]['advice_cat_indoors'], draw_indoors_icon)
+    ]
+    
+    num_cols = len(categories)
+    col_width = (width - 80) / num_cols
+    
+    for i, (key, title, icon_func) in enumerate(categories):
+        center_x = 40 + (i * col_width) + (col_width / 2)
+        
+        # Draw Icon
+        icon_func(draw, center_x, advice_y_start)
+        
+        # Draw Category Title
+        cat_y = advice_y_start + 65
+        draw.text((center_x, cat_y), title, font=font_advice_cat, anchor="ms", fill="#111111")
+        
+        # Draw Advice Body Text
+        body_y = cat_y + 30
+        advice_text = advice_details[key]
+        
+        # Wrap text
+        wrapped_lines = textwrap.wrap(advice_text, width=18)
+        
+        current_y = body_y
+        for line in wrapped_lines:
+            draw.text((center_x, current_y), line, font=font_advice_body, anchor="ms", fill="#555555", align="center")
+            current_y += 25
 
-    total_text_height = 0
-    line_heights = []
-    line_spacing = 15
-    for i, line in enumerate(lines):
-        font_to_use = font_advice_header if t[lang]['general_public'] in line or t[lang]['risk_group'] in line else font_advice
-        bbox = draw.textbbox((0, 0), line, font=font_to_use)
-        line_height = bbox[3] - bbox[1]
-        line_heights.append(line_height)
-        total_text_height += line_height
-        if i < len(lines) - 1:
-            total_text_height += line_spacing
-
-    advice_area_top = box_y_start + 360 + 20
-    advice_area_bottom = height - 220 # Reserve space for legend and footer
-    advice_area_height = advice_area_bottom - advice_area_top
-    y_text = advice_area_top + (advice_area_height - total_text_height) / 2
-
-    for i, line in enumerate(lines):
-        font_to_use = font_advice_header if t[lang]['general_public'] in line or t[lang]['risk_group'] in line else font_advice
-        draw.text((width/2, y_text), line, font=font_to_use, fill="#333333", anchor="mt")
-        y_text += line_heights[i] + line_spacing
+    # --- Risk Group Advice ---
+    risk_y = advice_y_start + 200
+    draw.line([(60, risk_y), (width - 60, risk_y)], fill="#EEEEEE", width=2)
+    risk_text = f"🚨 {t[lang]['advice_cat_risk_group']}: {advice_details['risk_group']}"
+    
+    wrapped_risk_lines = textwrap.wrap(risk_text, width=60)
+    current_risk_y = risk_y + 25
+    for line in wrapped_risk_lines:
+        draw.text((width/2, current_risk_y), line, font=font_risk, anchor="ms", fill="#333333", align="center")
+        current_risk_y += 30
 
     # --- AQI Legend Bar ---
     legend_y = height - 160
@@ -114,7 +160,6 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
         
         center_x = x0 + segment_width / 2
         
-        # Use smaller font for longer text
         current_font = font_legend_small if len(level_text) > 8 else font_legend
         
         draw.text((center_x, legend_y + bar_height/2 - 10), level_text, font=current_font, anchor="mm", fill=text_color, align="center")
@@ -130,7 +175,6 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     mask_draw = ImageDraw.Draw(mask)
     mask_draw.rounded_rectangle((0, 0, width, height), radius=radius, fill=255)
     
-    # Create a new image to hold the final result with transparency
     final_img = Image.new('RGBA', (width, height))
     final_img.paste(img, (0, 0), mask=mask)
 
