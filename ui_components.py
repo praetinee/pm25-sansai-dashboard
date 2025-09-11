@@ -124,7 +124,12 @@ def display_24hr_chart(df):
         plot_bgcolor='rgba(0,0,0,0)', 
         template="plotly_white",
         margin=dict(l=20, r=20, t=40, b=20),
-        xaxis=dict(gridcolor='var(--border-color, #e9e9e9)', showticklabels=False),
+        xaxis=dict(
+            gridcolor='var(--border-color, #e9e9e9)', 
+            showticklabels=True,
+            tickformat='%H:%M', # Format to show HH:MM
+            tickangle=-45      # Angle the ticks to prevent overlap
+        ),
         yaxis=dict(gridcolor='var(--border-color, #e9e9e9)'),
         showlegend=False,
         uniformtext_minsize=8, 
@@ -198,7 +203,7 @@ def display_historical_data(df):
         with col_date1:
             start_date = st.date_input("วันที่เริ่มต้น", value=default_start, min_value=df['Datetime'].min().date(), max_value=today, key="start_date_hist")
         with col_date2:
-            end_date = st.date_input("วันที่สิ้นสุด", value=today, min_value=df['Datetime'].min().date(), max_value=today, key="end_date_hist")
+            end_date = st.date_input("สิ้นสุด", value=today, min_value=df['Datetime'].min().date(), max_value=today, key="end_date_hist")
 
         if start_date > end_date:
             st.error("วันที่เริ่มต้นต้องมาก่อนวันที่สิ้นสุด")
@@ -252,7 +257,7 @@ def display_knowledge_tabs():
         """)
     with tab3:
         st.markdown("""
-        - **🌬️ เครื่องฟอกอากาศ DIY:** ใช้พลมประกบกับแผ่นกรอง HEPA เป็นวิธีที่ประหยัดและได้ผลดีในห้องขนาดเล็ก
+        - **🌬️ เครื่องฟอกอากาศ DIY:** ใช้พัดลมประกบกับแผ่นกรอง HEPA เป็นวิธีที่ประหยัดและได้ผลดีในห้องขนาดเล็ก
         - **🚪 การซีลประตูหน้าต่าง:** ใช้ซีลยางปิดช่องว่างตามขอบประตูหน้าต่างเพื่อป้องกันฝุ่นเข้าบ้าน
         - **💨 พัดลมดูดอากาศ:** เปิดเท่าที่จำเป็น เพราะเป็นการดึงอากาศภายนอกเข้ามา
         """)
