@@ -3,15 +3,15 @@ import requests
 from io import BytesIO
 import streamlit as st
 
-@st.cache_data
+# @st.cache_data # Removing cache to ensure fresh download attempts
 def get_font_bytes(url):
-    """Downloads font file bytes and caches them."""
+    """Downloads font file bytes."""
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=15) # Added a timeout
         response.raise_for_status()
-        return response.content # Return raw bytes, which are immutable and cache-safe
+        return response.content # Return raw bytes, which are immutable
     except requests.exceptions.RequestException as e:
-        st.error(f"Font download failed: {e}")
+        st.warning(f"Font download failed for {url}: {e}")
         return None
 
 def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lang, t):
@@ -28,6 +28,7 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     font_emoji_content = get_font_bytes(emoji_font_url)
 
     if not all([font_reg_content, font_bold_content, font_light_content, font_emoji_content]):
+        st.error("ไม่สามารถดาวน์โหลดฟอนต์ได้ ไม่สามารถสร้างการ์ดรายงานได้" if lang == 'th' else "Font download failed. Cannot generate report card.")
         return None
     
     # --- Create Fonts directly from bytes by wrapping in BytesIO ---
