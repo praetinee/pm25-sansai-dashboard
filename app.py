@@ -21,10 +21,10 @@ st.set_page_config(
 
 # --- Language Selection ---
 _, col1, col2 = st.columns([10, 1, 1])
-if col1.button('🇹🇭 TH'):
+if col1.button('ไทย'):
     st.session_state.lang = 'th'
     st.rerun()
-if col2.button('🇬🇧 EN'):
+if col2.button('English'):
     st.session_state.lang = 'en'
     st.rerun()
 
