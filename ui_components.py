@@ -182,14 +182,15 @@ def display_24hr_chart(df, lang, t):
         textposition='outside'
     ))
     fig_24hr.update_layout(
-        font=dict(family="Sarabun"),
+        font=dict(family="Sarabun, sans-serif"),
+        title_font=dict(family="Sarabun, sans-serif"),
         xaxis_title=None, 
         yaxis_title=t[lang]['pm25_unit'], 
         plot_bgcolor='rgba(0,0,0,0)', 
         template="plotly_white",
         margin=dict(l=20, r=20, t=40, b=20),
-        xaxis=dict(gridcolor='var(--border-color, #e9e9e9)', showticklabels=True, tickformat='%H:%M', tickangle=-45),
-        yaxis=dict(gridcolor='var(--border-color, #e9e9e9)'),
+        xaxis=dict(gridcolor='var(--border-color, #e9e9e9)', showticklabels=True, tickformat='%H:%M', tickangle=-45, title_font=dict(family="Sarabun, sans-serif"), tickfont=dict(family="Sarabun, sans-serif")),
+        yaxis=dict(gridcolor='var(--border-color, #e9e9e9)', title_font=dict(family="Sarabun, sans-serif"), tickfont=dict(family="Sarabun, sans-serif")),
         showlegend=False,
         uniformtext_minsize=8, 
         uniformtext_mode='hide'
@@ -302,10 +303,13 @@ def display_historical_data(df, lang, t):
                 marker=dict(cornerradius=5)
             ))
             fig_hist.update_layout(
-                font=dict(family="Sarabun"),
-                title=title_text,
+                title_text=title_text,
+                font=dict(family="Sarabun, sans-serif"),
+                title_font=dict(family="Sarabun, sans-serif"),
                 xaxis_title="วันที่" if lang == 'th' else "Date", 
                 yaxis_title=t[lang]['avg_pm25_unit'],
+                xaxis=dict(title_font=dict(family="Sarabun, sans-serif"), tickfont=dict(family="Sarabun, sans-serif")),
+                yaxis=dict(title_font=dict(family="Sarabun, sans-serif"), tickfont=dict(family="Sarabun, sans-serif")),
                 template="plotly_white",
                 plot_bgcolor='rgba(0,0,0,0)',
                 showlegend=False
