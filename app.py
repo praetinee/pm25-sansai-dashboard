@@ -7,16 +7,14 @@ from ui_components import (
     display_health_impact,
     display_symptom_checker,
     display_historical_data,
-    display_knowledge_base
+    display_knowledge_base  # Renamed from display_knowledge_tabs
 )
 from translations import TRANSLATIONS as t
 
 # --- Page Configuration ---
-# Initialize session state for language if it doesn't exist
 if 'lang' not in st.session_state:
     st.session_state.lang = 'th'
 
-# Set page config based on the selected language
 st.set_page_config(
     page_title=t[st.session_state.lang]['page_title'],
     page_icon="🍃",
@@ -24,11 +22,10 @@ st.set_page_config(
 )
 
 # --- Language Selection ---
-# Place buttons at the top right
 _, col1, col2 = st.columns([10, 1, 1])
 if col1.button('ไทย'):
     st.session_state.lang = 'th'
-    st.rerun() # Rerun to apply language change immediately
+    st.rerun()
 if col2.button('English'):
     st.session_state.lang = 'en'
     st.rerun()
@@ -38,15 +35,13 @@ lang = st.session_state.lang
 # --- Data Loading ---
 df = load_data()
 
-# Stop execution if data loading fails
 if df is None or df.empty:
-    st.warning("ไม่พบข้อมูล หรือข้อมูลที่โหลดมาไม่สมบูรณ์" if lang == 'th' else "No data found or failed to load.")
+    st.warning(t[lang]['no_data_for_year'])
     st.stop()
 
 # --- Header ---
 st.title(t[lang]['header'])
 
-# Format the latest date string based on the selected language
 latest_dt = df['Datetime'][0]
 if lang == 'th':
     thai_year = latest_dt.year + 543
@@ -58,18 +53,18 @@ st.markdown(f"{t[lang]['latest_data']} `{date_str}`")
 
 st.divider()
 
-# --- UI Components Display Order ---
+# --- UI Components Display Order (Updated) ---
 display_realtime_pm(df, lang, t, date_str)
 st.divider()
 display_24hr_chart(df, lang, t)
 st.divider()
 display_monthly_calendar(df, lang, t)
 st.divider()
-display_symptom_checker(lang, t)
-st.divider()
 display_historical_data(df, lang, t)
 st.divider()
-display_knowledge_base(lang, t)
+display_knowledge_base(lang, t) # New knowledge base display
 st.divider()
 display_health_impact(df, lang, t)
+st.divider()
+display_symptom_checker(lang, t) # Moved to the bottom
 
