@@ -119,28 +119,26 @@ def display_realtime_pm(df, lang, t, date_str):
         
         st.subheader(t[lang]['advice_header'])
         
-        # --- Custom SVG Icons ---
+        # --- Standardized SVG Icons ---
         mask_svg = """
-        <svg viewBox="0 0 64 64">
-            <path d="M12 24 Q32 10 52 24 Q54 36 52 44 Q32 58 12 44 Q10 36 12 24 Z" fill="none" stroke="currentColor" stroke-width="3"/>
-            <path d="M12 28 Q2 32 12 40" stroke="currentColor" stroke-width="3" fill="none"/>
-            <path d="M52 28 Q62 32 52 40" stroke="currentColor" stroke-width="3" fill="none"/>
-            <path d="M16 30 Q32 26 48 30" stroke="currentColor" stroke-width="2"/>
-            <path d="M16 36 Q32 32 48 36" stroke="currentColor" stroke-width="2"/>
-            <path d="M16 42 Q32 38 48 42" stroke="currentColor" stroke-width="2"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 9 Q12 4 20 9 Q21 14 20 18 Q12 22 4 18 Q3 14 4 9 Z" />
+            <path d="M4 11 Q0 13 4 16" />
+            <path d="M20 11 Q24 13 20 16" />
+            <path d="M6 11 Q12 9.5 18 11" />
+            <path d="M6 14 Q12 12.5 18 14" />
+            <path d="M6 17 Q12 15.5 18 17" />
         </svg>
         """
         
         activity_svg = """
-        <svg viewBox="0 0 64 64">
-          <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none">
-            <circle cx="18" cy="44" r="8" />
-            <circle cx="46" cy="44" r="8" />
-            <path d="M18 44 L30 32 L40 44 Z" />
-            <path d="M30 32 L30 24" />
-            <path d="M28 24 L34 24" />
-            <path d="M40 44 L44 30 L52 28" />
-          </g>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="6.75" cy="16.5" r="3" />
+            <circle cx="17.25" cy="16.5" r="3" />
+            <path d="M6.75 16.5 L11.25 12 L15 16.5 Z" />
+            <path d="M11.25 12 L11.25 9" />
+            <path d="M10.5 9 L12.75 9" />
+            <path d="M15 16.5 L16.5 11.25 L19.5 10.5" />
         </svg>
         """
         indoors_svg = """
