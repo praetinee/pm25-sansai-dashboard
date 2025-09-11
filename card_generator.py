@@ -15,47 +15,28 @@ def get_font(url):
         st.error(f"Font download failed: {e}")
         return None
 
-# --- Helper functions for drawing icons (New Professional Style) ---
+# --- Helper functions for drawing icons (New Minimalist Style) ---
 def draw_mask_icon(draw, center_x, y, size=50, color="#333333"):
     s = size / 2
-    width = 3
-    top_y = y + s * 0.4
-    bottom_y = y + s * 1.5
-    left_x = center_x - s
-    right_x = center_x + s
-    
-    draw.line([(left_x + s*0.2, top_y), (right_x - s*0.2, top_y)], fill=color, width=width)
-    draw.line([(left_x + s*0.4, bottom_y), (right_x - s*0.4, bottom_y)], fill=color, width=width)
-    draw.arc([(left_x, top_y), (left_x + s*0.8, bottom_y)], 90, 270, fill=color, width=width)
-    draw.arc([(right_x - s*0.8, top_y), (right_x, bottom_y)], 270, 90, fill=color, width=width)
-    draw.arc([(left_x - s*0.8, top_y - s*0.2), (left_x + s*0.2, bottom_y + s*0.2)], 120, 240, fill=color, width=width-1)
-    draw.arc([(right_x - s*0.2, top_y - s*0.2), (right_x + s*0.8, bottom_y + s*0.2)], -60, 60, fill=color, width=width-1)
+    width = 4
+    draw.line([(center_x - s, y + s*0.2), (center_x + s, y + s*0.2)], fill=color, width=width)
+    draw.line([(center_x - s, y + s*1.2), (center_x + s, y + s*1.2)], fill=color, width=width)
+    draw.arc([center_x - s, y + s*0.2, center_x, y + s*1.2], 90, 180, fill=color, width=width)
+    draw.arc([center_x, y + s*0.2, center_x + s, y + s*1.2], 0, 90, fill=color, width=width)
+    draw.line((center_x - s, y + s*0.3, center_x - s * 1.5, y), fill=color, width=width-1)
+    draw.line((center_x + s, y + s*0.3, center_x + s * 1.5, y), fill=color, width=width-1)
 
 def draw_activity_icon(draw, center_x, y, size=50, color="#333333"):
     s = size / 2
-    width = 3
-    head_radius = s * 0.25
-    head_center_x = center_x
-    head_center_y = y + head_radius
-    draw.ellipse([
-        (head_center_x - head_radius, head_center_y - head_radius),
-        (head_center_x + head_radius, head_center_y + head_radius)
-    ], outline=color, width=width)
-
-    body_start_y = head_center_y + head_radius
-    body_end_y = y + s * 1.4
-    draw.line([(center_x, body_start_y), (center_x, body_end_y)], fill=color, width=width)
-    
-    arm_y = body_start_y + s * 0.2
-    draw.line([(center_x, arm_y), (center_x + s*0.8, arm_y + s * 0.2)], fill=color, width=width)
-    draw.line([(center_x, arm_y), (center_x - s*0.7, arm_y - s * 0.3)], fill=color, width=width)
-
-    draw.line([(center_x, body_end_y), (center_x + s*0.7, body_end_y + s * 0.5)], fill=color, width=width)
-    draw.line([(center_x, body_end_y), (center_x - s*0.6, body_end_y + s * 0.2)], fill=color, width=width)
+    width = 4
+    draw.ellipse((center_x - s*0.3, y, center_x + s*0.3, y + s*0.6), outline=color, width=width)
+    draw.line((center_x, y + s*0.6, center_x, y + s*1.5), fill=color, width=width)
+    draw.line((center_x - s*0.7, y + s*0.7, center_x, y + s*1.0, center_x + s*0.7, y + s*0.7), fill=color, width=width)
+    draw.line((center_x - s*0.6, y + s*2.0), (center_x, y + s*1.5), (center_x + s*0.6, y + s*2.0), fill=color, width=width)
 
 def draw_indoors_icon(draw, center_x, y, size=50, color="#333333"):
     s = size / 2
-    width = 3
+    width = 4
     draw.line([(center_x - s, y + s*0.6), (center_x, y), (center_x + s, y + s*0.6)], fill=color, width=width)
     draw.rectangle((center_x - s*0.8, y + s*0.6, center_x + s*0.8, y + s*1.8), outline=color, width=width)
     draw.rectangle((center_x - s*0.5, y + s*0.9, center_x, y + s*1.4), outline=color, width=width-1)
