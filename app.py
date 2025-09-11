@@ -56,11 +56,12 @@ st.divider()
 
 # --- UI Components ---
 display_realtime_pm(df, lang, t)
-display_health_impact(df, lang, t) # <-- Added new component here
 st.divider()
 display_24hr_chart(df, lang, t)
 st.divider()
 display_monthly_calendar(df, lang, t)
+st.divider()
+display_health_impact(df, lang, t) # <-- Moved here
 st.divider()
 display_historical_data(df, lang, t)
 st.divider()
