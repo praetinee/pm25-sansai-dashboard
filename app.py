@@ -4,7 +4,8 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, timedelta
-from streamlit_gsheets.gsheets_connection import GSheetsConnection
+# แก้ไข: เปลี่ยนชื่อ library ที่ import
+from st_gsheets_connection import GSheetsConnection
 
 # =================================================================================
 # Page Configuration (ตั้งค่าหน้าเว็บ)
@@ -75,7 +76,7 @@ st.markdown("""
 def load_data_from_gsheet():
     """โหลดข้อมูลจาก Google Sheet"""
     conn = st.connection("gsheets", type=GSheetsConnection)
-    # อ่านข้อมูลจากชีทชื่อ "PM2.5 Log" และเลือกคอลัมน์ "Datetime" กับ "PM2.5"
+    # อ่านข้อมูลจากชีทชื่อ "PM2.5 Log" และเลือกคอลลัมน์ "Datetime" กับ "PM2.5"
     df = conn.read(worksheet="PM2.5 Log", usecols=["Datetime", "PM2.5"]) 
     df.dropna(inplace=True) # ลบแถวที่ข้อมูลไม่ครบ
     # เปลี่ยนชื่อคอลัมน์ให้ตรงกับที่โค้ดส่วนอื่นใช้
