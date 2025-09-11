@@ -77,7 +77,7 @@ def load_data_from_gsheet():
     data = worksheet.get_all_records()
     df = pd.DataFrame(data)
 
-    # ตรวจสอบว่า DataFrame มีข้อมูลหรือไม่ และมีคอลัมน์ที่คาดหวังหรือไม่
+    # ตรวจสอบว่า DataFrame มีข้อมูลหรือไม่ และมีคอลลัมน์ที่คาดหวังหรือไม่
     if df.empty or not all(col in df.columns for col in ["Datetime", "PM2.5"]):
         st.error("ไม่พบข้อมูลหรือชื่อคอลัมน์ 'Datetime', 'PM2.5' ใน Google Sheet")
         st.stop()
@@ -85,7 +85,7 @@ def load_data_from_gsheet():
     # ขั้นตอนการจัดการข้อมูลเหมือนเดิม
     df = df[["Datetime", "PM2.5"]].copy() # เลือกเฉพาะคอลัมน์ที่ต้องการ
     df.dropna(inplace=True) 
-    df.columns = ['timestamp', 'pm25'] # สมมติว่าชื่อคอลัมน์ในชีทคือ Datetime และ PM2.5
+    df.columns = ['timestamp', 'pm25'] # สมมติว่าชื่อคอลลัมน์ในชีทคือ Datetime และ PM2.5
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     df['pm25'] = pd.to_numeric(df['pm25'])
     df = df.sort_values('timestamp')
@@ -97,11 +97,26 @@ def load_data_from_gsheet():
 try:
     df = load_data_from_gsheet()
 except gspread.exceptions.SpreadsheetNotFound:
+    # --- BEGIN: ปรับปรุงส่วนแจ้งเตือน ---
+    client_email = st.secrets.get("gcp_service_account", {}).get("client_email", "[ไม่พบอีเมลใน Secrets]")
+    sheet_url = st.secrets.get("connections", {}).get("gsheets", {}).get("spreadsheet", "#")
     st.error(
-        "**ไม่พบ Google Sheet!** "
-        "กรุณาตรวจสอบว่า URL ใน Streamlit Secrets ของคุณถูกต้อง "
-        "และ Service Account ได้รับสิทธิ์เข้าถึงชีทแล้ว"
+        f"""
+        **ไม่พบ Google Sheet!**
+
+        ปัญหานี้เกิดจาก "หุ่นยนต์" ของเราไม่ได้รับอนุญาตให้เข้าไปอ่านข้อมูลครับ
+
+        **วิธีแก้ไข (ทำข้อนี้สำคัญที่สุด):**
+        1.  **คัดลอกอีเมลนี้:** `{client_email}`
+        2.  **ไปที่ Google Sheet ของคุณ:** [คลิกที่นี่เพื่อเปิดชีท]({sheet_url})
+        3.  คลิกปุ่ม **"Share"** (แชร์) สีเขียวมุมขวาบน
+        4.  นำอีเมลที่คัดลอกมาไปวาง และตั้งค่าสิทธิ์ให้เป็น **"Editor"**
+
+        
+        หลังจากให้สิทธิ์แล้ว ให้กด **Reboot** ที่หน้าแอปอีกครั้งครับ
+        """
     )
+    # --- END: ปรับปรุงส่วนแจ้งเตือน ---
     st.stop()
 except gspread.exceptions.WorksheetNotFound:
     st.error(
