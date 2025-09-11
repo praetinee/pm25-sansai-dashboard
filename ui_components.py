@@ -45,7 +45,7 @@ def inject_custom_css():
             .calendar-day-value { font-size: 1.5rem; font-weight: 700; line-height: 1; }
             .calendar-day-na { background-color: var(--secondary-background-color); color: var(--text-color); opacity: 0.5; box-shadow: none; }
             .aqi-legend-bar { display: flex; height: 50px; width: 100%; border-radius: 10px; overflow: hidden; margin-top: 10px; }
-            .aqi-legend-segment { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: 500; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); font-size: 0.9rem; line-height: 1.2; }
+            .aqi-legend-segment { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: 500; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); font-size: 0.9rem; line-height: 1.2; text-align: center; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -275,4 +275,3 @@ def display_knowledge_base(lang, t):
         if item['title'] == st.session_state.selected_topic:
             st.markdown(item['body'])
             break
-
