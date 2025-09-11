@@ -120,7 +120,6 @@ def display_realtime_pm(df, lang, t, date_str):
         st.subheader(t[lang]['advice_header'])
         
         # --- Custom SVG Icons ---
-        # Your custom SVG for the mask
         mask_svg = """
         <svg viewBox="0 0 64 64">
             <path d="M12 24 Q32 10 52 24 Q54 36 52 44 Q32 58 12 44 Q10 36 12 24 Z" fill="none" stroke="currentColor" stroke-width="3"/>
@@ -132,12 +131,16 @@ def display_realtime_pm(df, lang, t, date_str):
         </svg>
         """
         
-        # Other icons
         activity_svg = """
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5.5 17.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm13 0a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"></path>
-            <path d="M12 17.5H5.5l1.5-5 4-2.5 2 3h1.5"></path>
-            <path d="M15 6.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path>
+        <svg viewBox="0 0 64 64">
+          <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <circle cx="18" cy="44" r="8" />
+            <circle cx="46" cy="44" r="8" />
+            <path d="M18 44 L30 32 L40 44 Z" />
+            <path d="M30 32 L30 24" />
+            <path d="M28 24 L34 24" />
+            <path d="M40 44 L44 30 L52 28" />
+          </g>
         </svg>
         """
         indoors_svg = """
