@@ -101,21 +101,26 @@ def display_realtime_pm(df):
         """, unsafe_allow_html=True)
 
 def display_24hr_chart(df):
-    """Displays the 24-hour PM2.5 trend as a bar chart with colored bars."""
-    st.subheader("แนวโน้มค่า PM2.5 ใน 24 ชั่วโมงล่าสุด")
+    """Displays the PM2.5 trend for the latest day (00:00-23:59) as a colored bar chart."""
+    st.subheader("แนวโน้มค่า PM2.5 รายชั่วโมงของวันนี้")
     
-    last_24_hours_data = df[df['Datetime'] >= (df['Datetime'].max() - timedelta(hours=24))].sort_values(by="Datetime", ascending=True)
+    latest_date = df['Datetime'].max().date()
+    day_data = df[df['Datetime'].dt.date == latest_date].sort_values(by="Datetime", ascending=True)
 
-    colors = [get_aqi_level(pm)[1] for pm in last_24_hours_data['PM2.5']]
+    if day_data.empty:
+        st.info("ยังไม่มีข้อมูลสำหรับวันนี้")
+        return
+
+    colors = [get_aqi_level(pm)[1] for pm in day_data['PM2.5']]
 
     fig_24hr = go.Figure()
     fig_24hr.add_trace(go.Bar(
-        x=last_24_hours_data['Datetime'], 
-        y=last_24_hours_data['PM2.5'], 
+        x=day_data['Datetime'], 
+        y=day_data['PM2.5'], 
         name='PM2.5',
         marker_color=colors,
         marker=dict(cornerradius=5), # Rounded corners
-        text=last_24_hours_data['PM2.5'].apply(lambda x: f'{x:.1f}'), # Text on bars
+        text=day_data['PM2.5'].apply(lambda x: f'{x:.1f}'), # Text on bars
         textposition='outside' # Position of text
     ))
     fig_24hr.update_layout(
