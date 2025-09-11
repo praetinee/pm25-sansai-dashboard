@@ -237,13 +237,24 @@ def display_historical_data(df):
                 mcol2.metric("ค่าสูงสุด", f"{max_pm:.1f} μg/m³")
                 mcol3.metric("ค่าต่ำสุด", f"{min_pm:.1f} μg/m³")
 
+                # Generate colors for each bar
+                colors_hist = [get_aqi_level(pm)[1] for pm in filtered_df['PM2.5']]
+
                 fig_hist = go.Figure()
-                fig_hist.add_trace(go.Scatter(x=filtered_df['Datetime'], y=filtered_df['PM2.5'], mode='lines', name='PM2.5', line=dict(color='#2575fc')))
+                fig_hist.add_trace(go.Bar(
+                    x=filtered_df['Datetime'], 
+                    y=filtered_df['PM2.5'], 
+                    name='PM2.5',
+                    marker_color=colors_hist,
+                    marker=dict(cornerradius=5)
+                ))
                 fig_hist.update_layout(
                     title=f"ข้อมูล PM2.5 ตั้งแต่ {start_date.strftime('%d/%m/%Y')} ถึง {end_date.strftime('%d/%m/%Y')}",
                     xaxis_title="วันที่", 
                     yaxis_title="PM2.5 (μg/m³)",
-                    template="plotly_white"
+                    template="plotly_white",
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    showlegend=False
                 )
                 st.plotly_chart(fig_hist, use_container_width=True)
 
