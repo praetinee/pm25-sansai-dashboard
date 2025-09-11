@@ -1,7 +1,5 @@
 streamlit
 pandas
-numpy
-plotly
 gspread
 google-auth-oauthlib
-google-auth-httplib2
+plotly
