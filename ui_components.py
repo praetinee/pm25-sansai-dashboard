@@ -4,7 +4,6 @@ from datetime import datetime
 import calendar
 import pandas as pd
 from utils import get_aqi_level
-from card_generator import generate_report_card
 
 def inject_custom_css():
     """Injects custom CSS to make the app responsive and theme-aware."""
@@ -44,46 +43,47 @@ def inject_custom_css():
             .calendar-day-header { align-self: flex-start; font-size: 0.9rem; font-weight: 500; opacity: 0.8; }
             .calendar-day-value { font-size: 1.5rem; font-weight: 700; line-height: 1; }
             .calendar-day-na { background-color: var(--secondary-background-color); color: var(--text-color); opacity: 0.5; box-shadow: none; }
-            .aqi-legend-bar { display: flex; height: 50px; width: 100%; border-radius: 10px; overflow: hidden; margin-top: 10px; margin-bottom: 20px; }
-            .aqi-legend-segment { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: 500; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); font-size: 0.9rem; line-height: 1.2; text-align: center; }
+            .aqi-legend-bar { display: flex; height: 50px; width: 100%; border-radius: 10px; overflow: hidden; margin-top: 10px; }
+            .aqi-legend-segment { 
+                flex-grow: 1; 
+                display: flex; 
+                flex-direction: column; 
+                align-items: center; 
+                justify-content: center; 
+                color: white; 
+                font-weight: 500; 
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.4); 
+                font-size: 0.9rem; 
+                line-height: 1.2; 
+                text-align: center;
+            }
             .advice-container {
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
-                gap: 15px;
-                padding: 15px;
-                border-radius: 15px;
-                background-color: var(--secondary-background-color);
-                border: 1px solid var(--border-color, #dfe6e9);
+                gap: 20px;
                 text-align: center;
             }
             .advice-item {
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                gap: 8px;
             }
-            .advice-item svg {
+            .advice-icon svg {
                 width: 48px;
                 height: 48px;
-                color: var(--text-color);
+                margin-bottom: 8px;
+            }
+            .advice-title {
+                font-weight: 600;
+                margin-bottom: 4px;
             }
             .advice-text {
-                display: flex;
-                flex-direction: column;
-            }
-            .advice-text strong {
-                font-weight: 600;
-            }
-            .advice-text span {
                 font-size: 0.9rem;
-                opacity: 0.8;
             }
             .risk-group-advice {
-                margin-top: 15px;
-                padding: 10px;
-                border-radius: 10px;
-                background-color: var(--secondary-background-color);
-                border: 1px solid var(--border-color, #dfe6e9);
+                margin-top: 20px;
+                padding-top: 20px;
+                border-top: 1px solid #e0e0e0;
                 text-align: center;
             }
         </style>
@@ -92,8 +92,8 @@ def inject_custom_css():
 def display_realtime_pm(df, lang, t, date_str):
     inject_custom_css()
     latest_pm25 = df['PM2.5'][0]
-    level, color, _, advice = get_aqi_level(latest_pm25, lang, t)
-    advice_details = advice['details']
+    level, color, emoji, advice = get_aqi_level(latest_pm25, lang, t)
+    advice_details = advice['details'] # Get structured advice
 
     col1, col2 = st.columns([1, 2])
     with col1:
@@ -118,37 +118,60 @@ def display_realtime_pm(df, lang, t, date_str):
         """, unsafe_allow_html=True)
         
         st.subheader(t[lang]['advice_header'])
+        
+        # --- Custom SVG Icons ---
+        # Your custom SVG for the mask
+        mask_svg = """
+        <svg viewBox="0 0 64 64">
+            <path d="M12 24 Q32 10 52 24 Q54 36 52 44 Q32 58 12 44 Q10 36 12 24 Z" fill="none" stroke="currentColor" stroke-width="3"/>
+            <path d="M12 28 Q2 32 12 40" stroke="currentColor" stroke-width="3" fill="none"/>
+            <path d="M52 28 Q62 32 52 40" stroke="currentColor" stroke-width="3" fill="none"/>
+            <path d="M16 30 Q32 26 48 30" stroke="currentColor" stroke-width="2"/>
+            <path d="M16 36 Q32 32 48 36" stroke="currentColor" stroke-width="2"/>
+            <path d="M16 42 Q32 38 48 42" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        """
+        
+        # Other icons
+        activity_svg = """
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5.5 17.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm13 0a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"></path>
+            <path d="M12 17.5H5.5l1.5-5 4-2.5 2 3h1.5"></path>
+            <path d="M15 6.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path>
+        </svg>
+        """
+        indoors_svg = """
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        """
+        
         st.markdown(f"""
-        <div class="advice-container">
-            <div class="advice-item">
-                <!-- Mask Icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 13.5A2.5 2.5 0 0 1 5 11h14a2.5 2.5 0 0 1 2.5 2.5v0A2.5 2.5 0 0 1 19 16H5a2.5 2.5 0 0 1-2.5-2.5v0Z"/><path d="M2.5 11V9a2 2 0 0 1 2-2h15a2 2 0 0 1 2 2v2"/></svg>
-                <div class="advice-text">
-                    <strong>{t[lang]['advice_topics']['mask']}</strong>
-                    <span>{advice_details['mask']}</span>
+        <div class="card">
+            <div class="advice-container">
+                <div class="advice-item">
+                    <div class="advice-icon">{mask_svg}</div>
+                    <div class="advice-title">{t[lang]['advice_cat_mask']}</div>
+                    <div class="advice-text">{advice_details['mask']}</div>
+                </div>
+                <div class="advice-item">
+                    <div class="advice-icon">{activity_svg}</div>
+                    <div class="advice-title">{t[lang]['advice_cat_activity']}</div>
+                    <div class="advice-text">{advice_details['activity']}</div>
+                </div>
+                <div class="advice-item">
+                    <div class="advice-icon">{indoors_svg}</div>
+                    <div class="advice-title">{t[lang]['advice_cat_indoors']}</div>
+                    <div class="advice-text">{advice_details['indoors']}</div>
                 </div>
             </div>
-            <div class="advice-item">
-                <!-- Activity Icon (Cyclist) -->
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5.5" r="2.5"/><path d="M12 17.5h-2.5l1.5-4 4-2.5 -2.5-2.5"/></svg>
-                <div class="advice-text">
-                    <strong>{t[lang]['advice_topics']['activity']}</strong>
-                    <span>{advice_details['activity']}</span>
-                </div>
+            <div class="risk-group-advice">
+                <strong>{t[lang]['risk_group']}:</strong> {advice_details['risk_group']}
             </div>
-            <div class="advice-item">
-                <!-- Indoors Icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                <div class="advice-text">
-                    <strong>{t[lang]['advice_topics']['indoors']}</strong>
-                    <span>{advice_details['indoors']}</span>
-                </div>
-            </div>
-        </div>
-        <div class="risk-group-advice">
-            <strong>{t[lang]['risk_group']}:</strong> {advice_details['risk_group']}
         </div>
         """, unsafe_allow_html=True)
+
 
     st.write("") # Add a small space
 
@@ -159,6 +182,7 @@ def display_realtime_pm(df, lang, t, date_str):
             st.cache_data.clear()
             st.rerun()
     with b_col2:
+        from card_generator import generate_report_card
         report_card_bytes = generate_report_card(latest_pm25, level, color, "", advice_details, date_str, lang, t)
         if report_card_bytes:
             st.download_button(
@@ -332,10 +356,12 @@ def display_historical_data(df, lang, t):
 def display_knowledge_base(lang, t):
     st.subheader(t[lang]['knowledge_header'])
     
-    cols = st.columns(4)
+    # Use session state to manage the selected topic
     if 'selected_topic' not in st.session_state or st.session_state.selected_topic not in [item['title'] for item in t[lang]['knowledge_content']]:
         st.session_state.selected_topic = t[lang]['knowledge_content'][0]['title']
 
+    # Create buttons in columns, updating the session state on click
+    cols = st.columns(4) 
     for i, item in enumerate(t[lang]['knowledge_content']):
         with cols[i % 4]:
             if st.button(item['title'], key=f"topic_{i}", use_container_width=True):
@@ -343,6 +369,7 @@ def display_knowledge_base(lang, t):
     
     st.markdown("---")
     
+    # Display the content of the selected topic
     for item in t[lang]['knowledge_content']:
         if item['title'] == st.session_state.selected_topic:
             st.markdown(item['body'])
