@@ -16,6 +16,10 @@ TRANSLATIONS = {
         'advice_header': "คำแนะนำในการปฏิบัติตัว",
         'general_public': "ประชาชนทั่วไป",
         'risk_group': "กลุ่มเสี่ยง",
+        'refresh_button': "🔄 รีเฟรชข้อมูล",
+        'download_button': "📥 ดาวน์โหลดรายงาน",
+        'report_card_footer': "ด้วยความปรารถนาดีจากกลุ่มงานอาชีวเวชกรรม รพ.สันทราย",
+
 
         # AQI Levels & Advice
         'aqi_level_1': "ดีมาก",
@@ -41,6 +45,24 @@ TRANSLATIONS = {
         'health_impact_explanation': "หมายเหตุ: คำนวณจากค่าเฉลี่ยฝุ่นสะสมทั้งหมด โดยเทียบว่าการได้รับ PM2.5 เฉลี่ย 22 µg/m³ ตลอด 24 ชั่วโมง เทียบเท่าการสูบบุหรี่ 1 มวน (เป็นการเปรียบเทียบเพื่อให้เห็นภาพผลกระทบ)",
         'days_unit': "วัน",
         'cigarettes_unit': "มวน",
+
+        # Symptom Checker
+        'symptom_checker_title': "คุณได้รับผลกระทบจาก PM2.5 หรือไม่?",
+        'symptom_checker_intro': "ลองประเมินอาการเบื้องต้นของคุณจากรายการด้านล่าง:",
+        'symptoms': [
+            "แสบตา คันตา น้ำตาไหล",
+            "คัดจมูก แสบจมูก มีน้ำมูก",
+            "ไอแห้งๆ ระคายเคืองคอ",
+            "รู้สึกเหนื่อยง่ายกว่าปกติ",
+            "หายใจไม่สะดวก หรือหายใจถี่",
+            "ปวดศีรษะ หรือเวียนศีรษะ",
+            "มีผื่นคันตามผิวหนัง"
+        ],
+        'symptom_results_0': "เยี่ยมมาก! คุณยังไม่มีอาการที่น่ากังวล แต่ยังคงต้องป้องกันตัวเองอยู่เสมอนะครับ",
+        'symptom_results_1_2': "คุณเริ่มมีอาการเล็กน้อย ควรหลีกเลี่ยงการสัมผัสฝุ่นและสังเกตอาการอย่างใกล้ชิด",
+        'symptom_results_3_plus': "คุณมีอาการหลายอย่างที่อาจเกี่ยวข้องกับ PM2.5 หากอาการไม่ดีขึ้นหรือรบกวนชีวิตประจำวัน ควรพิจารณาปรึกษาแพทย์",
+        'symptom_disclaimer': "ข้อควรระวัง: แบบประเมินนี้เป็นเพียงเครื่องมือช่วยสังเกตอาการเบื้องต้นเท่านั้น ไม่สามารถใช้แทนการวินิจฉัยทางการแพทย์ได้",
+
 
         # Charts
         'hourly_trend_today': "แนวโน้มค่า PM2.5 รายชั่วโมงของวันนี้",
@@ -89,6 +111,10 @@ TRANSLATIONS = {
         'advice_header': "Health Recommendations",
         'general_public': "General Public",
         'risk_group': "Sensitive Groups",
+        'refresh_button': "🔄 Refresh Data",
+        'download_button': "📥 Download Report",
+        'report_card_footer': "With best wishes from Occupational Medicine Dept., San Sai Hospital.",
+
 
         # AQI Levels & Advice
         'aqi_level_1': "Very Good",
@@ -114,6 +140,24 @@ TRANSLATIONS = {
         'health_impact_explanation': "Note: Calculated from total cumulative exposure, where an average daily exposure of 22 µg/m³ is roughly equivalent to smoking 1 cigarette (This is an approximation to illustrate the health impact).",
         'days_unit': "days",
         'cigarettes_unit': "cigarettes",
+
+        # Symptom Checker
+        'symptom_checker_title': "Are you affected by PM2.5?",
+        'symptom_checker_intro': "Check any of the following symptoms you are experiencing:",
+        'symptoms': [
+            "Itchy, watery, or burning eyes",
+            "Nasal congestion or runny nose",
+            "Dry cough or throat irritation",
+            "Feeling more tired than usual",
+            "Shortness of breath or rapid breathing",
+            "Headache or dizziness",
+            "Skin rash or irritation"
+        ],
+        'symptom_results_0': "Great! You have no worrying symptoms, but always remember to protect yourself.",
+        'symptom_results_1_2': "You are experiencing mild symptoms. You should avoid dust exposure and monitor your condition closely.",
+        'symptom_results_3_plus': "You have several symptoms that could be related to PM2.5. If they don't improve or affect your daily life, consider consulting a doctor.",
+        'symptom_disclaimer': "Disclaimer: This checklist is a tool for preliminary self-assessment only and is not a substitute for a medical diagnosis.",
+
 
         # Charts
         'hourly_trend_today': "Today's Hourly PM2.5 Trend",
