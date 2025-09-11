@@ -59,12 +59,12 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     box_y_start = 150
     draw.rounded_rectangle([(20, box_y_start), (width - 20, height - 20)], radius=20, fill="#FFFFFF")
 
-    # --- PM2.5 Value ---
-    draw.text((width/2, box_y_start + 140), f"{latest_pm25:.1f}", font=font_pm_value, anchor="ms", fill="#111111")
-    draw.text((width/2, box_y_start + 220), "μg/m³", font=font_unit, anchor="ms", fill="#555555")
-    draw.text((width/2, box_y_start + 280), f"{level}", font=font_level, anchor="ms", fill="#111111")
+    # --- PM2.5 Value (Adjusted Vertical Positions) ---
+    draw.text((width/2, box_y_start + 180), f"{latest_pm25:.1f}", font=font_pm_value, anchor="ms", fill="#111111")
+    draw.text((width/2, box_y_start + 260), "μg/m³", font=font_unit, anchor="ms", fill="#555555")
+    draw.text((width/2, box_y_start + 320), f"{level}", font=font_level, anchor="ms", fill="#111111")
     
-    draw.line([(60, box_y_start + 340), (width - 60, box_y_start + 340)], fill="#EEEEEE", width=2)
+    draw.line([(60, box_y_start + 360), (width - 60, box_y_start + 360)], fill="#EEEEEE", width=2)
     
     # --- Advice Section (with vertical centering) ---
     advice_text = advice.replace('<br>', '\n').replace('<strong>', '').replace('</strong>', '')
@@ -82,7 +82,7 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
         if i < len(lines) - 1:
             total_text_height += line_spacing
 
-    advice_area_top = box_y_start + 340 + 20
+    advice_area_top = box_y_start + 360 + 20
     advice_area_bottom = height - 220 # Reserve space for legend and footer
     advice_area_height = advice_area_bottom - advice_area_top
     y_text = advice_area_top + (advice_area_height - total_text_height) / 2
