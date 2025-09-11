@@ -16,37 +16,36 @@ def get_font(url):
 
 # --- Icon Drawing Functions ---
 def draw_mask_icon(draw, center_x, y, size=48, color="#333333"):
-    """Draws the custom mask icon using Pillow."""
-    # Scale coordinates from 64x64 viewBox to the target size
+    """Draws the custom mask icon using Pillow with standardized stroke width."""
     offset_x = center_x - size / 2
     offset_y = y
-    
+    stroke_width = 2 # Standardized stroke width
+
     def scale_point(px, py):
         return (px / 64 * size + offset_x, py / 64 * size + offset_y)
 
     # Replicate the drawing based on the provided SVG paths
-    # Main Body - A series of curves. Pillow doesn't have a direct quadratic Bezier function,
-    # so we approximate with lines connecting key points.
-    draw.line([scale_point(12, 24), scale_point(32, 10), scale_point(52, 24)], fill=color, width=3, joint='curve')
-    draw.line([scale_point(52, 24), scale_point(54, 36), scale_point(52, 44)], fill=color, width=3, joint='curve')
-    draw.line([scale_point(52, 44), scale_point(32, 58), scale_point(12, 44)], fill=color, width=3, joint='curve')
-    draw.line([scale_point(12, 44), scale_point(10, 36), scale_point(12, 24)], fill=color, width=3, joint='curve')
+    draw.line([scale_point(12, 24), scale_point(32, 10), scale_point(52, 24)], fill=color, width=stroke_width)
+    draw.line([scale_point(52, 24), scale_point(54, 36), scale_point(52, 44)], fill=color, width=stroke_width)
+    draw.line([scale_point(52, 44), scale_point(32, 58), scale_point(12, 44)], fill=color, width=stroke_width)
+    draw.line([scale_point(12, 44), scale_point(10, 36), scale_point(12, 24)], fill=color, width=stroke_width)
     
     # Ear loops
-    draw.line([scale_point(12, 28), scale_point(2, 32), scale_point(12, 40)], fill=color, width=3, joint='curve')
-    draw.line([scale_point(52, 28), scale_point(62, 32), scale_point(52, 40)], fill=color, width=3, joint='curve')
+    draw.line([scale_point(12, 28), scale_point(2, 32), scale_point(12, 40)], fill=color, width=stroke_width)
+    draw.line([scale_point(52, 28), scale_point(62, 32), scale_point(52, 40)], fill=color, width=stroke_width)
     
-    # Folds
-    draw.line([scale_point(16, 30), scale_point(32, 26), scale_point(48, 30)], fill=color, width=2, joint='curve')
-    draw.line([scale_point(16, 36), scale_point(32, 32), scale_point(48, 36)], fill=color, width=2, joint='curve')
-    draw.line([scale_point(16, 42), scale_point(32, 38), scale_point(48, 42)], fill=color, width=2, joint='curve')
+    # Folds (thinner)
+    fold_width = stroke_width - 1 if stroke_width > 1 else 1
+    draw.line([scale_point(16, 30), scale_point(32, 26), scale_point(48, 30)], fill=color, width=fold_width)
+    draw.line([scale_point(16, 36), scale_point(32, 32), scale_point(48, 36)], fill=color, width=fold_width)
+    draw.line([scale_point(16, 42), scale_point(32, 38), scale_point(48, 42)], fill=color, width=fold_width)
 
 
 def draw_activity_icon(draw, center_x, y, size=48, color="#333333"):
-    """Draws the custom bicycle icon using Pillow."""
+    """Draws the custom bicycle icon using Pillow with standardized stroke width."""
     offset_x = center_x - size / 2
     offset_y = y
-    stroke_width = 3
+    stroke_width = 2 # Standardized stroke width
 
     def p(px, py):
         return (px / 64 * size + offset_x, py / 64 * size + offset_y)
@@ -68,28 +67,28 @@ def draw_activity_icon(draw, center_x, y, size=48, color="#333333"):
 def draw_indoors_icon(draw, center_x, y, size=48, color="#333333"):
     """Draws the house icon using Pillow."""
     s = size / 24 # Scale factor from 24x24 viewBox
-    w = 2
+    w = 2 # Reference stroke width
     offset_x = center_x - size / 2
     offset_y = y
     
-    points = [
+    # Redefined for cleaner drawing
+    house_outline = [
         (3*s + offset_x, 9*s + offset_y),
         (12*s + offset_x, 2*s + offset_y),
         (21*s + offset_x, 9*s + offset_y),
         (21*s + offset_x, 22*s + offset_y),
-        (5*s + offset_x, 22*s + offset_y),
         (3*s + offset_x, 22*s + offset_y),
-        (3*s + offset_x, 9*s + offset_y),
+        (3*s + offset_x, 9*s + offset_y)
     ]
-    draw.polygon(points, outline=color, width=w)
+    draw.line(house_outline, fill=color, width=w)
 
-    chimney = [
-        (15*s + offset_x, 12*s + offset_y),
-        (15*s + offset_x, 22*s + offset_y),
+    door = [
         (9*s + offset_x, 22*s + offset_y),
         (9*s + offset_x, 12*s + offset_y),
+        (15*s + offset_x, 12*s + offset_y),
+        (15*s + offset_x, 22*s + offset_y)
     ]
-    draw.line(chimney, fill=color, width=w)
+    draw.line(door, fill=color, width=w)
 
 
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
