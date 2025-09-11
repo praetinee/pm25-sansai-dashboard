@@ -4,12 +4,12 @@ from io import BytesIO
 import streamlit as st
 
 @st.cache_data
-def get_font(url):
-    """Downloads a font file and caches it."""
+def get_font_bytes(url):
+    """Downloads font file bytes and caches them."""
     try:
         response = requests.get(url)
         response.raise_for_status()
-        return BytesIO(response.content)
+        return response.content # Return raw bytes, which are immutable and cache-safe
     except requests.exceptions.RequestException as e:
         st.error(f"Font download failed: {e}")
         return None
@@ -22,29 +22,24 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     font_url_light = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Light.ttf"
     emoji_font_url = "https://github.com/googlefonts/noto-emoji/raw/main/fonts/NotoColorEmoji.ttf"
 
+    font_reg_content = get_font_bytes(font_url_reg)
+    font_bold_content = get_font_bytes(font_url_bold)
+    font_light_content = get_font_bytes(font_url_light)
+    font_emoji_content = get_font_bytes(emoji_font_url)
 
-    font_reg_bytes = get_font(font_url_reg)
-    font_bold_bytes = get_font(font_url_bold)
-    font_light_bytes = get_font(font_url_light)
-    font_emoji_bytes = get_font(emoji_font_url)
-
-    if not all([font_reg_bytes, font_bold_bytes, font_light_bytes, font_emoji_bytes]):
+    if not all([font_reg_content, font_bold_content, font_light_content, font_emoji_content]):
         return None
     
-    # --- Create Fonts ---
-    def create_font(font_bytes, size):
-        font_bytes.seek(0)
-        return ImageFont.truetype(font_bytes, size)
-
-    font_header = create_font(font_bold_bytes, 36)
-    font_date = create_font(font_reg_bytes, 24)
-    font_pm_value = create_font(font_bold_bytes, 150)
-    font_unit = create_font(font_reg_bytes, 30)
-    font_level = create_font(font_bold_bytes, 40)
-    font_advice_header = create_font(font_bold_bytes, 26)
-    font_advice = create_font(font_reg_bytes, 22)
-    font_footer = create_font(font_light_bytes, 16)
-    font_emoji = create_font(font_emoji_bytes, 40)
+    # --- Create Fonts directly from bytes by wrapping in BytesIO ---
+    font_header = ImageFont.truetype(BytesIO(font_bold_content), 36)
+    font_date = ImageFont.truetype(BytesIO(font_reg_content), 24)
+    font_pm_value = ImageFont.truetype(BytesIO(font_bold_content), 150)
+    font_unit = ImageFont.truetype(BytesIO(font_reg_content), 30)
+    font_level = ImageFont.truetype(BytesIO(font_bold_content), 40)
+    font_advice_header = ImageFont.truetype(BytesIO(font_bold_content), 26)
+    font_advice = ImageFont.truetype(BytesIO(font_reg_content), 22)
+    font_footer = ImageFont.truetype(BytesIO(font_light_content), 16)
+    font_emoji = ImageFont.truetype(BytesIO(font_emoji_content), 40)
     
     # --- Card Creation ---
     width, height = 800, 1000
