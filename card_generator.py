@@ -18,97 +18,78 @@ def get_font(url):
 def draw_mask_icon(draw, center_x, y, size=48, color="#333333"):
     """Draws the custom mask icon using Pillow."""
     # Scale coordinates from 64x64 viewBox to the target size
-    def scale(p):
-        return (p[0] * size / 64, p[1] * size / 64)
-
-    # Center the icon
     offset_x = center_x - size / 2
     offset_y = y
-
-    # Define points for the quadratic Bezier curves
-    p = {
-        'main': [(12, 24), (32, 10), (52, 24), (54, 36), (52, 44), (32, 58), (12, 44), (10, 36), (12, 24)],
-        'ear_l': [(12, 28), (2, 32), (12, 40)],
-        'ear_r': [(52, 28), (62, 32), (52, 40)],
-        'fold1': [(16, 30), (32, 26), (48, 30)],
-        'fold2': [(16, 36), (32, 32), (48, 36)],
-        'fold3': [(16, 42), (32, 38), (48, 42)]
-    }
-
-    # Apply scaling and offset to all points
-    for key in p:
-        p[key] = [(pt[0] / 64 * size + offset_x, pt[1] / 64 * size + offset_y) for pt in p[key]]
     
-    # Custom path drawing logic for curves
-    # This is a simplification; true Bezier requires more complex rendering
-    # We will use lines to connect points of the curves
-    draw.line(p['main'][0:3], fill=color, width=3)
-    draw.line(p['main'][2:5], fill=color, width=3)
-    draw.line(p['main'][4:7], fill=color, width=3)
-    draw.line(p['main'][6:9], fill=color, width=3)
-    
-    draw.line(p['ear_l'], fill=color, width=3)
-    draw.line(p['ear_r'], fill=color, width=3)
+    def scale_point(px, py):
+        return (px / 64 * size + offset_x, py / 64 * size + offset_y)
 
-    draw.line(p['fold1'], fill=color, width=2)
-    draw.line(p['fold2'], fill=color, width=2)
-    draw.line(p['fold3'], fill=color, width=2)
+    # Replicate the drawing based on the provided SVG paths
+    # Main Body - A series of curves. Pillow doesn't have a direct quadratic Bezier function,
+    # so we approximate with lines connecting key points.
+    draw.line([scale_point(12, 24), scale_point(32, 10), scale_point(52, 24)], fill=color, width=3, joint='curve')
+    draw.line([scale_point(52, 24), scale_point(54, 36), scale_point(52, 44)], fill=color, width=3, joint='curve')
+    draw.line([scale_point(52, 44), scale_point(32, 58), scale_point(12, 44)], fill=color, width=3, joint='curve')
+    draw.line([scale_point(12, 44), scale_point(10, 36), scale_point(12, 24)], fill=color, width=3, joint='curve')
+    
+    # Ear loops
+    draw.line([scale_point(12, 28), scale_point(2, 32), scale_point(12, 40)], fill=color, width=3, joint='curve')
+    draw.line([scale_point(52, 28), scale_point(62, 32), scale_point(52, 40)], fill=color, width=3, joint='curve')
+    
+    # Folds
+    draw.line([scale_point(16, 30), scale_point(32, 26), scale_point(48, 30)], fill=color, width=2, joint='curve')
+    draw.line([scale_point(16, 36), scale_point(32, 32), scale_point(48, 36)], fill=color, width=2, joint='curve')
+    draw.line([scale_point(16, 42), scale_point(32, 38), scale_point(48, 42)], fill=color, width=2, joint='curve')
 
 
 def draw_activity_icon(draw, center_x, y, size=48, color="#333333"):
-    """Draws the cyclist icon using Pillow."""
-    s = size / 24 # Scale factor
-    w = 2
-    # Circle centers
-    c1_x, c1_y = center_x - (18.5-12) * s, y + (17.5-4) * s
-    c2_x, c2_y = center_x - (5.5-12) * s, y + (17.5-4) * s
-    head_x, head_y = center_x + (15-12) * s, y + (6.5-4) * s
-    
-    # Radii
-    r1 = 3.5 * s
-    r_head = 2 * s
+    """Draws the custom bicycle icon using Pillow."""
+    offset_x = center_x - size / 2
+    offset_y = y
+    stroke_width = 3
 
-    # Draw wheels
-    draw.ellipse([(c1_x-r1, c1_y-r1), (c1_x+r1, c1_y+r1)], outline=color, width=w)
-    draw.ellipse([(c2_x-r1, c2_y-r1), (c2_x+r1, c2_y+r1)], outline=color, width=w)
+    def p(px, py):
+        return (px / 64 * size + offset_x, py / 64 * size + offset_y)
+
+    # Wheels
+    r = 8 / 64 * size
+    draw.ellipse([(p(18-8, 44-8)), (p(18+8, 44+8))], outline=color, width=stroke_width)
+    draw.ellipse([(p(46-8, 44-8)), (p(46+8, 44+8))], outline=color, width=stroke_width)
     
-    # Draw frame and person
-    p = {
-        'frame_person': [
-            (center_x + (12-12)*s, y + (17.5-4)*s), # Midpoint between wheels
-            (center_x - (5.5-12)*s, y + (17.5-4)*s),# Back wheel center
-            (center_x - (5.5-12-1.5)*s, y + (17.5-4-5)*s), # Seat post
-            (center_x + (12-12-4)*s, y + (17.5-4-7.5)*s), # Top tube
-            (center_x + (12-12+2)*s, y + (17.5-4-10.5)*s), # Head
-            (center_x + (15-12)*s, y + (6.5-4)*s),
-            (center_x + (12-12+1.5)*s, y + (17.5-4-5)*s), # Handlebar
-            (center_x + (18.5-12)*s, y + (17.5-4)*s) # Front wheel center
-        ]
-    }
-    draw.line(p['frame_person'], fill=color, width=w)
+    # Frame
+    draw.polygon([p(18, 44), p(30, 32), p(40, 44)], outline=color, width=stroke_width)
     
-    # Draw head
-    draw.ellipse([(head_x-r_head, head_y-r_head), (head_x+r_head, head_y+r_head)], outline=color, width=w)
+    # Seat and handle
+    draw.line([p(30, 32), p(30, 24)], fill=color, width=stroke_width)
+    draw.line([p(28, 24), p(34, 24)], fill=color, width=stroke_width)
+    draw.line([p(40, 44), p(44, 30), p(52, 28)], fill=color, width=stroke_width)
 
 
 def draw_indoors_icon(draw, center_x, y, size=48, color="#333333"):
     """Draws the house icon using Pillow."""
-    s = size / 24 # Scale factor
+    s = size / 24 # Scale factor from 24x24 viewBox
     w = 2
+    offset_x = center_x - size / 2
+    offset_y = y
     
     points = [
-        (center_x + (3-12)*s, y + (9-2)*s),
-        (center_x + (12-12)*s, y + (2-2)*s),
-        (center_x + (21-12)*s, y + (9-2)*s),
-        (center_x + (21-12)*s, y + (20-2)*s),
-        (center_x + (17-12)*s, y + (20-2)*s),
-        (center_x + (17-12)*s, y + (12-2)*s),
-        (center_x + (7-12)*s, y + (12-2)*s),
-        (center_x + (7-12)*s, y + (20-2)*s),
-        (center_x + (3-12)*s, y + (20-2)*s),
-        (center_x + (3-12)*s, y + (9-2)*s),
+        (3*s + offset_x, 9*s + offset_y),
+        (12*s + offset_x, 2*s + offset_y),
+        (21*s + offset_x, 9*s + offset_y),
+        (21*s + offset_x, 22*s + offset_y),
+        (5*s + offset_x, 22*s + offset_y),
+        (3*s + offset_x, 22*s + offset_y),
+        (3*s + offset_x, 9*s + offset_y),
     ]
-    draw.line(points, fill=color, width=w)
+    draw.polygon(points, outline=color, width=w)
+
+    chimney = [
+        (15*s + offset_x, 12*s + offset_y),
+        (15*s + offset_x, 22*s + offset_y),
+        (9*s + offset_x, 22*s + offset_y),
+        (9*s + offset_x, 12*s + offset_y),
+    ]
+    draw.line(chimney, fill=color, width=w)
 
 
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
