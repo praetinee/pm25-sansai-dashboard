@@ -81,3 +81,4 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     buf = BytesIO()
     img.save(buf, format='PNG')
     return buf.getvalue()
+
