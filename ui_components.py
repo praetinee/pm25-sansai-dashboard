@@ -6,10 +6,12 @@ import pandas as pd
 from utils import get_aqi_level
 from card_generator import generate_report_card
 
-ICON_MASK_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="advice-icon"><path d="M2 12.5C2 12.5 4 15 8 15s6 0 6 0s4-2.5 4-2.5"></path><path d="M10 15V9a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v6"></path><path d="M2 12.5V10c0-1 1-2 2-2h12c1 0 2 1 2 2v2.5"></path><path d="M20 10c0-1.5-1-2.5-2-2.5"></path><path d="M4 8c-1 0-2-1-2-2.5"></path></svg>"""
-ICON_ACTIVITY_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="advice-icon"><circle cx="12" cy="5" r="2"></circle><path d="M10 10.5v3.5h4v-3.5"></path><path d="M12 14v7"></path><path d="M7 14.5l-3 4"></path><path d="M17 14.5l3 4"></path></svg>"""
+# --- Simple, consistent SVG Icons ---
+ICON_MASK_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="advice-icon"><path d="M20 12V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v4Z"></path><path d="M20 12h-2.5a2 2 0 0 1-4 0H8.5a2 2 0 0 0-4 0H2"></path><path d="M4 12v-2"></path><path d="M20 10V8"></path><path d="M12 6V5"></path><path d="M12 12v-1"></path></svg>"""
+ICON_ACTIVITY_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="advice-icon"><circle cx="18.5" cy="17.5" r="3.5"></circle><circle cx="5.5" cy="17.5" r="3.5"></circle><circle cx="15" cy="5" r="1"></circle><path d="M12 17.5h-4.5l-3-6 4-1 3 6h3"></path><path d="m6.5 14 1 3"></path><path d="M14 5.5 17 9l-2.5 6"></path></svg>"""
 ICON_INDOORS_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="advice-icon"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>"""
 ICON_RISK_GROUP_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="risk-icon"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>"""
+
 
 def inject_custom_css():
     """Injects custom CSS to make the app responsive and theme-aware."""
