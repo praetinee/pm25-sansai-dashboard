@@ -41,8 +41,17 @@ def load_data():
     try:
         spreadsheet = client.open_by_key(SPREADSHEET_ID)
         sheet = spreadsheet.worksheet(SHEET_NAME)
-        data = sheet.get_all_records()
-        df = pd.DataFrame(data)
+        
+        # --- FIX: ใช้ get_all_values() เพื่อดึงข้อมูลทั้งหมด ---
+        # ข้ามแถวแรก (header) ของชีตด้วย [1:]
+        data = sheet.get_all_values()[1:] 
+        
+        # กำหนดชื่อคอลัมน์เองโดยตรงเพื่อป้องกันปัญหา header ซ้ำซ้อน
+        # ตรวจสอบให้แน่ใจว่าจำนวนชื่อตรงกับจำนวนคอลัมน์ในชีตของคุณ
+        expected_headers = ["Datetime", "PM2.5", "Date", "Time"]
+        # เลือกข้อมูลมาแค่ 4 คอลัมน์แรกเท่านั้น
+        data_subset = [row[:4] for row in data]
+        df = pd.DataFrame(data_subset, columns=expected_headers)
 
         # Data Cleaning and Preparation
         df['PM2.5'] = pd.to_numeric(df['PM2.5'], errors='coerce')
@@ -244,3 +253,4 @@ fig_cal.update_layout(
 st.plotly_chart(fig_cal, use_container_width=True)
 
 st.sidebar.success("เลือกเมนูเพื่อดูข้อมูล")
+
