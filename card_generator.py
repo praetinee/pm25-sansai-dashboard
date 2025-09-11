@@ -60,20 +60,41 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     # --- PM2.5 Value ---
     draw.text((width/2, box_y_start + 140), f"{latest_pm25:.1f}", font=font_pm_value, anchor="ms", fill="#111111")
     draw.text((width/2, box_y_start + 220), "μg/m³", font=font_unit, anchor="ms", fill="#555555")
-    draw.text((width/2, box_y_start + 280), f"{level} {emoji}", font=font_level, anchor="ms", fill="#111111")
+    # Removed emoji from this line
+    draw.text((width/2, box_y_start + 280), f"{level}", font=font_level, anchor="ms", fill="#111111")
     
     draw.line([(60, box_y_start + 340), (width - 60, box_y_start + 340)], fill="#EEEEEE", width=2)
     
-    # --- Advice Section ---
+    # --- Advice Section (with vertical centering) ---
     advice_text = advice.replace('<br>', '\n').replace('<strong>', '').replace('</strong>', '')
-    y_text = box_y_start + 380
+    lines = [line.strip() for line in advice_text.split('\n') if line.strip()]
+
+    # Calculate total height of the advice text block
+    total_text_height = 0
+    line_heights = []
+    line_spacing = 15
+    for i, line in enumerate(lines):
+        font_to_use = font_advice_header if t[lang]['general_public'] in line or t[lang]['risk_group'] in line else font_advice
+        bbox = draw.textbbox((0, 0), line, font=font_to_use)
+        line_height = bbox[3] - bbox[1]
+        line_heights.append(line_height)
+        total_text_height += line_height
+        if i < len(lines) - 1:
+            total_text_height += line_spacing
+
+    # Define the drawing area and calculate starting position
+    advice_area_top = box_y_start + 340 + 20 # 20px padding
+    advice_area_bottom = height - 80 # a bit of padding from footer
+    advice_area_height = advice_area_bottom - advice_area_top
     
-    for line in advice_text.split('\n'):
-        line = line.strip()
-        if line:
-            font_to_use = font_advice_header if t[lang]['general_public'] in line or t[lang]['risk_group'] in line else font_advice
-            draw.text((width/2, y_text), line, font=font_to_use, fill="#333333", anchor="ms")
-            y_text += 40 if font_to_use == font_advice_header else 35
+    y_text = advice_area_top + (advice_area_height - total_text_height) / 2
+
+    # Draw the text lines
+    for i, line in enumerate(lines):
+        font_to_use = font_advice_header if t[lang]['general_public'] in line or t[lang]['risk_group'] in line else font_advice
+        draw.text((width/2, y_text), line, font=font_to_use, fill="#333333", anchor="mt")
+        y_text += line_heights[i] + line_spacing
+
 
     # --- Footer ---
     footer_text = t[lang]['report_card_footer']
@@ -82,4 +103,3 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     buf = BytesIO()
     img.save(buf, format='PNG')
     return buf.getvalue()
-
