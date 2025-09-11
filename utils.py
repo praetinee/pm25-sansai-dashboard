@@ -41,4 +41,3 @@ def get_aqi_level(pm25, lang, t):
     advice = advice_dict[advice_key]
     
     return level, color, emoji, advice
-
