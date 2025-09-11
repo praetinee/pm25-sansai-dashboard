@@ -76,8 +76,14 @@ def load_data_from_gsheet():
     # ดึงข้อมูลทั้งหมดมาเป็น DataFrame
     data = worksheet.get_all_records()
     df = pd.DataFrame(data)
+
+    # ตรวจสอบว่า DataFrame มีข้อมูลหรือไม่ และมีคอลัมน์ที่คาดหวังหรือไม่
+    if df.empty or not all(col in df.columns for col in ["Datetime", "PM2.5"]):
+        st.error("ไม่พบข้อมูลหรือชื่อคอลัมน์ 'Datetime', 'PM2.5' ใน Google Sheet")
+        st.stop()
     
     # ขั้นตอนการจัดการข้อมูลเหมือนเดิม
+    df = df[["Datetime", "PM2.5"]].copy() # เลือกเฉพาะคอลัมน์ที่ต้องการ
     df.dropna(inplace=True) 
     df.columns = ['timestamp', 'pm25'] # สมมติว่าชื่อคอลัมน์ในชีทคือ Datetime และ PM2.5
     df['timestamp'] = pd.to_datetime(df['timestamp'])
@@ -86,8 +92,52 @@ def load_data_from_gsheet():
     return df
 # --- END: การเปลี่ยนแปลงที่ 2 ---
 
-# เรียกใช้ฟังก์ชันโหลดข้อมูลจาก Google Sheet
-df = load_data_from_gsheet()
+# --- BEGIN: การเปลี่ยนแปลงที่ 3 ---
+# เรียกใช้ฟังก์ชันโหลดข้อมูลจาก Google Sheet พร้อมจัดการ Error
+try:
+    df = load_data_from_gsheet()
+except gspread.exceptions.SpreadsheetNotFound:
+    st.error(
+        "**ไม่พบ Google Sheet!** "
+        "กรุณาตรวจสอบว่า URL ใน Streamlit Secrets ของคุณถูกต้อง "
+        "และ Service Account ได้รับสิทธิ์เข้าถึงชีทแล้ว"
+    )
+    st.stop()
+except gspread.exceptions.WorksheetNotFound:
+    st.error(
+        "**ไม่พบ Worksheet 'PM2.5 Log'!** "
+        "กรุณาตรวจสอบว่าใน Google Sheet ของคุณมีชีทที่ชื่อว่า `PM2.5 Log` จริงๆ (ตัวพิมพ์ใหญ่-เล็กต้องตรงกัน)"
+    )
+    st.stop()
+except KeyError as e:
+    if "gcp_service_account" in str(e) or "connections" in str(e):
+         st.error(
+            "**การตั้งค่า Secrets ไม่ถูกต้อง!** "
+            "ดูเหมือนว่าโครงสร้างของ Secrets ใน Streamlit Cloud ของคุณจะไม่ตรงกับที่โค้ดต้องการ "
+            "กรุณาตรวจสอบให้แน่ใจว่าคุณได้คัดลอกรูปแบบ `secrets.toml` ไปวางอย่างถูกต้อง"
+         )
+    else:
+        st.error(f"**ไม่พบคอลัมน์ที่ต้องการใน Google Sheet!** กรุณาตรวจสอบว่ามีคอลัมน์ 'Datetime' และ 'PM2.5' อยู่ในชีท 'PM2.5 Log' ของคุณ")
+    st.stop()
+except Exception as e:
+    st.error(f"""
+        **เกิดข้อผิดพลาดที่ไม่คาดคิด**
+
+        กรุณาตรวจสอบการตั้งค่าทั้งหมดอีกครั้ง
+
+        **รายละเอียดทางเทคนิค:**
+        ```
+        {e}
+        ```
+    """)
+    st.stop()
+
+# --- ตรวจสอบว่า DataFrame มีข้อมูลหรือไม่หลังจากการประมวลผล ---
+if df.empty:
+    st.warning("ไม่พบข้อมูลที่สามารถแสดงผลได้ใน Google Sheet")
+    st.stop()
+# --- END: การเปลี่ยนแปลงที่ 3 ---
+
 
 # =================================================================================
 # Helper Functions (ฟังก์ชันช่วยคำนวณ)
@@ -295,34 +345,4 @@ with tab3:
 
 st.divider()
 st.caption("พัฒนาโดย คู่หูเขียนโค้ด (Coding Copilot) | ข้อมูลคุณภาพอากาศอ้างอิงตามเกณฑ์ของกรมควบคุมมลพิษ ประเทศไทย")
-```
-
-### **ขั้นตอนที่ 3: อัปเดต Secrets บน Streamlit Cloud (สำคัญมาก)**
-
-วิธีการใหม่นี้ต้องการ Secrets ในรูปแบบที่แตกต่างออกไปครับ คุณจะต้องใช้ **Service Account Key** ซึ่งเป็นไฟล์ JSON ที่คุณได้มาจากตอนสร้าง Service Account บน Google Cloud Platform
-
-1.  เปิดไฟล์ JSON ของ Service Account Key ของคุณขึ้นมาด้วยโปรแกรม Text Editor
-2.  คัดลอกเนื้อหา **ทั้งหมด** ในไฟล์ JSON นั้น
-3.  ไปที่หน้าแอปของคุณบน Streamlit Cloud > **Settings** > **Secrets**
-4.  **ลบ Secrets เก่าทิ้งทั้งหมด** แล้วนำเนื้อหาใหม่ตามรูปแบบข้างล่างนี้ไปวาง:
-
-    ```toml
-    # URL ของ Google Sheet
-    [connections.gsheets]
-    spreadsheet = "https://docs.google.com/spreadsheets/d/1-Une9oA0-ln6ApbhwaXFNpkniAvX-7g1K9pNR800MJwQ/"
-
-    # เนื้อหาจากไฟล์ Service Account Key (JSON)
-    [gcp_service_account]
-    type = "service_account"
-    project_id = "..."
-    private_key_id = "..."
-    private_key = "..."
-    client_email = "..."
-    client_id = "..."
-    auth_uri = "https://accounts.google.com/o/oauth2/auth"
-    token_uri = "https://oauth2.googleapis.com/token"
-    auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/certs"
-    client_x509_cert_url = "..."
-    universe_domain = "googleapis.com"
-    
 
