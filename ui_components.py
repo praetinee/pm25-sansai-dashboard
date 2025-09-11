@@ -6,12 +6,6 @@ import pandas as pd
 from utils import get_aqi_level
 from card_generator import generate_report_card
 
-# Updated Minimalist Icons v5
-ICON_MASK_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="advice-icon"><path d="M2 12h20v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/><path d="M2 12V8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4"/><path d="M20 12h2"/><path d="M2 12H0"/><path d="M7 15h10"/></svg>"""
-ICON_ACTIVITY_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="advice-icon"><path d="M13 3.5a2.5 2.5 0 1 0 5 0 2.5 2.5 0 1 0-5 0Z"/><path d="M16 8.5 13 13l-1.5-1.5"/><path d="m13 13 4 5"/><path d="M11 15l-3-3-3 4h11"/></svg>"""
-ICON_INDOORS_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="advice-icon"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>"""
-ICON_RISK_GROUP_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="risk-icon"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>"""
-
 def inject_custom_css():
     """Injects custom CSS to make the app responsive and theme-aware."""
     st.markdown("""
@@ -29,50 +23,6 @@ def inject_custom_css():
                 background-color: var(--secondary-background-color);
                 border: 1px solid var(--border-color, #dfe6e9);
                 height: 100%;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-            }
-            .advice-container {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 20px;
-                text-align: center;
-                margin-bottom: 20px;
-            }
-            .advice-item {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: flex-start;
-            }
-            .advice-icon {
-                margin-bottom: 10px;
-                color: var(--text-color);
-            }
-            .advice-title {
-                font-weight: 600;
-                font-size: 1.1rem;
-                margin-bottom: 5px;
-            }
-            .advice-body {
-                font-size: 0.95rem;
-                opacity: 0.9;
-                min-height: 50px;
-            }
-            .risk-advice {
-                margin-top: 15px;
-                padding-top: 15px;
-                border-top: 1px solid var(--border-color, #dfe6e9);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 10px;
-                font-size: 1.05rem;
-            }
-            .risk-icon {
-                 display: inline-block;
-                 vertical-align: middle;
             }
             .calendar-day {
                 background-color: var(--secondary-background-color);
@@ -96,13 +46,54 @@ def inject_custom_css():
             .calendar-day-na { background-color: var(--secondary-background-color); color: var(--text-color); opacity: 0.5; box-shadow: none; }
             .aqi-legend-bar { display: flex; height: 50px; width: 100%; border-radius: 10px; overflow: hidden; margin-top: 10px; }
             .aqi-legend-segment { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: 500; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); font-size: 0.9rem; line-height: 1.2; text-align: center; }
+            .advice-container {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 15px;
+                padding: 15px;
+                border-radius: 15px;
+                background-color: var(--secondary-background-color);
+                border: 1px solid var(--border-color, #dfe6e9);
+                text-align: center;
+            }
+            .advice-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+            }
+            .advice-item svg {
+                width: 48px;
+                height: 48px;
+                color: var(--text-color);
+            }
+            .advice-text {
+                display: flex;
+                flex-direction: column;
+            }
+            .advice-text strong {
+                font-weight: 600;
+            }
+            .advice-text span {
+                font-size: 0.9rem;
+                opacity: 0.8;
+            }
+            .risk-group-advice {
+                margin-top: 15px;
+                padding: 10px;
+                border-radius: 10px;
+                background-color: var(--secondary-background-color);
+                border: 1px solid var(--border-color, #dfe6e9);
+                text-align: center;
+            }
         </style>
     """, unsafe_allow_html=True)
 
 def display_realtime_pm(df, lang, t, date_str):
     inject_custom_css()
     latest_pm25 = df['PM2.5'][0]
-    level, color, _, advice_details = get_aqi_level(latest_pm25, lang, t)
+    level, color, _, advice = get_aqi_level(latest_pm25, lang, t)
+    advice_details = advice['details']
 
     col1, col2 = st.columns([1, 2])
     with col1:
@@ -115,47 +106,43 @@ def display_realtime_pm(df, lang, t, date_str):
             </div>
             """, unsafe_allow_html=True)
     with col2:
-        st.subheader(t[lang]['aqi_guideline_header'])
-        st.markdown(f"""
-            <div class="aqi-legend-bar">
-                <div class="aqi-legend-segment" style="background-color: #0099FF; color: white;">{t[lang]['aqi_level_1']}<br>0-15</div>
-                <div class="aqi-legend-segment" style="background-color: #2ECC71; color: white;">{t[lang]['aqi_level_2']}<br>15-25</div>
-                <div class="aqi-legend-segment" style="background-color: #F1C40F; color: black;">{t[lang]['aqi_level_3']}<br>25-37.5</div>
-                <div class="aqi-legend-segment" style="background-color: #E67E22; color: white;">{t[lang]['aqi_level_4_short']}<br>37.5-75</div>
-                <div class="aqi-legend-segment" style="background-color: #E74C3C; color: white;">{t[lang]['aqi_level_5_short']}<br>>75</div>
-            </div>
-        """, unsafe_allow_html=True)
         st.subheader(t[lang]['advice_header'])
-        advice_html = f"""
-        <div class="card">
-            <div class="advice-container">
-                <div class="advice-item">
-                    {ICON_MASK_SVG}
-                    <div class="advice-title">{t[lang]['advice_cat_mask']}</div>
-                    <div class="advice-body">{advice_details['mask']}</div>
-                </div>
-                <div class="advice-item">
-                    {ICON_ACTIVITY_SVG}
-                    <div class="advice-title">{t[lang]['advice_cat_activity']}</div>
-                    <div class="advice-body">{advice_details['activity']}</div>
-                </div>
-                <div class="advice-item">
-                    {ICON_INDOORS_SVG}
-                    <div class="advice-title">{t[lang]['advice_cat_indoors']}</div>
-                    <div class="advice-body">{advice_details['indoors']}</div>
+        st.markdown(f"""
+        <div class="advice-container">
+            <div class="advice-item">
+                <!-- Mask Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 13.5A2.5 2.5 0 0 1 5 11h14a2.5 2.5 0 0 1 2.5 2.5v0A2.5 2.5 0 0 1 19 16H5a2.5 2.5 0 0 1-2.5-2.5v0Z"/><path d="M2.5 11V9a2 2 0 0 1 2-2h15a2 2 0 0 1 2 2v2"/></svg>
+                <div class="advice-text">
+                    <strong>{t[lang]['advice_topics']['mask']}</strong>
+                    <span>{advice_details['mask']}</span>
                 </div>
             </div>
-            <div class="risk-advice">
-                {ICON_RISK_GROUP_SVG}
-                <span><b>{t[lang]['advice_cat_risk_group']}:</b> {advice_details['risk_group']}</span>
+            <div class="advice-item">
+                <!-- Activity Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12a2 2 0 1 0-4 0 2 2 0 0 0 4 0Z"/><path d="M18 18a3 3 0 1 0-6 0 3 3 0 0 0 6 0Zm-12 0a3 3 0 1 0-6 0 3 3 0 0 0 6 0Z"/><path d="M15.5 15.5 12 12l-3 3.5"/></svg>
+                <div class="advice-text">
+                    <strong>{t[lang]['advice_topics']['activity']}</strong>
+                    <span>{advice_details['activity']}</span>
+                </div>
+            </div>
+            <div class="advice-item">
+                <!-- Indoors Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <div class="advice-text">
+                    <strong>{t[lang]['advice_topics']['indoors']}</strong>
+                    <span>{advice_details['indoors']}</span>
+                </div>
             </div>
         </div>
-        """
-        st.markdown(advice_html, unsafe_allow_html=True)
+        <div class="risk-group-advice">
+            <strong>{t[lang]['risk_group']}:</strong> {advice_details['risk_group']}
+        </div>
+        """, unsafe_allow_html=True)
 
-    st.write("") 
+    st.write("") # Add a small space
 
-    b_col1, b_col2, b_col3 = st.columns([2,2,8]) 
+    # --- Action Buttons ---
+    b_col1, b_col2, b_col3 = st.columns([2,2,8]) # Adjust column ratios
     with b_col1:
         if st.button(f"🔄 {t[lang]['refresh_button']}", use_container_width=True):
             st.cache_data.clear()
@@ -249,7 +236,7 @@ def display_monthly_calendar(df, lang, t):
         t[lang]['date_picker_label'],
         options=month_options,
         format_func=format_month,
-        index=len(month_options)-1 
+        index=len(month_options)-1 # Default to the latest month
     )
     
     year, month = selected_month_str.year, selected_month_str.month
