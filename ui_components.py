@@ -4,6 +4,84 @@ from datetime import datetime, timedelta, date
 import calendar
 import pandas as pd
 from utils import get_aqi_level
+from PIL import Image, ImageDraw, ImageFont
+import requests
+from io import BytesIO
+
+@st.cache_data
+def get_font(url):
+    """Downloads a font file and caches it."""
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return BytesIO(response.content)
+    except requests.exceptions.RequestException as e:
+        st.error(f"Font download failed: {e}")
+        return None
+
+def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lang, t):
+    """Generates a beautiful, shareable report card image."""
+    # --- Font Handling ---
+    font_url_reg = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
+    font_url_bold = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
+    
+    font_reg_bytes = get_font(font_url_reg)
+    font_bold_bytes = get_font(font_url_bold)
+
+    if not font_reg_bytes or not font_bold_bytes:
+        return None
+
+    font_main = ImageFont.truetype(font_reg_bytes, 32)
+    font_pm_value = ImageFont.truetype(font_bold_bytes, 120)
+    font_level = ImageFont.truetype(font_bold_bytes, 48)
+    font_advice_header = ImageFont.truetype(font_bold_bytes, 28)
+    font_advice = ImageFont.truetype(font_reg_bytes, 24)
+    font_footer = ImageFont.truetype(font_reg_bytes, 18)
+
+    # --- Card Creation ---
+    width, height = 800, 600
+    img = Image.new('RGB', (width, height), color=(255, 255, 255))
+    draw = ImageDraw.Draw(img)
+
+    # --- Background Gradient ---
+    top_color = tuple(int(color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+    bottom_color = (255, 255, 255)
+    for y in range(height):
+        r = int(top_color[0] * (1 - y/height) + bottom_color[0] * (y/height))
+        g = int(top_color[1] * (1 - y/height) + bottom_color[1] * (y/height))
+        b = int(top_color[2] * (1 - y/height) + bottom_color[2] * (y/height))
+        draw.line([(0, y), (width, y)], fill=(r, g, b))
+
+    # --- Drawing Elements ---
+    draw.text((40, 40), date_str, font=font_main, fill=(0,0,0, 200))
+
+    draw.text((width/2, 160), f"{latest_pm25:.1f}", font=font_pm_value, anchor="ms", fill="#333333")
+    draw.text((width/2, 230), f"μg/m³", font=font_main, anchor="ms", fill="#555555")
+    draw.text((width/2, 280), f"{level} {emoji}", font=font_level, anchor="ms", fill="#333333")
+
+    # --- Advice Section ---
+    advice_text = advice.replace('<br>', '\n').replace('<strong>', '').replace('</strong>', '')
+    advice_lines = advice_text.split('\n')
+    y_text = 360
+    
+    draw.line([(40, y_text - 20), (width - 40, y_text - 20)], fill="#DDDDDD", width=1)
+    
+    for line in advice_lines:
+        line = line.strip()
+        if line:
+            font_to_use = font_advice_header if t[lang]['general_public'] in line or t[lang]['risk_group'] in line else font_advice
+            draw.text((40, y_text), line, font=font_to_use, fill="#333333")
+            y_text += 35 if font_to_use == font_advice_header else 30
+    
+    # --- Footer ---
+    footer_text = t[lang]['report_card_footer']
+    draw.text((width - 40, height - 40), footer_text, font=font_footer, anchor="rs", fill="#555555")
+    
+    # --- Convert image to bytes ---
+    buf = BytesIO()
+    img.save(buf, format='PNG')
+    return buf.getvalue()
+
 
 def inject_custom_css():
     """Injects custom CSS to make the app responsive and theme-aware."""
@@ -78,7 +156,7 @@ def inject_custom_css():
         </style>
     """, unsafe_allow_html=True)
 
-def display_realtime_pm(df, lang, t):
+def display_realtime_pm(df, lang, t, date_str):
     """Displays the current PM2.5 value and advice with a modern UI."""
     inject_custom_css()
     
@@ -111,6 +189,48 @@ def display_realtime_pm(df, lang, t):
             <div class="legend-box"><div class="legend-color" style="background-color: #E67E22;"></div><b>{t[lang]['aqi_level_4']}:</b> 37.6 - 75.0 μg/m³</div>
             <div class="legend-box"><div class="legend-color" style="background-color: #E74C3C;"></div><b>{t[lang]['aqi_level_5']}:</b> > 75.0 μg/m³</div>
         """, unsafe_allow_html=True)
+
+    # --- Action Buttons ---
+    st.write("") # Spacer
+    btn_col1, btn_col2, _ = st.columns([1, 1, 3])
+    with btn_col1:
+        if st.button(t[lang]['refresh_button'], use_container_width=True):
+            st.cache_data.clear()
+            st.rerun()
+    
+    with btn_col2:
+        report_card_bytes = generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lang, t)
+        if report_card_bytes:
+            st.download_button(
+                label=t[lang]['download_button'],
+                data=report_card_bytes,
+                file_name=f"pm25_report_{datetime.now().strftime('%Y%m%d_%H%M')}.png",
+                mime="image/png",
+                use_container_width=True
+            )
+
+def display_symptom_checker(lang, t):
+    st.subheader(t[lang]['symptom_checker_title'])
+    st.write(t[lang]['symptom_checker_intro'])
+
+    symptoms = t[lang]['symptoms']
+    checked_symptoms = 0
+    
+    for symptom in symptoms:
+        if st.checkbox(symptom):
+            checked_symptoms += 1
+
+    st.write("---")
+
+    if checked_symptoms == 0:
+        st.success(f"✅ {t[lang]['symptom_results_0']}")
+    elif 1 <= checked_symptoms <= 2:
+        st.warning(f"⚠️ {t[lang]['symptom_results_1_2']}")
+    else:
+        st.error(f"🚨 {t[lang]['symptom_results_3_plus']}")
+    
+    st.caption(t[lang]['symptom_disclaimer'])
+
 
 def display_health_impact(df, lang, t):
     """Calculates and displays health impact metrics for the current year."""
@@ -469,4 +589,20 @@ def display_knowledge_tabs(lang, t):
             > Investing in a good air purifier is an investment in the **"clean breaths"** of your entire family.
             """
         )
+```
+
+### (แผนในอนาคต) ไอเดียสำหรับส่วน "เกร็ดความรู้"
+
+สำหรับส่วนเกร็ดความรู้ที่มี 8 หัวข้อ การใช้แท็บอาจจะเริ่มดูแน่นเกินไปบนหน้าจอมือถือ ผมมี 2 แนวทางที่น่าสนใจมาแนะนำครับ:
+
+1.  **Accordion (แบบย่อ-ขยาย):**
+    * **หลักการ:** เปลี่ยนแต่ละแท็บให้เป็นหัวข้อที่สามารถคลิกเพื่อย่อหรือขยายดูเนื้อหาได้ (เหมือนที่คุณเคยใช้กับส่วนข้อมูลย้อนหลัง)
+    * **ข้อดี:** เป็นวิธีที่สะอาดตามาก ผู้ใช้จะเห็นทุกหัวข้อพร้อมกันและเลือกอ่านเฉพาะเรื่องที่สนใจได้ ทำให้หน้าเว็บไม่ยาวเกินไป และเป็นมิตรกับมือถืออย่างยิ่ง
+    * **ตัวอย่าง:**
+        ```
+        - PM2.5 คืออะไร? [+]
+        - อันตรายต่อเด็ก [+]
+        - อันตรายต่อผู้สูงอายุ [+]
+        ...
+        
 
