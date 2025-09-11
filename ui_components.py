@@ -6,9 +6,9 @@ import pandas as pd
 from utils import get_aqi_level
 from card_generator import generate_report_card
 
-# Updated Minimalist Icons v3
-ICON_MASK_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="advice-icon"><path d="M3 12v-2a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M4 12v-2a1 1 0 0 0-1-1H2"/><path d="M20 12v-2a1 1 0 0 1 1-1h1"/></svg>"""
-ICON_ACTIVITY_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="advice-icon"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5h-2.5l-3-6.5-1 1.5"/><path d="m5 17.5 3-5.5 4 2.5 3-4.5h2.5"/></svg>"""
+# Updated Minimalist Icons v4
+ICON_MASK_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="advice-icon"><path d="M20 14.5a5.5 5.5 0 0 0-11 0"/><path d="M4 14.5a5.5 5.5 0 0 1 11 0"/><path d="M2.5 12.5 4 14.5l1.5-2"/><path d="M21.5 12.5 20 14.5l-1.5-2"/><path d="M9 14.5V11a3 3 0 0 1 6 0v3.5"/></svg>"""
+ICON_ACTIVITY_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="advice-icon"><path d="M15.5 13.5 19 10l-4-1-1 4.5 3.5 1Z"/><circle cx="13" cy="7" r="1"/><path d="M8.5 15.5 5 19l4 1 1-4.5-2.5-1Z"/><circle cx="11" cy="17" r="1"/></svg>"""
 ICON_INDOORS_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="advice-icon"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>"""
 ICON_RISK_GROUP_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="risk-icon"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>"""
 
