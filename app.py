@@ -2,6 +2,7 @@ import streamlit as st
 from data_loader import load_data
 from ui_components import (
     display_realtime_pm,
+    display_health_impact,
     display_24hr_chart,
     display_monthly_calendar,
     display_historical_data,
@@ -55,6 +56,7 @@ st.divider()
 
 # --- UI Components ---
 display_realtime_pm(df, lang, t)
+display_health_impact(df, lang, t) # <-- Added new component here
 st.divider()
 display_24hr_chart(df, lang, t)
 st.divider()
