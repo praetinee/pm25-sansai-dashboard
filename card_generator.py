@@ -15,36 +15,36 @@ def get_font(url):
         return None
 
 # --- Icon Drawing Functions ---
-def draw_mask_icon(draw, center_x, y, size=48, color="#333333"):
+def draw_mask_icon(draw, center_x, y, size=60, color="#333333"):
     """Draws the custom mask icon using Pillow with standardized stroke width."""
     offset_x = center_x - size / 2
     offset_y = y
-    stroke_width = 2
+    stroke_width = 2.5 # Standardized stroke width
     s = size / 24 # Scale factor from 24x24 viewBox
 
     def p(px, py):
         return (px * s + offset_x, py * s + offset_y)
     
     # Replicate the drawing based on the standardized SVG paths
-    draw.line([p(4, 9), p(12, 4), p(20, 9)], fill=color, width=stroke_width)
-    draw.line([p(20, 9), p(21, 14), p(20, 18)], fill=color, width=stroke_width)
-    draw.line([p(20, 18), p(12, 22), p(4, 18)], fill=color, width=stroke_width)
-    draw.line([p(4, 18), p(3, 14), p(4, 9)], fill=color, width=stroke_width)
+    draw.line([p(4, 9), p(12, 4), p(20, 9)], fill=color, width=int(stroke_width))
+    draw.line([p(20, 9), p(21, 14), p(20, 18)], fill=color, width=int(stroke_width))
+    draw.line([p(20, 18), p(12, 22), p(4, 18)], fill=color, width=int(stroke_width))
+    draw.line([p(4, 18), p(3, 14), p(4, 9)], fill=color, width=int(stroke_width))
 
-    draw.line([p(4, 11), p(0, 13), p(4, 16)], fill=color, width=stroke_width)
-    draw.line([p(20, 11), p(24, 13), p(20, 16)], fill=color, width=stroke_width)
+    draw.line([p(4, 11), p(0, 13), p(4, 16)], fill=color, width=int(stroke_width))
+    draw.line([p(20, 11), p(24, 13), p(20, 16)], fill=color, width=int(stroke_width))
     
-    fold_width = stroke_width - 1 if stroke_width > 1 else 1
+    fold_width = int(stroke_width) - 1 if stroke_width > 1 else 1
     draw.line([p(6, 11), p(12, 9.5), p(18, 11)], fill=color, width=fold_width)
     draw.line([p(6, 14), p(12, 12.5), p(18, 14)], fill=color, width=fold_width)
     draw.line([p(6, 17), p(12, 15.5), p(18, 17)], fill=color, width=fold_width)
 
 
-def draw_activity_icon(draw, center_x, y, size=48, color="#333333"):
+def draw_activity_icon(draw, center_x, y, size=60, color="#333333"):
     """Draws the custom bicycle icon using Pillow with standardized stroke width."""
     offset_x = center_x - size / 2
     offset_y = y
-    stroke_width = 2
+    stroke_width = 2.5 # Standardized stroke width
     s = size / 24 # Scale factor from 24x24 viewBox
 
     def p(px, py):
@@ -52,22 +52,22 @@ def draw_activity_icon(draw, center_x, y, size=48, color="#333333"):
     
     # Wheels
     r = 3 * s
-    draw.ellipse([(p(6.75-3, 16.5-3)), (p(6.75+3, 16.5+3))], outline=color, width=stroke_width)
-    draw.ellipse([(p(17.25-3, 16.5-3)), (p(17.25+3, 16.5+3))], outline=color, width=stroke_width)
+    draw.ellipse([(p(6.75-3, 16.5-3)), (p(6.75+3, 16.5+3))], outline=color, width=int(stroke_width))
+    draw.ellipse([(p(17.25-3, 16.5-3)), (p(17.25+3, 16.5+3))], outline=color, width=int(stroke_width))
     
     # Frame
-    draw.polygon([p(6.75, 16.5), p(11.25, 12), p(15, 16.5)], outline=color, width=stroke_width)
+    draw.polygon([p(6.75, 16.5), p(11.25, 12), p(15, 16.5)], outline=color, width=int(stroke_width))
     
     # Seat and handle
-    draw.line([p(11.25, 12), p(11.25, 9)], fill=color, width=stroke_width)
-    draw.line([p(10.5, 9), p(12.75, 9)], fill=color, width=stroke_width)
-    draw.line([p(15, 16.5), p(16.5, 11.25), p(19.5, 10.5)], fill=color, width=stroke_width)
+    draw.line([p(11.25, 12), p(11.25, 9)], fill=color, width=int(stroke_width))
+    draw.line([p(10.5, 9), p(12.75, 9)], fill=color, width=int(stroke_width))
+    draw.line([p(15, 16.5), p(16.5, 11.25), p(19.5, 10.5)], fill=color, width=int(stroke_width))
 
 
-def draw_indoors_icon(draw, center_x, y, size=48, color="#333333"):
+def draw_indoors_icon(draw, center_x, y, size=60, color="#333333"):
     """Draws the house icon using Pillow."""
     s = size / 24 
-    w = 2 
+    w = 2.5 # Standardized stroke width
     offset_x = center_x - size / 2
     offset_y = y
     
@@ -79,7 +79,7 @@ def draw_indoors_icon(draw, center_x, y, size=48, color="#333333"):
         (3*s + offset_x, 22*s + offset_y),
         (3*s + offset_x, 9*s + offset_y)
     ]
-    draw.line(house_outline, fill=color, width=w)
+    draw.line(house_outline, fill=color, width=int(w))
 
     door = [
         (9*s + offset_x, 22*s + offset_y),
@@ -87,7 +87,7 @@ def draw_indoors_icon(draw, center_x, y, size=48, color="#333333"):
         (15*s + offset_x, 12*s + offset_y),
         (15*s + offset_x, 22*s + offset_y)
     ]
-    draw.line(door, fill=color, width=w)
+    draw.line(door, fill=color, width=int(w))
 
 
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
@@ -150,7 +150,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         
         icon_func(draw, center_x, advice_y_start) # Draw icon
         
-        text_y = advice_y_start + 60
+        text_y = advice_y_start + 75 # Adjusted for bigger icon
         draw.text((center_x, text_y), title, font=font_advice_header, anchor="ms", fill="#333333")
         draw.text((center_x, text_y + 30), advice_details[key], font=font_advice, anchor="ms", fill="#555555", align="center")
 
