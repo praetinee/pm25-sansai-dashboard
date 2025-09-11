@@ -20,15 +20,12 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     font_url_reg = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
     font_url_bold = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
     font_url_light = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Light.ttf"
-    emoji_font_url = "https://github.com/googlefonts/noto-emoji/raw/main/fonts/NotoColorEmoji.ttf"
-
 
     font_reg_bytes = get_font(font_url_reg)
     font_bold_bytes = get_font(font_url_bold)
     font_light_bytes = get_font(font_url_light)
-    font_emoji_bytes = get_font(emoji_font_url)
 
-    if not all([font_reg_bytes, font_bold_bytes, font_light_bytes, font_emoji_bytes]):
+    if not all([font_reg_bytes, font_bold_bytes, font_light_bytes]):
         return None
     
     # --- Create Fonts ---
@@ -44,7 +41,6 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     font_advice_header = create_font(font_bold_bytes, 26)
     font_advice = create_font(font_reg_bytes, 22)
     font_footer = create_font(font_light_bytes, 16)
-    font_emoji = create_font(font_emoji_bytes, 40)
     
     # --- Card Creation ---
     width, height = 800, 1000
@@ -64,17 +60,7 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     # --- PM2.5 Value ---
     draw.text((width/2, box_y_start + 140), f"{latest_pm25:.1f}", font=font_pm_value, anchor="ms", fill="#111111")
     draw.text((width/2, box_y_start + 220), "μg/m³", font=font_unit, anchor="ms", fill="#555555")
-    
-    # --- Level and Emoji (Side by side) ---
-    level_bbox = draw.textbbox((0,0), level, font=font_level)
-    emoji_bbox = draw.textbbox((0,0), emoji, font=font_emoji)
-    total_width = level_bbox[2] + emoji_bbox[2] + 10 # 10 is spacing
-    
-    level_x = (width - total_width) / 2
-    emoji_x = level_x + level_bbox[2] + 10
-    
-    draw.text((level_x, box_y_start + 280), level, font=font_level, anchor="ls", fill="#111111")
-    draw.text((emoji_x, box_y_start + 280), emoji, font=font_emoji, anchor="ls", fill="#111111")
+    draw.text((width/2, box_y_start + 280), f"{level} {emoji}", font=font_level, anchor="ms", fill="#111111")
     
     draw.line([(60, box_y_start + 340), (width - 60, box_y_start + 340)], fill="#EEEEEE", width=2)
     
@@ -86,7 +72,7 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
         line = line.strip()
         if line:
             font_to_use = font_advice_header if t[lang]['general_public'] in line or t[lang]['risk_group'] in line else font_advice
-            draw.text((width/2, y_text), line, font=font_to_use, fill="#333333", anchor="ms", align="center")
+            draw.text((width/2, y_text), line, font=font_to_use, fill="#333333", anchor="ms")
             y_text += 40 if font_to_use == font_advice_header else 35
 
     # --- Footer ---
