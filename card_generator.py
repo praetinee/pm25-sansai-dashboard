@@ -49,7 +49,8 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     draw = ImageDraw.Draw(img)
 
     # --- Header ---
-    draw.text((width/2, 60), t[lang]['header'], font=font_header, anchor="ms", fill="#FFFFFF")
+    header_title = t[lang]['page_title']
+    draw.text((width/2, 60), header_title, font=font_header, anchor="ms", fill="#FFFFFF")
     draw.text((width/2, 105), date_str, font=font_date, anchor="ms", fill=(255, 255, 255, 200))
 
     # --- White Info Box ---
