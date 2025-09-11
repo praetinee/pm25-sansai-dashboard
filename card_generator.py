@@ -124,7 +124,17 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     footer_text = t[lang]['report_card_footer']
     draw.text((width - 40, height - 40), footer_text, font=font_footer, anchor="rs", fill="#AAAAAA")
 
+    # --- Final Touches: Round the corners of the entire image ---
+    radius = 30
+    mask = Image.new('L', (width, height), 0)
+    mask_draw = ImageDraw.Draw(mask)
+    mask_draw.rounded_rectangle((0, 0, width, height), radius=radius, fill=255)
+    
+    # Create a new image to hold the final result with transparency
+    final_img = Image.new('RGBA', (width, height))
+    final_img.paste(img, (0, 0), mask=mask)
+
     buf = BytesIO()
-    img.save(buf, format='PNG')
+    final_img.save(buf, format='PNG')
     return buf.getvalue()
 
