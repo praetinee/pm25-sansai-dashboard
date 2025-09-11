@@ -78,16 +78,19 @@ def display_realtime_pm(df, lang, t, date_str):
         st.subheader(t[lang]['advice_header'])
         st.markdown(f"<div class='card'>{advice}</div>", unsafe_allow_html=True)
 
-    btn_col1, btn_col2, _ = st.columns([1, 1, 3])
-    with btn_col1:
-        if st.button(t[lang]['refresh_button'], use_container_width=True):
+    st.write("") # Add a small space
+
+    # --- Action Buttons ---
+    b_col1, b_col2, b_col3 = st.columns([2,2,8]) # Adjust column ratios
+    with b_col1:
+        if st.button(f"🔄 {t[lang]['refresh_button']}", use_container_width=True):
             st.cache_data.clear()
             st.rerun()
-    with btn_col2:
+    with b_col2:
         report_card_bytes = generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lang, t)
         if report_card_bytes:
             st.download_button(
-                label=t[lang]['download_button'],
+                label=f"🖼️ {t[lang]['download_button']}",
                 data=report_card_bytes,
                 file_name=f"pm25_report_{datetime.now().strftime('%Y%m%d_%H%M')}.png",
                 mime="image/png",
@@ -258,7 +261,7 @@ def display_knowledge_base(lang, t):
     st.subheader(t[lang]['knowledge_header'])
     
     cols = st.columns(4)
-    if 'selected_topic' not in st.session_state:
+    if 'selected_topic' not in st.session_state or st.session_state.selected_topic not in [item['title'] for item in t[lang]['knowledge_content']]:
         st.session_state.selected_topic = t[lang]['knowledge_content'][0]['title']
 
     for i, item in enumerate(t[lang]['knowledge_content']):
