@@ -53,7 +53,7 @@ TRANSLATIONS = {
         'days_header': ["จันทร์", "อังคาร", "พุธ", "พฤหัส", "ศุกร์", "เสาร์", "อาทิตย์"],
 
         # Historical Data
-        'historical_expander': "📊 ดูข้อมูลย้อนหลัง (คลิกเพื่อเลือกช่วงวัน)",
+        'historical_expander': "ดูข้อมูลย้อนหลัง",
         'start_date': "วันที่เริ่มต้น",
         'end_date': "สิ้นสุด",
         'date_error': "วันที่เริ่มต้นต้องมาก่อนวันที่สิ้นสุด",
@@ -117,7 +117,7 @@ TRANSLATIONS = {
         'days_header': ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
 
         # Historical Data
-        'historical_expander': "📊 View Historical Data (Click to select date range)",
+        'historical_expander': "Historical Data",
         'start_date': "Start Date",
         'end_date': "End Date",
         'date_error': "Start date must be before end date.",
