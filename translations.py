@@ -34,6 +34,14 @@ TRANSLATIONS = {
         'advice_5_general': "ควรงดกิจกรรมกลางแจ้ง และสวมหน้ากากป้องกันฝุ่นเมื่ออยู่นอกอาคาร",
         'advice_5_risk': "ควรงดออกจากอาคารโดยเด็ดขาด และอยู่ในห้องปลอดฝุ่น",
         
+        # Health Impact Section
+        'health_impact_title': "สรุปผลกระทบต่อสุขภาพ (จากข้อมูลทั้งหมด)",
+        'unhealthy_days_text': "จำนวนวันที่ค่าฝุ่นเกินเกณฑ์ (>37.5 µg/m³)",
+        'cigarette_equivalent_text': "เทียบเท่าการสูบบุหรี่สะสม",
+        'health_impact_explanation': "หมายเหตุ: คำนวณจากค่าเฉลี่ยฝุ่นสะสมทั้งหมด โดยเทียบว่าการได้รับ PM2.5 เฉลี่ย 22 µg/m³ ตลอด 24 ชั่วโมง เทียบเท่าการสูบบุหรี่ 1 มวน (เป็นการเปรียบเทียบเพื่อให้เห็นภาพผลกระทบ)",
+        'days_unit': "วัน",
+        'cigarettes_unit': "มวน",
+
         # Charts
         'hourly_trend_today': "แนวโน้มค่า PM2.5 รายชั่วโมงของวันนี้",
         'no_data_today': "ยังไม่มีข้อมูลสำหรับวันนี้",
@@ -90,6 +98,14 @@ TRANSLATIONS = {
         'advice_5_general': "Avoid outdoor activities and wear a mask if you must go out.",
         'advice_5_risk': "Stay indoors in a clean or air-purified room.",
         
+        # Health Impact Section
+        'health_impact_title': "Health Impact Summary (All-time Data)",
+        'unhealthy_days_text': "Days Above Guideline (>37.5 µg/m³)",
+        'cigarette_equivalent_text': "Cumulative Cigarette Equivalent",
+        'health_impact_explanation': "Note: Calculated from total cumulative exposure, where an average daily exposure of 22 µg/m³ is roughly equivalent to smoking 1 cigarette (This is an approximation to illustrate the health impact).",
+        'days_unit': "days",
+        'cigarettes_unit': "cigarettes",
+
         # Charts
         'hourly_trend_today': "Today's Hourly PM2.5 Trend",
         'no_data_today': "No data available for today yet.",
