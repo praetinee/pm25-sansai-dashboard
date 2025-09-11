@@ -34,6 +34,9 @@ st.divider()
 display_24hr_chart(df)
 st.divider()
 
+display_monthly_calendar(df)
+st.divider()
+
 display_historical_data(df)
 st.divider()
 
