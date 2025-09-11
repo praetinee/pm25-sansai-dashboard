@@ -46,41 +46,19 @@ TRANSLATIONS = {
         'aqi_level_4_short': "เสี่ยง",
         'aqi_level_5': "อันตรายต่อสุขภาพ",
         'aqi_level_5_short': "อันตราย",
-        'advice_cat_mask': "หน้ากาก",
-        'advice_cat_activity': "กิจกรรมกลางแจ้ง",
-        'advice_cat_indoors': "ในอาคาร",
-        'advice_cat_risk_group': "กลุ่มเสี่ยง",
+        'general_public': "ประชาชนทั่วไป",
+        'risk_group': "กลุ่มเสี่ยง",
+        'advice_topics': {
+            'mask': "หน้ากาก",
+            'activity': "กิจกรรมกลางแจ้ง",
+            'indoors': "ในอาคาร"
+        },
         'advice': {
-            'advice_1': {
-                'mask': "ไม่จำเป็น",
-                'activity': "ทำได้ตามปกติ",
-                'indoors': "เปิดระบายอากาศได้เต็มที่",
-                'risk_group': "ใช้ชีวิตได้ตามปกติ"
-            },
-            'advice_2': {
-                'mask': "ไม่จำเป็น",
-                'activity': "ทำได้ตามปกติ",
-                'indoors': "เปิดระบายอากาศได้",
-                'risk_group': "ควรสังเกตอาการผิดปกติ"
-            },
-            'advice_3': {
-                'mask': "พิจารณาสวมหน้ากากเมื่ออยู่นอกอาคารนานๆ",
-                'activity': "ลดการออกกำลังกายหนัก",
-                'indoors': "ควรปิดหน้าต่างเป็นบางช่วง",
-                'risk_group': "ควรสวมหน้ากากและลดเวลาอยู่นอกบ้าน"
-            },
-            'advice_4': {
-                'mask': "สวมหน้ากาก N95 เมื่อออกนอกอาคาร",
-                'activity': "งดกิจกรรมที่ใช้แรงมาก",
-                'indoors': "ปิดหน้าต่างให้สนิท, เปิดเครื่องฟอกอากาศ",
-                'risk_group': "ควรงดกิจกรรมกลางแจ้งทั้งหมด"
-            },
-            'advice_5': {
-                'mask': "สวมหน้ากาก N95 อย่างเคร่งครัด",
-                'activity': "งดกิจกรรมกลางแจ้งเด็ดขาด",
-                'indoors': "อยู่ในห้องปลอดฝุ่น, เปิดเครื่องฟอกอากาศตลอดเวลา",
-                'risk_group': "ต้องอยู่ในอาคารเท่านั้น"
-            }
+            'advice_1': {'details': {'mask': 'ไม่จำเป็น', 'activity': 'ทำได้ตามปกติ', 'indoors': 'เปิดระบายอากาศได้', 'risk_group': 'ควรสังเกตอาการผิดปกติ'}},
+            'advice_2': {'details': {'mask': 'ไม่จำเป็น', 'activity': 'ทำได้ตามปกติ', 'indoors': 'เปิดระบายอากาศได้', 'risk_group': 'ควรสังเกตอาการผิดปกติ'}},
+            'advice_3': {'details': {'mask': 'พิจารณาตามความเหมาะสม', 'activity': 'ลดกิจกรรมที่ใช้แรงมาก', 'indoors': 'ปิดหน้าต่างเป็นบางช่วง', 'risk_group': 'สวมหน้ากากเมื่อออกนอกอาคาร'}},
+            'advice_4': {'details': {'mask': 'สวมหน้ากากอนามัย', 'activity': 'ควรงดกิจกรรมที่ใช้แรงมาก', 'indoors': 'ปิดหน้าต่างให้สนิท', 'risk_group': 'สวม N95 และงดออกนอกอาคาร'}},
+            'advice_5': {'details': {'mask': 'สวมหน้ากาก N95', 'activity': 'งดโดยเด็ดขาด', 'indoors': 'เปิดเครื่องฟอกอากาศ', 'risk_group': 'อยู่ในห้องปลอดฝุ่นเท่านั้น'}}
         },
         'month_names': ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"],
         'days_header_short': ["จ", "อ", "พ", "พฤ", "ศ", "ส", "อา"],
@@ -142,41 +120,19 @@ TRANSLATIONS = {
         'aqi_level_4_short': "Unhealthy (Sen.)",
         'aqi_level_5': "Unhealthy",
         'aqi_level_5_short': "Unhealthy",
-        'advice_cat_mask': "Mask",
-        'advice_cat_activity': "Outdoor Activity",
-        'advice_cat_indoors': "Indoors",
-        'advice_cat_risk_group': "Sensitive Groups",
+        'general_public': "General Public",
+        'risk_group': "Sensitive Groups",
+        'advice_topics': {
+            'mask': "Mask",
+            'activity': "Outdoor Activity",
+            'indoors': "Indoors"
+        },
         'advice': {
-            'advice_1': {
-                'mask': "Not necessary",
-                'activity': "Enjoy as usual",
-                'indoors': "Feel free to ventilate",
-                'risk_group': "Normal activities"
-            },
-            'advice_2': {
-                'mask': "Not necessary",
-                'activity': "Enjoy as usual",
-                'indoors': "Ventilate as needed",
-                'risk_group': "Monitor for symptoms"
-            },
-            'advice_3': {
-                'mask': "Consider a mask for prolonged outdoor exposure",
-                'activity': "Reduce strenuous exercise",
-                'indoors': "Close windows periodically",
-                'risk_group': "Wear a mask and reduce time outdoors"
-            },
-            'advice_4': {
-                'mask': "Wear an N95 mask when outdoors",
-                'activity': "Avoid strenuous activities",
-                'indoors': "Keep windows closed, run air purifier",
-                'risk_group': "Avoid all outdoor activities"
-            },
-            'advice_5': {
-                'mask': "Strictly wear an N95 mask",
-                'activity': "Avoid all outdoor activities",
-                'indoors': "Stay in a clean room, run purifier continuously",
-                'risk_group': "Must remain indoors"
-            }
+            'advice_1': {'details': {'mask': 'Not necessary', 'activity': 'Normal activities', 'indoors': 'Can ventilate', 'risk_group': 'Monitor for any symptoms'}},
+            'advice_2': {'details': {'mask': 'Not necessary', 'activity': 'Normal activities', 'indoors': 'Can ventilate', 'risk_group': 'Monitor for any symptoms'}},
+            'advice_3': {'details': {'mask': 'Consider wearing one', 'activity': 'Reduce strenuous activities', 'indoors': 'Close windows periodically', 'risk_group': 'Wear a mask when outdoors'}},
+            'advice_4': {'details': {'mask': 'Wear a surgical mask', 'activity': 'Avoid strenuous activities', 'indoors': 'Keep windows closed', 'risk_group': 'Wear N95 and avoid going out'}},
+            'advice_5': {'details': {'mask': 'Wear an N95 mask', 'activity': 'Avoid all outdoor activities', 'indoors': 'Use air purifier', 'risk_group': 'Stay in a clean room'}}
         },
         'month_names': ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
         'days_header_short': ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
