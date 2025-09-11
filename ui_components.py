@@ -223,11 +223,16 @@ def display_historical_data(df):
             st.error("วันที่เริ่มต้นต้องมาก่อนวันที่สิ้นสุด")
         else:
             mask = (df['Datetime'].dt.date >= start_date) & (df['Datetime'].dt.date <= end_date)
-            filtered_df = df.loc[mask].sort_values(by="Datetime", ascending=True)
+            filtered_df = df.loc[mask]
 
             if filtered_df.empty:
                 st.warning("ไม่พบข้อมูลในช่วงวันที่ที่เลือก")
             else:
+                # Calculate daily averages for the chart
+                daily_avg_df = filtered_df.groupby(filtered_df['Datetime'].dt.date)['PM2.5'].mean().reset_index()
+                daily_avg_df.rename(columns={'Datetime': 'Date', 'PM2.5': 'Avg PM2.5'}, inplace=True)
+
+                # Calculate overall metrics for the selected range
                 avg_pm = filtered_df['PM2.5'].mean()
                 max_pm = filtered_df['PM2.5'].max()
                 min_pm = filtered_df['PM2.5'].min()
@@ -237,21 +242,21 @@ def display_historical_data(df):
                 mcol2.metric("ค่าสูงสุด", f"{max_pm:.1f} μg/m³")
                 mcol3.metric("ค่าต่ำสุด", f"{min_pm:.1f} μg/m³")
 
-                # Generate colors for each bar
-                colors_hist = [get_aqi_level(pm)[1] for pm in filtered_df['PM2.5']]
+                # Generate colors for each daily average bar
+                colors_hist = [get_aqi_level(pm)[1] for pm in daily_avg_df['Avg PM2.5']]
 
                 fig_hist = go.Figure()
                 fig_hist.add_trace(go.Bar(
-                    x=filtered_df['Datetime'], 
-                    y=filtered_df['PM2.5'], 
-                    name='PM2.5',
+                    x=daily_avg_df['Date'], 
+                    y=daily_avg_df['Avg PM2.5'], 
+                    name='ค่าเฉลี่ย PM2.5',
                     marker_color=colors_hist,
                     marker=dict(cornerradius=5)
                 ))
                 fig_hist.update_layout(
-                    title=f"ข้อมูล PM2.5 ตั้งแต่ {start_date.strftime('%d/%m/%Y')} ถึง {end_date.strftime('%d/%m/%Y')}",
+                    title=f"ค่าเฉลี่ย PM2.5 รายวัน ({start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')})",
                     xaxis_title="วันที่", 
-                    yaxis_title="PM2.5 (μg/m³)",
+                    yaxis_title="ค่าเฉลี่ย PM2.5 (μg/m³)",
                     template="plotly_white",
                     plot_bgcolor='rgba(0,0,0,0)',
                     showlegend=False
