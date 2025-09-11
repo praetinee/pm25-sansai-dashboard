@@ -94,6 +94,11 @@ def inject_custom_css():
             html, body, [class*="st-"], .stApp, h1, h2, h3, h4, h5, h6 {
                 font-family: 'Sarabun', sans-serif !important;
             }
+            
+            /* SUPER-SPECIFIC FIX for st.expander header font */
+            .st-expander-header p {
+                 font-family: 'Sarabun', sans-serif !important;
+            }
 
             /* General Card Style */
             .card {
@@ -438,171 +443,134 @@ def display_historical_data(df, lang, t):
 
 def display_knowledge_tabs(lang, t):
     st.subheader(t[lang]['knowledge_header'])
-    tabs = st.tabs(t[lang]['tabs'])
-
-    # Tab 1: What is PM2.5?
-    with tabs[0]:
-        st.markdown(
-            """
-            #### PM2.5: ฆาตกรเงียบที่มองไม่เห็น
-            **PM2.5** คือฝุ่นพิษขนาดจิ๋วที่เล็กกว่าเส้นผมของเราถึง 25 เท่า มันคือภัยร้ายที่เรามองไม่เห็นด้วยตาเปล่า แต่สามารถเดินทางผ่านการหายใจเข้าสู่ปอดและแทรกซึมเข้าสู่กระแสเลือดได้โดยตรง
-            > มันไม่ใช่แค่ "ฝุ่น" แต่มันคือ **"พาหะของสารพิษ"** ที่พร้อมจะทำลายสุขภาพของเราจากภายใน
-            """ if lang == 'th' else """
-            #### PM2.5: The Invisible Killer
-            **PM2.5** are tiny toxic particles, 25 times smaller than a human hair. They are an invisible danger that can bypass your body's defenses, entering your lungs and bloodstream directly.
-            > It's not just "dust"; it's a **carrier for toxins** ready to damage our health from the inside out.
-            """
-        )
-
-    # Tab 2: Danger to Children
-    with tabs[1]:
-        st.markdown(
-            """
-            #### ทำไม PM2.5 ถึงเป็น "หายนะ" สำหรับอนาคตของเด็ก?
-            ปอดและสมองของเด็กยังคงพัฒนาอย่างต่อเนื่อง การหายใจเอาอากาศพิษเข้าไปในช่วงวัยนี้ **เปรียบเสมือนการวางยาพิษต่อพัฒนาการของพวกเขา**
-            - **ปอดถูกทำลาย:** ขัดขวางการเติบโตของปอด เพิ่มความเสี่ยงของโรคหอบหืดและภูมิแพ้ไปตลอดชีวิต
-            - **สมองเสียหาย:** ส่งผลกระทบต่อพัฒนาการทางสมองและสติปัญญา ทำให้ศักยภาพของเด็กลดลง
-            > การปกป้องเด็กจาก PM2.5 ไม่ใช่ทางเลือก แต่คือ **หน้าที่ในการปกป้องอนาคตของพวกเขา**
-            """ if lang == 'th' else """
-            #### Why is PM2.5 a "Catastrophe" for a Child's Future?
-            A child's lungs and brain are still developing. Breathing toxic air during this critical period is **like poisoning their growth.**
-            - **Damaged Lungs:** Hinders lung development, increasing lifelong risks of asthma and allergies.
-            - **Brain Impairment:** Affects cognitive development and intelligence, limiting their full potential.
-            > Protecting children from PM2.5 isn't an option; it's our **duty to safeguard their future.**
-            """
-        )
-
-    # Tab 3: Danger to Elderly
-    with tabs[2]:
-        st.markdown(
-            """
-            #### PM2.5: ตัวเร่งให้วาระสุดท้ายมาถึงเร็วขึ้น
-            สำหรับผู้สูงอายุ ร่างกายที่เสื่อมถอยตามวัยนั้นเปราะบางอยู่แล้ว PM2.5 ทำหน้าที่เหมือน **"ตัวจุดชนวน"** ที่กระตุ้นให้โรคประจำตัวกำเริบอย่างรุนแรง
-            - **หัวใจวายและหลอดเลือดสมอง:** เพิ่มความเสี่ยงเฉียบพลันอย่างมีนัยสำคัญ
-            - **โรคปอดกำเริบ:** ทำให้ผู้ป่วยโรคถุงลมโป่งพองหรือหลอดลมอักเสบเรื้อรังมีอาการทรุดลงอย่างรวดเร็ว
-            > ทุกวันที่ต้องหายใจในอากาศที่มีมลพิษ คือการบั่นทอนคุณภาพชีวิตและเร่งเวลาสู่ความเจ็บป่วยที่หนักหนาสาหัส
-            """ if lang == 'th' else """
-            #### PM2.5: Accelerating the Inevitable
-            For the elderly, an aging body is already vulnerable. PM2.5 acts as a **"trigger"** that severely aggravates chronic diseases.
-            - **Heart Attacks and Strokes:** Significantly increases the acute risk.
-            - **Exacerbated Lung Disease:** Rapidly worsens conditions for patients with emphysema or chronic bronchitis.
-            > Every day spent breathing polluted air diminishes their quality of life and hastens severe illness.
-            """
-        )
     
-    # Tab 4: Danger to Pregnant Women
-    with tabs[3]:
-        st.markdown(
-            """
-            #### ภัยคุกคามต่อ "สองชีวิต" ในครรภ์มารดา
-            เมื่อแม่หายใจเอา PM2.5 เข้าไป พิษร้ายไม่ได้หยุดอยู่แค่ที่แม่ แต่มันสามารถ **เดินทางผ่านรกไปสู่ทารกในครรภ์ได้**
-            - **คลอดก่อนกำหนด:** เพิ่มความเสี่ยงที่ทารกจะลืมตาดูโลกก่อนเวลาอันควร
-            - **น้ำหนักแรกเกิดต่ำ:** ส่งผลต่อสุขภาพและพัฒนาการในระยะยาวของเด็ก
-            > การปกป้องหญิงตั้งครรภ์ คือการให้ **"ของขวัญชิ้นแรกที่ดีที่สุด"** แก่ชีวิตใหม่ที่กำลังจะเกิดขึ้น นั่นคือสุขภาพที่แข็งแรง
-            """ if lang == 'th' else """
-            #### A Threat to "Two Lives"
-            When an expectant mother breathes in PM2.5, the toxins don't stop with her. They can **cross the placental barrier and affect the unborn child.**
-            - **Premature Birth:** Increases the risk of the baby being born too early.
-            - **Low Birth Weight:** Impacts the child's long-term health and development.
-            > Protecting pregnant women is giving the **"best first gift"** to a new life: a healthy start.
-            """
-        )
+    knowledge_items = t[lang]['tabs']
+    content_th = [
+        """
+        #### PM2.5: ฆาตกรเงียบที่มองไม่เห็น
+        **PM2.5** คือฝุ่นพิษขนาดจิ๋วที่เล็กกว่าเส้นผมของเราถึง 25 เท่า มันคือภัยร้ายที่เรามองไม่เห็นด้วยตาเปล่า แต่สามารถเดินทางผ่านการหายใจเข้าสู่ปอดและแทรกซึมเข้าสู่กระแสเลือดได้โดยตรง
+        > มันไม่ใช่แค่ "ฝุ่น" แต่มันคือ **"พาหะของสารพิษ"** ที่พร้อมจะทำลายสุขภาพของเราจากภายใน
+        """,
+        """
+        #### ทำไม PM2.5 ถึงเป็น "หายนะ" สำหรับอนาคตของเด็ก?
+        ปอดและสมองของเด็กยังคงพัฒนาอย่างต่อเนื่อง การหายใจเอาอากาศพิษเข้าไปในช่วงวัยนี้ **เปรียบเสมือนการวางยาพิษต่อพัฒนาการของพวกเขา**
+        - **ปอดถูกทำลาย:** ขัดขวางการเติบโตของปอด เพิ่มความเสี่ยงของโรคหอบหืดและภูมิแพ้ไปตลอดชีวิต
+        - **สมองเสียหาย:** ส่งผลกระทบต่อพัฒนาการทางสมองและสติปัญญา ทำให้ศักยภาพของเด็กลดลง
+        > การปกป้องเด็กจาก PM2.5 ไม่ใช่ทางเลือก แต่คือ **หน้าที่ในการปกป้องอนาคตของพวกเขา**
+        """,
+        """
+        #### PM2.5: ตัวเร่งให้วาระสุดท้ายมาถึงเร็วขึ้น
+        สำหรับผู้สูงอายุ ร่างกายที่เสื่อมถอยตามวัยนั้นเปราะบางอยู่แล้ว PM2.5 ทำหน้าที่เหมือน **"ตัวจุดชนวน"** ที่กระตุ้นให้โรคประจำตัวกำเริบอย่างรุนแรง
+        - **หัวใจวายและหลอดเลือดสมอง:** เพิ่มความเสี่ยงเฉียบพลันอย่างมีนัยสำคัญ
+        - **โรคปอดกำเริบ:** ทำให้ผู้ป่วยโรคถุงลมโป่งพองหรือหลอดลมอักเสบเรื้อรังมีอาการทรุดลงอย่างรวดเร็ว
+        > ทุกวันที่ต้องหายใจในอากาศที่มีมลพิษ คือการบั่นทอนคุณภาพชีวิตและเร่งเวลาสู่ความเจ็บป่วยที่หนักหนาสาหัส
+        """,
+        """
+        #### ภัยคุกคามต่อ "สองชีวิต" ในครรภ์มารดา
+        เมื่อแม่หายใจเอา PM2.5 เข้าไป พิษร้ายไม่ได้หยุดอยู่แค่ที่แม่ แต่มันสามารถ **เดินทางผ่านรกไปสู่ทารกในครรภ์ได้**
+        - **คลอดก่อนกำหนด:** เพิ่มความเสี่ยงที่ทารกจะลืมตาดูโลกก่อนเวลาอันควร
+        - **น้ำหนักแรกเกิดต่ำ:** ส่งผลต่อสุขภาพและพัฒนาการในระยะยาวของเด็ก
+        > การปกป้องหญิงตั้งครรภ์ คือการให้ **"ของขวัญชิ้นแรกที่ดีที่สุด"** แก่ชีวิตใหม่ที่กำลังจะเกิดขึ้น นั่นคือสุขภาพที่แข็งแรง
+        """,
+        """
+        #### เปลี่ยนโรคประจำตัวให้กลายเป็น "ภาวะฉุกเฉิน"
+        สำหรับผู้ที่มีโรคประจำตัว เช่น โรคหัวใจ, โรคหอบหืด, หรือภูมิแพ้ PM2.5 ไม่ใช่แค่สิ่งรบกวน แต่คือ **"ตัวกระตุ้นชั้นดี"** ที่สามารถเปลี่ยนวันที่ปกติให้กลายเป็นวิกฤตได้
+        - **กระตุ้นอาการแพ้:** ทำให้อาการภูมิแพ้รุนแรงและควบคุมได้ยากขึ้น
+        - **จุดชนวนหอบหืด:** เพิ่มความถี่และความรุนแรงของการจับหืด
+        - **เพิ่มภาระให้หัวใจ:** ทำให้หัวใจทำงานหนักขึ้น เสี่ยงต่อภาวะหัวใจล้มเหลว
+        > การป้องกัน PM2.5 คือ **การป้องกันภาวะแทรกซ้อนที่อาจเป็นอันตรายถึงชีวิต**
+        """,
+        """
+        #### ลำดับชั้นของการป้องกัน PM2.5 ที่ได้ผลจริง
+        1.  **สร้างห้องปลอดฝุ่น (Clean Room):** วิธีที่ดีที่สุดคือการสร้างพื้นที่ปลอดภัยในบ้าน โดยใช้เครื่องฟอกอากาศที่มีแผ่นกรอง HEPA ในห้องที่ปิดสนิท และอาจทำระบบ Positive Pressure เพื่อดันอากาศพิษออกไป
+        2.  **เครื่องฟอกอากาศ:** เลือกเครื่องที่มีค่า **CADR (Clean Air Delivery Rate)** เหมาะสมกับขนาดห้อง และใช้แผ่นกรอง **HEPA** ที่สามารถดักจับฝุ่นจิ๋วได้
+        3.  **หน้ากาก N95/KF94:** เมื่อต้องออกนอกอาคาร การสวมหน้ากากที่ได้มาตรฐานและกระชับกับใบหน้าเป็นสิ่งจำเป็น
+        4.  **ปิดบ้านให้สนิท:** ลดการนำอากาศจากภายนอกเข้ามาในบ้าน
+        5.  **ระบบปรับอากาศ:** แอร์ที่มีแผ่นกรองสามารถช่วยกรองฝุ่นได้ในระดับหนึ่ง
+        6.  **สเปรย์ละอองน้ำ:** เป็นวิธีที่ได้ผลน้อยและแค่ชั่วคราว ไม่สามารถแก้ปัญหาที่ต้นเหตุได้
+        """,
+        """
+        #### หน้ากากที่ดีที่สุด ไม่ใช่แค่ยี่ห้อ แต่คือ "ความฟิต"
+        หน้ากาก N95 ราคาแพงอาจไร้ค่า ถ้าอากาศพิษยังเล็ดลอดผ่านช่องว่างข้างแก้มได้
+        - **มาตรฐานต้องมี:** มองหาสัญลักษณ์ N95, KN95, หรือ KF94 ที่รับรองความสามารถในการกรอง
+        - **ความกระชับสำคัญที่สุด:** หน้ากากต้องแนบสนิทกับใบหน้า ไม่มีช่องว่างให้อากาศรั่วไหล
+        - **วาล์วหายใจออก:** ช่วยให้หายใจสะดวกขึ้น แต่ **ไม่ป้องกันการแพร่เชื้อ** จากตัวเราไปสู่ผู้อื่น
+        > **จำไว้ว่า:** หน้ากากที่ดีที่สุดคือหน้ากากที่ได้มาตรฐาน และคุณสวมมันอย่าง "ถูกต้องและกระชับ" ทุกครั้งที่ออกนอกบ้าน
+        """,
+        """
+        #### เลือกเครื่องฟอกอากาศให้ฉลาด เหมือนเลือก "ปอดที่สาม" ให้บ้าน
+        อย่าดูแค่ดีไซน์หรือราคา แต่ให้ดูที่ "ประสิทธิภาพ" ในการฟอกอากาศ
+        - **รู้จัก CADR (Clean Air Delivery Rate):** คือค่าที่บอกว่าเครื่องฟอกอากาศสามารถสร้างอากาศบริสุทธิ์ได้เร็วแค่ไหน (ยิ่งสูงยิ่งดี) **เลือก CADR ให้เหมาะสมกับขนาดห้องของคุณ**
+        - **หัวใจคือแผ่นกรอง HEPA:** ตรวจสอบให้แน่ใจว่าเป็น **"True HEPA"** ซึ่งสามารถดักจับอนุภาคขนาดเล็กถึง 0.3 ไมครอนได้ 99.97%
+        - **ไส้กรองเสริม:** ไส้กรอง Carbon ช่วยลดกลิ่นและสารเคมีระเหยได้
+        > การลงทุนกับเครื่องฟอกอากาศที่ดี คือการลงทุนกับ **"ลมหายใจที่สะอาด"** ของทุกคนในครอบครัว
+        """
+    ]
+    content_en = [
+        """
+        #### PM2.5: The Invisible Killer
+        **PM2.5** are tiny toxic particles, 25 times smaller than a human hair. They are an invisible danger that can bypass your body's defenses, entering your lungs and bloodstream directly.
+        > It's not just "dust"; it's a **carrier for toxins** ready to damage our health from the inside out.
+        """,
+        """
+        #### Why is PM2.5 a "Catastrophe" for a Child's Future?
+        A child's lungs and brain are still developing. Breathing toxic air during this critical period is **like poisoning their growth.**
+        - **Damaged Lungs:** Hinders lung development, increasing lifelong risks of asthma and allergies.
+        - **Brain Impairment:** Affects cognitive development and intelligence, limiting their full potential.
+        > Protecting children from PM2.5 isn't an option; it's our **duty to safeguard their future.**
+        """,
+        """
+        #### PM2.5: Accelerating the Inevitable
+        For the elderly, an aging body is already vulnerable. PM2.5 acts as a **"trigger"** that severely aggravates chronic diseases.
+        - **Heart Attacks and Strokes:** Significantly increases the acute risk.
+        - **Exacerbated Lung Disease:** Rapidly worsens conditions for patients with emphysema or chronic bronchitis.
+        > Every day spent breathing polluted air diminishes their quality of life and hastens severe illness.
+        """,
+        """
+        #### A Threat to "Two Lives"
+        When an expectant mother breathes in PM2.5, the toxins don't stop with her. They can **cross the placental barrier and affect the unborn child.**
+        - **Premature Birth:** Increases the risk of the baby being born too early.
+        - **Low Birth Weight:** Impacts the child's long-term health and development.
+        > Protecting pregnant women is giving the **"best first gift"** to a new life: a healthy start.
+        """,
+        """
+        #### Turning a Chronic Condition into an "Emergency"
+        For individuals with conditions like heart disease, asthma, or allergies, PM2.5 is not just an irritant; it's a **potent trigger** that can turn a normal day into a crisis.
+        - **Intensified Allergies:** Makes allergy symptoms more severe and difficult to control.
+        - **Asthma Attacks:** Increases the frequency and severity of asthma attacks.
+        - **Strained Heart:** Forces the heart to work harder, risking heart failure.
+        > Protecting against PM2.5 is **preventing life-threatening complications.**
+        """,
+        """
+        #### The Hierarchy of Effective PM2.5 Protection
+        1.  **Create a Clean Room:** The best method is to establish a safe zone at home using an air purifier with a HEPA filter in a sealed room. A positive pressure system can also be used to push out polluted air.
+        2.  **Air Purifiers:** Choose a unit with a **CADR (Clean Air Delivery Rate)** appropriate for your room size and a **HEPA** filter capable of trapping microscopic particles.
+        3.  **N95/KF94 Masks:** Essential when outdoors. Ensure the mask is certified and fits snugly.
+        4.  **Seal Your Home:** Minimize air infiltration from outside.
+        5.  **Air Conditioning:** AC units with filters can provide some level of filtration.
+        6.  **Water Misting:** A temporary and minimally effective solution that doesn't address the root cause.
+        """,
+        """
+        #### The Best Mask Isn't a Brand, It's a "Fit"
+        An expensive N95 mask is useless if polluted air can leak through gaps on the sides.
+        - **Look for Standards:** Check for certifications like N95, KN95, or KF94.
+        - **The Fit is Everything:** The mask must create a tight seal against your face with no gaps.
+        - **Exhalation Valves:** Make breathing easier but **do not protect others from you** if you are sick.
+        > **Remember:** The best mask is one that is certified AND that you wear "correctly and snugly" every time you go outside.
+        """,
+        """
+        #### Choose an Air Purifier Wisely, Like Choosing a "Third Lung" for Your Home
+        Don't just look at design or price; focus on performance.
+        - **Know Your CADR (Clean Air Delivery Rate):** This value indicates how quickly the purifier cleans the air. A higher CADR is better. **Match the CADR to your room size.**
+        - **The HEPA Filter is Key:** Ensure it's a **"True HEPA"** filter, which captures 99.97% of particles as small as 0.3 microns.
+        - **Additional Filters:** An activated carbon filter can help remove odors and volatile organic compounds (VOCs).
+        > Investing in a good air purifier is an investment in the **"clean breaths"** of your entire family.
+        """
+    ]
 
-    # Tab 5: Danger to People with Health Conditions
-    with tabs[4]:
-        st.markdown(
-            """
-            #### เปลี่ยนโรคประจำตัวให้กลายเป็น "ภาวะฉุกเฉิน"
-            สำหรับผู้ที่มีโรคประจำตัว เช่น โรคหัวใจ, โรคหอบหืด, หรือภูมิแพ้ PM2.5 ไม่ใช่แค่สิ่งรบกวน แต่คือ **"ตัวกระตุ้นชั้นดี"** ที่สามารถเปลี่ยนวันที่ปกติให้กลายเป็นวิกฤตได้
-            - **กระตุ้นอาการแพ้:** ทำให้อาการภูมิแพ้รุนแรงและควบคุมได้ยากขึ้น
-            - **จุดชนวนหอบหืด:** เพิ่มความถี่และความรุนแรงของการจับหืด
-            - **เพิ่มภาระให้หัวใจ:** ทำให้หัวใจทำงานหนักขึ้น เสี่ยงต่อภาวะหัวใจล้มเหลว
-            > การป้องกัน PM2.5 คือ **การป้องกันภาวะแทรกซ้อนที่อาจเป็นอันตรายถึงชีวิต**
-            """ if lang == 'th' else """
-            #### Turning a Chronic Condition into an "Emergency"
-            For individuals with conditions like heart disease, asthma, or allergies, PM2.5 is not just an irritant; it's a **potent trigger** that can turn a normal day into a crisis.
-            - **Intensified Allergies:** Makes allergy symptoms more severe and difficult to control.
-            - **Asthma Attacks:** Increases the frequency and severity of asthma attacks.
-            - **Strained Heart:** Forces the heart to work harder, risking heart failure.
-            > Protecting against PM2.5 is **preventing life-threatening complications.**
-            """
-        )
-
-    # Tab 6: Most Effective Protection
-    with tabs[5]:
-        st.markdown(
-            """
-            #### ลำดับชั้นของการป้องกัน PM2.5 ที่ได้ผลจริง
-            1.  **สร้างห้องปลอดฝุ่น (Clean Room):** วิธีที่ดีที่สุดคือการสร้างพื้นที่ปลอดภัยในบ้าน โดยใช้เครื่องฟอกอากาศที่มีแผ่นกรอง HEPA ในห้องที่ปิดสนิท และอาจทำระบบ Positive Pressure เพื่อดันอากาศพิษออกไป
-            2.  **เครื่องฟอกอากาศ:** เลือกเครื่องที่มีค่า **CADR (Clean Air Delivery Rate)** เหมาะสมกับขนาดห้อง และใช้แผ่นกรอง **HEPA** ที่สามารถดักจับฝุ่นจิ๋วได้
-            3.  **หน้ากาก N95/KF94:** เมื่อต้องออกนอกอาคาร การสวมหน้ากากที่ได้มาตรฐานและกระชับกับใบหน้าเป็นสิ่งจำเป็น
-            4.  **ปิดบ้านให้สนิท:** ลดการนำอากาศจากภายนอกเข้ามาในบ้าน
-            5.  **ระบบปรับอากาศ:** แอร์ที่มีแผ่นกรองสามารถช่วยกรองฝุ่นได้ในระดับหนึ่ง
-            6.  **สเปรย์ละอองน้ำ:** เป็นวิธีที่ได้ผลน้อยและแค่ชั่วคราว ไม่สามารถแก้ปัญหาที่ต้นเหตุได้
-            """ if lang == 'th' else """
-            #### The Hierarchy of Effective PM2.5 Protection
-            1.  **Create a Clean Room:** The best method is to establish a safe zone at home using an air purifier with a HEPA filter in a sealed room. A positive pressure system can also be used to push out polluted air.
-            2.  **Air Purifiers:** Choose a unit with a **CADR (Clean Air Delivery Rate)** appropriate for your room size and a **HEPA** filter capable of trapping microscopic particles.
-            3.  **N95/KF94 Masks:** Essential when outdoors. Ensure the mask is certified and fits snugly.
-            4.  **Seal Your Home:** Minimize air infiltration from outside.
-            5.  **Air Conditioning:** AC units with filters can provide some level of filtration.
-            6.  **Water Misting:** A temporary and minimally effective solution that doesn't address the root cause.
-            """
-        )
-
-    # Tab 7: Choosing a Mask
-    with tabs[6]:
-        st.markdown(
-            """
-            #### หน้ากากที่ดีที่สุด ไม่ใช่แค่ยี่ห้อ แต่คือ "ความฟิต"
-            หน้ากาก N95 ราคาแพงอาจไร้ค่า ถ้าอากาศพิษยังเล็ดลอดผ่านช่องว่างข้างแก้มได้
-            - **มาตรฐานต้องมี:** มองหาสัญลักษณ์ N95, KN95, หรือ KF94 ที่รับรองความสามารถในการกรอง
-            - **ความกระชับสำคัญที่สุด:** หน้ากากต้องแนบสนิทกับใบหน้า ไม่มีช่องว่างให้อากาศรั่วไหล
-            - **วาล์วหายใจออก:** ช่วยให้หายใจสะดวกขึ้น แต่ **ไม่ป้องกันการแพร่เชื้อ** จากตัวเราไปสู่ผู้อื่น
-            > **จำไว้ว่า:** หน้ากากที่ดีที่สุดคือหน้ากากที่ได้มาตรฐาน และคุณสวมมันอย่าง "ถูกต้องและกระชับ" ทุกครั้งที่ออกนอกบ้าน
-            """ if lang == 'th' else """
-            #### The Best Mask Isn't a Brand, It's a "Fit"
-            An expensive N95 mask is useless if polluted air can leak through gaps on the sides.
-            - **Look for Standards:** Check for certifications like N95, KN95, or KF94.
-            - **The Fit is Everything:** The mask must create a tight seal against your face with no gaps.
-            - **Exhalation Valves:** Make breathing easier but **do not protect others from you** if you are sick.
-            > **Remember:** The best mask is one that is certified AND that you wear "correctly and snugly" every time you go outside.
-            """
-        )
-
-    # Tab 8: Choosing an Air Purifier
-    with tabs[7]:
-        st.markdown(
-            """
-            #### เลือกเครื่องฟอกอากาศให้ฉลาด เหมือนเลือก "ปอดที่สาม" ให้บ้าน
-            อย่าดูแค่ดีไซน์หรือราคา แต่ให้ดูที่ "ประสิทธิภาพ" ในการฟอกอากาศ
-            - **รู้จัก CADR (Clean Air Delivery Rate):** คือค่าที่บอกว่าเครื่องฟอกอากาศสามารถสร้างอากาศบริสุทธิ์ได้เร็วแค่ไหน (ยิ่งสูงยิ่งดี) **เลือก CADR ให้เหมาะสมกับขนาดห้องของคุณ**
-            - **หัวใจคือแผ่นกรอง HEPA:** ตรวจสอบให้แน่ใจว่าเป็น **"True HEPA"** ซึ่งสามารถดักจับอนุภาคขนาดเล็กถึง 0.3 ไมครอนได้ 99.97%
-            - **ไส้กรองเสริม:** ไส้กรอง Carbon ช่วยลดกลิ่นและสารเคมีระเหยได้
-            > การลงทุนกับเครื่องฟอกอากาศที่ดี คือการลงทุนกับ **"ลมหายใจที่สะอาด"** ของทุกคนในครอบครัว
-            """ if lang == 'th' else """
-            #### Choose an Air Purifier Wisely, Like Choosing a "Third Lung" for Your Home
-            Don't just look at design or price; focus on performance.
-            - **Know Your CADR (Clean Air Delivery Rate):** This value indicates how quickly the purifier cleans the air. A higher CADR is better. **Match the CADR to your room size.**
-            - **The HEPA Filter is Key:** Ensure it's a **"True HEPA"** filter, which captures 99.97% of particles as small as 0.3 microns.
-            - **Additional Filters:** An activated carbon filter can help remove odors and volatile organic compounds (VOCs).
-            > Investing in a good air purifier is an investment in the **"clean breaths"** of your entire family.
-            """
-        )
-```
-
-### (แผนในอนาคต) ไอเดียสำหรับส่วน "เกร็ดความรู้"
-
-สำหรับส่วนเกร็ดความรู้ที่มี 8 หัวข้อ การใช้แท็บอาจจะเริ่มดูแน่นเกินไปบนหน้าจอมือถือ ผมมี 2 แนวทางที่น่าสนใจมาแนะนำครับ:
-
-1.  **Accordion (แบบย่อ-ขยาย):**
-    * **หลักการ:** เปลี่ยนแต่ละแท็บให้เป็นหัวข้อที่สามารถคลิกเพื่อย่อหรือขยายดูเนื้อหาได้ (เหมือนที่คุณเคยใช้กับส่วนข้อมูลย้อนหลัง)
-    * **ข้อดี:** เป็นวิธีที่สะอาดตามาก ผู้ใช้จะเห็นทุกหัวข้อพร้อมกันและเลือกอ่านเฉพาะเรื่องที่สนใจได้ ทำให้หน้าเว็บไม่ยาวเกินไป และเป็นมิตรกับมือถืออย่างยิ่ง
-    * **ตัวอย่าง:**
-        ```
-        - PM2.5 คืออะไร? [+]
-        - อันตรายต่อเด็ก [+]
-        - อันตรายต่อผู้สูงอายุ [+]
-        ...
-        
+    content_to_display = content_th if lang == 'th' else content_en
+    
+    for i, title in enumerate(knowledge_items):
+        with st.expander(title):
+            st.markdown(content_to_display[i])
 
