@@ -39,13 +39,13 @@ TRANSLATIONS = {
         'daily_avg_chart_title': "ค่าเฉลี่ย PM2.5 รายวัน",
         'avg_pm25_unit': "ค่าเฉลี่ย PM2.5 (μg/m³)",
         'knowledge_header': "เกร็ดความรู้เกี่ยวกับ PM2.5",
-        'aqi_level_1': "ดีมาก",
-        'aqi_level_2': "ดี",
+        'aqi_level_1': "อากาศดีมาก",
+        'aqi_level_2': "อากาศดี",
         'aqi_level_3': "ปานกลาง",
-        'aqi_level_4': "เริ่มมีผลกระทบต่อสุขภาพ",
-        'aqi_level_4_short': "เริ่มกระทบ",
-        'aqi_level_5': "มีผลกระทบต่อสุขภาพ",
-        'aqi_level_5_short': "มีผลกระทบ",
+        'aqi_level_4': "เสี่ยงต่อสุขภาพ",
+        'aqi_level_4_short': "เสี่ยง",
+        'aqi_level_5': "อันตรายต่อสุขภาพ",
+        'aqi_level_5_short': "อันตราย",
         'general_public': "ประชาชนทั่วไป",
         'risk_group': "กลุ่มเสี่ยง",
         'advice': {
@@ -108,13 +108,13 @@ TRANSLATIONS = {
         'daily_avg_chart_title': "Daily Average PM2.5",
         'avg_pm25_unit': "Average PM2.5 (μg/m³)",
         'knowledge_header': "PM2.5 Knowledge Base",
-        'aqi_level_1': "Excellent",
-        'aqi_level_2': "Good",
+        'aqi_level_1': "Excellent Air",
+        'aqi_level_2': "Good Air",
         'aqi_level_3': "Moderate",
-        'aqi_level_4': "Unhealthy for Sensitive Groups",
-        'aqi_level_4_short': "Unhealthy (Sen.)",
-        'aqi_level_5': "Unhealthy",
-        'aqi_level_5_short': "Unhealthy",
+        'aqi_level_4': "Health Risk",
+        'aqi_level_4_short': "Risk",
+        'aqi_level_5': "Hazardous",
+        'aqi_level_5_short': "Hazardous",
         'general_public': "General Public",
         'risk_group': "Sensitive Groups",
         'advice': {
@@ -138,4 +138,3 @@ TRANSLATIONS = {
         ]
     }
 }
-
