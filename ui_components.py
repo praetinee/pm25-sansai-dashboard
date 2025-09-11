@@ -135,7 +135,7 @@ def display_24hr_chart(df, lang, t):
         textposition='outside'
     ))
     fig_24hr.update_layout(
-        font_family="Sarabun",
+        font=dict(family="Sarabun"),
         xaxis_title=None, 
         yaxis_title=t[lang]['pm25_unit'], 
         plot_bgcolor='rgba(0,0,0,0)', 
@@ -170,9 +170,11 @@ def display_monthly_calendar(df, lang, t):
     month_data = daily_avg_pm25[(daily_avg_pm25['date'].dt.year == year) & (daily_avg_pm25['date'].dt.month == month)]
     
     cal = calendar.monthcalendar(year, month)
-    month_name = selected_date.strftime("%B") if lang == 'en' else t['th']['month_names'][month-1]
+    
+    month_name = t[lang]['month_names'][month-1]
+    year_display = year + 543 if lang == 'th' else year
 
-    st.markdown(f"#### {month_name} {year}")
+    st.markdown(f"#### {month_name} {year_display}")
     
     days_header = t[lang]['days_header']
     cols = st.columns(7)
@@ -235,6 +237,14 @@ def display_historical_data(df, lang, t):
                 mcol3.metric(t[lang]['metric_min'], f"{min_pm:.1f} μg/m³")
 
                 colors_hist = [get_aqi_level(pm, lang, t)[1] for pm in daily_avg_df['Avg PM2.5']]
+                
+                if lang == 'th':
+                    start_date_str = f"{start_date.day} {t['th']['month_names'][start_date.month - 1]} {start_date.year + 543}"
+                    end_date_str = f"{end_date.day} {t['th']['month_names'][end_date.month - 1]} {end_date.year + 543}"
+                    title_text = f"{t[lang]['daily_avg_chart_title']} ({start_date_str} - {end_date_str})"
+                else:
+                    title_text = f"{t[lang]['daily_avg_chart_title']} ({start_date.strftime('%b %d, %Y')} - {end_date.strftime('%b %d, %Y')})"
+
 
                 fig_hist = go.Figure()
                 fig_hist.add_trace(go.Bar(
@@ -245,9 +255,9 @@ def display_historical_data(df, lang, t):
                     marker=dict(cornerradius=5)
                 ))
                 fig_hist.update_layout(
-                    font_family="Sarabun",
-                    title=f"{t[lang]['daily_avg_chart_title']} ({start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')})",
-                    xaxis_title=t[lang]['start_date'], 
+                    font=dict(family="Sarabun"),
+                    title=title_text,
+                    xaxis_title="วันที่" if lang == 'th' else "Date", 
                     yaxis_title=t[lang]['avg_pm25_unit'],
                     template="plotly_white",
                     plot_bgcolor='rgba(0,0,0,0)',
@@ -305,7 +315,7 @@ def display_knowledge_tabs(lang, t):
         - **KF94:** South Korean standard, filters 94%, offers a comfortable fit.
         - **Surgical Mask:** Not effective for protecting against PM2.5.
         
-        > **Key takeaway:** Choose a certified mask and ensure it fits your face snugly for maximum effectiveness.
+        > **สิ่งสำคัญ:** คือการเลือกหน้ากากที่ได้มาตรฐานและสวมให้กระชับกับใบหน้า
         """ if lang == 'th' else """
         - **N95:** US standard, filters 95% of 0.3-micron particles (Best option).
         - **KN95:** Chinese standard, similar performance to N95.
