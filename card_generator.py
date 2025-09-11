@@ -1,8 +1,7 @@
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont
 import requests
 from io import BytesIO
 import streamlit as st
-import textwrap
 
 @st.cache_data
 def get_font(url):
@@ -15,33 +14,47 @@ def get_font(url):
         st.error(f"Font download failed: {e}")
         return None
 
-# --- Helper functions for drawing icons ---
-def draw_mask_icon(draw, center_x, y, size=50, color="#555555"):
-    s = size / 2
-    draw.rounded_rectangle((center_x - s, y, center_x + s, y + s * 1.2), radius=s/4, outline=color, width=3)
-    draw.line((center_x - s, y + s*0.4, center_x - s - s*0.4, y + s*0.2), fill=color, width=3)
-    draw.line((center_x + s, y + s*0.4, center_x + s + s*0.4, y + s*0.2), fill=color, width=3)
+def draw_mask_icon(draw, x, y, size=30, color="#333333", width=3):
+    """Draws the final surgical mask icon."""
+    s = size / 4.0
+    # Main body
+    draw.line(((x - s*2.5, y - s), (x + s*2.5, y - s)), fill=color, width=width)
+    draw.line(((x - s*2.5, y), (x + s*2.5, y)), fill=color, width=width)
+    draw.line(((x - s*2.5, y + s), (x + s*2.5, y + s)), fill=color, width=width)
+    # Straps
+    draw.arc((x - s*3.5, y - s*2, x - s*1.5, y + s*2), 90, 270, fill=color, width=width)
+    draw.arc((x + s*1.5, y - s*2, x + s*3.5, y + s*2), -90, 90, fill=color, width=width)
 
-def draw_activity_icon(draw, center_x, y, size=50, color="#555555"):
-    s = size / 2
-    draw.ellipse((center_x - s*0.3, y, center_x + s*0.3, y + s*0.6), outline=color, width=3) # Head
-    draw.line((center_x, y + s*0.6, center_x, y + s*1.4), fill=color, width=3) # Body
-    draw.line((center_x, y + s*0.8, center_x + s*0.8, y + s*0.5), fill=color, width=3) # Arm
-    draw.line((center_x, y + s*1.4, center_x - s*0.7, y + s*1.9), fill=color, width=3) # Back Leg
-    draw.line((center_x, y + s*1.4, center_x + s*0.7, y + s*1.9), fill=color, width=3) # Front Leg
 
-def draw_indoors_icon(draw, center_x, y, size=50, color="#555555"):
-    s = size / 2
+def draw_activity_icon(draw, x, y, size=30, color="#333333", width=3):
+    """Draws the final cyclist icon."""
+    s = size / 6.0
+    # Wheels
+    draw.ellipse((x - s*4, y + s, x - s, y + s*4), outline=color, width=width)
+    draw.ellipse((x + s, y + s, x + s*4, y + s*4), outline=color, width=width)
+    # Frame and body
+    draw.line(((x - s*2.5, y + s*2.5), (x + s*0.5, y + s*2.5)), fill=color, width=width)
+    draw.line(((x - s*1, y + s*2.5), (x, y - s*0.5)), fill=color, width=width)
+    draw.line(((x, y - s*0.5), (x + s*2.5, y + s*2.5)), fill=color, width=width)
+    draw.line(((x, y - s*0.5), (x + s*2, y - s*0.5)), fill=color, width=width) # Handlebar
+    # Head
+    draw.ellipse((x - s*1, y - s*3, x + s*1, y - s*1), outline=color, width=width)
+
+def draw_indoors_icon(draw, x, y, size=30, color="#333333", width=3):
+    """Draws a simple house icon."""
+    s = size / 3.0
     points = [
-        (center_x - s, y + s*0.5), (center_x, y), (center_x + s, y + s*0.5),
-        (center_x + s, y + s*1.8), (center_x - s, y + s*1.8), (center_x - s, y + s*0.5)
+        (x - s*1.5, y), (x, y - s*1.5), (x + s*1.5, y),
+        (x + s*1.5, y + s*1.5), (x + s*0.5, y + s*1.5),
+        (x + s*0.5, y + s*0.5), (x - s*0.5, y + s*0.5),
+        (x - s*0.5, y + s*1.5), (x - s*1.5, y + s*1.5),
+        (x - s*1.5, y)
     ]
-    draw.polygon(points, outline=color, width=3)
-    draw.rectangle((center_x - s*0.2, y + s*1.1, center_x + s*0.2, y + s*1.8), outline=color, width=3)
+    draw.line(points, fill=color, width=width, joint="miter")
 
-def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lang, t):
+
+def generate_report_card(latest_pm25, level, color, emoji, advice_details, date_str, lang, t):
     """Generates a new, modern, and clean report card image."""
-    # --- Font Handling ---
     font_url_reg = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
     font_url_bold = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
     font_url_light = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Light.ttf"
@@ -53,132 +66,99 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     if not all([font_reg_bytes, font_bold_bytes, font_light_bytes]):
         return None
     
-    # --- Create Fonts ---
     def create_font(font_bytes, size):
         font_bytes.seek(0)
         return ImageFont.truetype(font_bytes, size)
 
     font_header = create_font(font_bold_bytes, 36)
     font_date = create_font(font_reg_bytes, 24)
-    font_pm_value = create_font(font_bold_bytes, 130) # Slightly smaller
+    font_pm_value = create_font(font_bold_bytes, 150)
     font_unit = create_font(font_reg_bytes, 30)
     font_level = create_font(font_bold_bytes, 40)
-    font_advice_cat = create_font(font_bold_bytes, 22)
-    font_advice_body = create_font(font_reg_bytes, 18)
-    font_risk = create_font(font_reg_bytes, 20)
+    font_advice_header = create_font(font_bold_bytes, 22)
+    font_advice = create_font(font_reg_bytes, 18)
+    font_risk_group = create_font(font_reg_bytes, 20)
     font_footer = create_font(font_light_bytes, 16)
-    font_legend = create_font(font_reg_bytes, 20)
-    font_legend_small = create_font(font_reg_bytes, 18)
-
-    # --- Card Creation ---
-    width, height = 800, 1000
+    
+    width_card, height_card = 800, 1000
     base_color = tuple(int(color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
-    img = Image.new('RGB', (width, height), color=base_color)
+    img = Image.new('RGB', (width_card, height_card), color=base_color)
     draw = ImageDraw.Draw(img)
 
-    # --- Header ---
     header_title = t[lang]['page_title']
-    draw.text((width/2, 60), header_title, font=font_header, anchor="ms", fill="#FFFFFF")
-    draw.text((width/2, 105), date_str, font=font_date, anchor="ms", fill=(255, 255, 255, 200))
+    draw.text((width_card/2, 60), header_title, font=font_header, anchor="ms", fill="#FFFFFF")
+    draw.text((width_card/2, 105), date_str, font=font_date, anchor="ms", fill=(255, 255, 255, 200))
 
-    # --- White Info Box ---
     box_y_start = 150
-    draw.rounded_rectangle([(20, box_y_start), (width - 20, height - 20)], radius=20, fill="#FFFFFF")
+    draw.rounded_rectangle([(20, box_y_start), (width_card - 20, height_card - 20)], radius=20, fill="#FFFFFF")
 
-    # --- PM2.5 Value ---
-    draw.text((width/2, box_y_start + 140), f"{latest_pm25:.1f}", font=font_pm_value, anchor="ms", fill="#111111")
-    draw.text((width/2, box_y_start + 210), "μg/m³", font=font_unit, anchor="ms", fill="#555555")
-    draw.text((width/2, box_y_start + 260), f"{level}", font=font_level, anchor="ms", fill="#111111")
+    pm_value_y = box_y_start + 140
+    draw.text((width_card/2, pm_value_y), f"{latest_pm25:.1f}", font=font_pm_value, anchor="ms", fill="#111111")
+    draw.text((width_card/2, pm_value_y + 80), "μg/m³", font=font_unit, anchor="ms", fill="#555555")
+    draw.text((width_card/2, pm_value_y + 130), f"{level}", font=font_level, anchor="ms", fill="#111111")
     
-    draw.line([(60, box_y_start + 310), (width - 60, box_y_start + 310)], fill="#EEEEEE", width=2)
+    line_y = pm_value_y + 180
+    draw.line([(60, line_y), (width_card - 60, line_y)], fill="#EEEEEE", width=2)
     
-    # --- Actionable Advice Section ---
-    advice_details = advice # The advice object is now passed directly
-    advice_y_start = box_y_start + 330
-    
-    categories = [
-        ('mask', t[lang]['advice_cat_mask'], draw_mask_icon),
-        ('activity', t[lang]['advice_cat_activity'], draw_activity_icon),
-        ('indoors', t[lang]['advice_cat_indoors'], draw_indoors_icon)
+    # --- Advice Section with Icons ---
+    advice_y_start = line_y + 80
+    icon_size = 40
+    icon_width = 3
+    icon_color = "#333333"
+
+    items = [
+        (draw_mask_icon, t[lang]['advice_topics']['mask'], advice_details['mask']),
+        (draw_activity_icon, t[lang]['advice_topics']['activity'], advice_details['activity']),
+        (draw_indoors_icon, t[lang]['advice_topics']['indoors'], advice_details['indoors']),
     ]
     
-    num_cols = len(categories)
-    col_width = (width - 80) / num_cols
+    num_items = len(items)
+    total_width = width_card - 120
+    item_width = total_width / num_items
     
-    for i, (key, title, icon_func) in enumerate(categories):
-        center_x = 40 + (i * col_width) + (col_width / 2)
-        
-        # Draw Icon
-        icon_func(draw, center_x, advice_y_start)
-        
-        # Draw Category Title
-        cat_y = advice_y_start + 65
-        draw.text((center_x, cat_y), title, font=font_advice_cat, anchor="ms", fill="#111111")
-        
-        # Draw Advice Body Text
-        body_y = cat_y + 30
-        advice_text = advice_details[key]
-        
-        # Wrap text
-        wrapped_lines = textwrap.wrap(advice_text, width=18)
-        
-        current_y = body_y
-        for line in wrapped_lines:
-            draw.text((center_x, current_y), line, font=font_advice_body, anchor="ms", fill="#555555", align="center")
-            current_y += 25
+    for i, (icon_func, header, text) in enumerate(items):
+        center_x = 60 + (item_width * i) + (item_width / 2)
+        icon_func(draw, center_x, advice_y_start - 20, size=icon_size, color=icon_color, width=icon_width)
+        draw.text((center_x, advice_y_start + 30), header, font=font_advice_header, anchor="ms", fill="#111111")
+        draw.text((center_x, advice_y_start + 60), text, font=font_advice, anchor="ms", fill="#555555")
 
-    # --- Risk Group Advice ---
-    risk_y = advice_y_start + 200
-    draw.line([(60, risk_y), (width - 60, risk_y)], fill="#EEEEEE", width=2)
-    risk_text = f"🚨 {t[lang]['advice_cat_risk_group']}: {advice_details['risk_group']}"
+    risk_line_y = advice_y_start + 100
+    draw.line([(60, risk_line_y), (width_card - 60, risk_line_y)], fill="#EEEEEE", width=2)
     
-    wrapped_risk_lines = textwrap.wrap(risk_text, width=60)
-    current_risk_y = risk_y + 25
-    for line in wrapped_risk_lines:
-        draw.text((width/2, current_risk_y), line, font=font_risk, anchor="ms", fill="#333333", align="center")
-        current_risk_y += 30
+    risk_text = f"{t[lang]['risk_group']}: {advice_details['risk_group']}"
+    draw.text((width_card/2, risk_line_y + 40), risk_text, font=font_risk_group, anchor="ms", fill="#333333")
 
-    # --- AQI Legend Bar ---
-    legend_y = height - 160
-    bar_height = 80
-    segments = [
+    # --- Footer with AQI Bar ---
+    aqi_bar_y = height_card - 160
+    aqi_levels = [
         (t[lang]['aqi_level_1'], "0-15", "#0099FF", "#FFFFFF"),
         (t[lang]['aqi_level_2'], "15-25", "#2ECC71", "#FFFFFF"),
         (t[lang]['aqi_level_3'], "25-37.5", "#F1C40F", "#000000"),
         (t[lang]['aqi_level_4_short'], "37.5-75", "#E67E22", "#FFFFFF"),
-        (t[lang]['aqi_level_5_short'], ">75", "#E74C3C", "#FFFFFF")
+        (t[lang]['aqi_level_5_short'], ">75", "#E74C3C", "#FFFFFF"),
     ]
     
-    bar_width = width - 80
-    segment_width = bar_width / len(segments)
-    start_x = 40
-
-    for i, (level_text, val_text, seg_color, text_color) in enumerate(segments):
-        x0 = start_x + i * segment_width
-        x1 = x0 + segment_width
-        draw.rectangle([x0, legend_y, x1, legend_y + bar_height], fill=seg_color)
-        
-        center_x = x0 + segment_width / 2
-        
-        current_font = font_legend_small if len(level_text) > 8 else font_legend
-        
-        draw.text((center_x, legend_y + bar_height/2 - 10), level_text, font=current_font, anchor="mm", fill=text_color, align="center")
-        draw.text((center_x, legend_y + bar_height/2 + 15), val_text, font=font_legend_small, anchor="mm", fill=text_color, align="center")
-
-    # --- Footer ---
-    footer_text = t[lang]['report_card_footer']
-    draw.text((width - 40, height - 40), footer_text, font=font_footer, anchor="rs", fill="#AAAAAA")
-
-    # --- Final Touches: Round the corners of the entire image ---
-    radius = 30
-    mask = Image.new('L', (width, height), 0)
-    mask_draw = ImageDraw.Draw(mask)
-    mask_draw.rounded_rectangle((0, 0, width, height), radius=radius, fill=255)
+    bar_width = width_card - 80
+    segment_width = bar_width / len(aqi_levels)
+    bar_height = 50
     
-    final_img = Image.new('RGBA', (width, height))
-    final_img.paste(img, (0, 0), mask=mask)
+    for i, (level_text, val_text, seg_color, text_color) in enumerate(aqi_levels):
+        x0 = 40 + (i * segment_width)
+        x1 = x0 + segment_width
+        draw.rectangle([(x0, aqi_bar_y), (x1, aqi_bar_y + bar_height)], fill=seg_color)
+        draw.text((x0 + segment_width/2, aqi_bar_y + bar_height/2 - 8), level_text, font=font_advice, anchor="ms", fill=text_color)
+        draw.text((x0 + segment_width/2, aqi_bar_y + bar_height/2 + 12), val_text, font=font_advice, anchor="ms", fill=text_color)
+    
+    footer_text = t[lang]['report_card_footer']
+    draw.text((width_card / 2, height_card - 40), footer_text, font=font_footer, anchor="ms", fill="#AAAAAA")
+    
+    # --- Round corners ---
+    mask = Image.new('L', (width_card, height_card), 0)
+    mask_draw = ImageDraw.Draw(mask)
+    mask_draw.rounded_rectangle((0, 0, width_card, height_card), radius=30, fill=255)
+    img.putalpha(mask)
 
     buf = BytesIO()
-    final_img.save(buf, format='PNG')
+    img.save(buf, format='PNG')
     return buf.getvalue()
 
