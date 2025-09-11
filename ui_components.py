@@ -9,12 +9,12 @@ def inject_custom_css():
     """Injects custom CSS to make the app responsive and theme-aware."""
     st.markdown("""
         <style>
-            /* Import Google Font 'Kanit' */
-            @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+            /* Import Google Font 'Sarabun' */
+            @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
 
             /* Apply font to the entire app */
             html, body, [class*="st-"], .stApp {
-                font-family: 'Kanit', sans-serif;
+                font-family: 'Sarabun', sans-serif;
             }
 
             /* General Card Style */
@@ -93,9 +93,9 @@ def display_realtime_pm(df):
         st.markdown(
             f"""
             <div style="background-color: {color}; padding: 25px; border-radius: 15px; text-align: center; color: white; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2); height: 100%;">
-                <h1 style="font-size: 4.5rem; margin: 0; text-shadow: 2px 2px 4px #000000;">{latest_pm25:.1f}</h1>
-                <p style="font-size: 1.5rem; margin: 0;">μg/m³</p>
-                <h2 style="margin-top: 15px;">{level} {emoji}</h2>
+                <h1 style="font-family: 'Sarabun', sans-serif; font-size: 4.5rem; margin: 0; text-shadow: 2px 2px 4px #000000;">{latest_pm25:.1f}</h1>
+                <p style="font-family: 'Sarabun', sans-serif; font-size: 1.5rem; margin: 0;">μg/m³</p>
+                <h2 style="font-family: 'Sarabun', sans-serif; margin-top: 15px;">{level} {emoji}</h2>
             </div>
             """,
             unsafe_allow_html=True
@@ -138,6 +138,7 @@ def display_24hr_chart(df):
         textposition='outside' # Position of text
     ))
     fig_24hr.update_layout(
+        font_family="Sarabun",
         xaxis_title=None, 
         yaxis_title="PM2.5 (μg/m³)", 
         plot_bgcolor='rgba(0,0,0,0)', 
@@ -262,6 +263,7 @@ def display_historical_data(df):
                     marker=dict(cornerradius=5)
                 ))
                 fig_hist.update_layout(
+                    font_family="Sarabun",
                     title=f"ค่าเฉลี่ย PM2.5 รายวัน ({start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')})",
                     xaxis_title="วันที่", 
                     yaxis_title="ค่าเฉลี่ย PM2.5 (μg/m³)",
