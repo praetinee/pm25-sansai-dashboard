@@ -1,6 +1,6 @@
 def get_aqi_level(pm25, lang, t):
     """
-    Converts a PM2.5 value into its corresponding AQI level, color, emoji, and advice
+    Converts a PM2.5 value into its corresponding AQI level, color, emoji, and structured advice
     based on the provided language and translation dictionary.
     """
     # Use the translation dictionary 't' for language-specific text
