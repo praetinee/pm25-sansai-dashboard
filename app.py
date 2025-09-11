@@ -4,8 +4,11 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, timedelta
-# แก้ไข: เปลี่ยนชื่อ library ที่ import
-from st_gsheets_connection import GSheetsConnection
+# --- BEGIN: การเปลี่ยนแปลงที่ 1 ---
+# เราจะใช้ gspread และเครื่องมือจัดการ credentials แทน
+import gspread
+from google.oauth2.service_account import Credentials
+# --- END: การเปลี่ยนแปลงที่ 1 ---
 
 # =================================================================================
 # Page Configuration (ตั้งค่าหน้าเว็บ)
@@ -49,46 +52,42 @@ st.markdown("""
 # Data Loading and Processing (ส่วนจัดการข้อมูล)
 # =================================================================================
 
-# --- ส่วนนี้จำลองการสร้างข้อมูลขึ้นมา (ตอนนี้ไม่ได้ใช้แล้ว) ---
-# @st.cache_data(ttl=600) 
-# def create_mock_data():
-#     """สร้างข้อมูล PM2.5 จำลองย้อนหลัง 45 วัน"""
-#     now = datetime.now()
-#     timestamps = pd.to_datetime(pd.date_range(start=now - timedelta(days=45), end=now, freq='H'))
-#     base_values = 15 + 10 * np.sin(np.linspace(0, 8 * np.pi, len(timestamps)))
-#     seasonal_trend = 1.2 ** (np.sin(np.linspace(0, 2*np.pi, len(timestamps))) * 2)
-#     noise = np.random.normal(0, 5, len(timestamps))
-#     pm25_values = np.abs(base_values * seasonal_trend + noise) + np.random.randint(0, 50, len(timestamps)) * (np.sin(np.linspace(0, 0.5*np.pi, len(timestamps)))**2)
-#     pm25_values = np.clip(pm25_values, 5, 250) 
-#     
-#     df = pd.DataFrame({
-#         'timestamp': timestamps,
-#         'pm25': pm25_values.astype(int)
-#     })
-#     return df
-
-# --- ส่วนนี้คือส่วนที่คุณจะใช้เชื่อมต่อ Google Sheet จริง ---
-# 1. ไปที่ secrets.toml ของ Streamlit แล้วเพิ่มข้อมูลการเชื่อมต่อ
-# [connections.gsheets]
-# spreadsheet = "https://docs.google.com/spreadsheets/d/1-Une9oA0-ln6ApbhwaXFNpkniAvX7g1K9pNR800MJwQ/" 
-#
+# --- BEGIN: การเปลี่ยนแปลงที่ 2 ---
+# แก้ไขฟังก์ชันโหลดข้อมูลทั้งหมดให้ใช้ gspread
 @st.cache_data(ttl=600) # โหลดข้อมูลใหม่ทุก 10 นาที
 def load_data_from_gsheet():
-    """โหลดข้อมูลจาก Google Sheet"""
-    conn = st.connection("gsheets", type=GSheetsConnection)
-    # อ่านข้อมูลจากชีทชื่อ "PM2.5 Log" และเลือกคอลลัมน์ "Datetime" กับ "PM2.5"
-    df = conn.read(worksheet="PM2.5 Log", usecols=["Datetime", "PM2.5"]) 
-    df.dropna(inplace=True) # ลบแถวที่ข้อมูลไม่ครบ
-    # เปลี่ยนชื่อคอลัมน์ให้ตรงกับที่โค้ดส่วนอื่นใช้
-    df.columns = ['timestamp', 'pm25']
+    """โหลดข้อมูลจาก Google Sheet โดยใช้ gspread โดยตรง"""
+    # กำหนดขอบเขตการเข้าถึง
+    scopes = ["https://www.googleapis.com/auth/spreadsheets"]
+    # สร้าง credentials จาก st.secrets ซึ่งเราจะตั้งค่าในขั้นตอนต่อไป
+    creds = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"],
+        scopes=scopes,
+    )
+    client = gspread.authorize(creds)
+    
+    # URL ของ Google Sheet ของคุณ
+    spreadsheet_url = st.secrets["connections"]["gsheets"]["spreadsheet"]
+    
+    # เปิด Spreadsheet และ Worksheet
+    spreadsheet = client.open_by_url(spreadsheet_url)
+    worksheet = spreadsheet.worksheet("PM2.5 Log")
+    
+    # ดึงข้อมูลทั้งหมดมาเป็น DataFrame
+    data = worksheet.get_all_records()
+    df = pd.DataFrame(data)
+    
+    # ขั้นตอนการจัดการข้อมูลเหมือนเดิม
+    df.dropna(inplace=True) 
+    df.columns = ['timestamp', 'pm25'] # สมมติว่าชื่อคอลัมน์ในชีทคือ Datetime และ PM2.5
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     df['pm25'] = pd.to_numeric(df['pm25'])
     df = df.sort_values('timestamp')
     return df
+# --- END: การเปลี่ยนแปลงที่ 2 ---
 
 # เรียกใช้ฟังก์ชันโหลดข้อมูลจาก Google Sheet
-# df = create_mock_data() # คอมเมนต์ส่วนข้อมูลจำลองออก
-df = load_data_from_gsheet() # เปิดใช้งานส่วนโหลดข้อมูลจริง
+df = load_data_from_gsheet()
 
 # =================================================================================
 # Helper Functions (ฟังก์ชันช่วยคำนวณ)
@@ -296,4 +295,34 @@ with tab3:
 
 st.divider()
 st.caption("พัฒนาโดย คู่หูเขียนโค้ด (Coding Copilot) | ข้อมูลคุณภาพอากาศอ้างอิงตามเกณฑ์ของกรมควบคุมมลพิษ ประเทศไทย")
+```
+
+### **ขั้นตอนที่ 3: อัปเดต Secrets บน Streamlit Cloud (สำคัญมาก)**
+
+วิธีการใหม่นี้ต้องการ Secrets ในรูปแบบที่แตกต่างออกไปครับ คุณจะต้องใช้ **Service Account Key** ซึ่งเป็นไฟล์ JSON ที่คุณได้มาจากตอนสร้าง Service Account บน Google Cloud Platform
+
+1.  เปิดไฟล์ JSON ของ Service Account Key ของคุณขึ้นมาด้วยโปรแกรม Text Editor
+2.  คัดลอกเนื้อหา **ทั้งหมด** ในไฟล์ JSON นั้น
+3.  ไปที่หน้าแอปของคุณบน Streamlit Cloud > **Settings** > **Secrets**
+4.  **ลบ Secrets เก่าทิ้งทั้งหมด** แล้วนำเนื้อหาใหม่ตามรูปแบบข้างล่างนี้ไปวาง:
+
+    ```toml
+    # URL ของ Google Sheet
+    [connections.gsheets]
+    spreadsheet = "https://docs.google.com/spreadsheets/d/1-Une9oA0-ln6ApbhwaXFNpkniAvX-7g1K9pNR800MJwQ/"
+
+    # เนื้อหาจากไฟล์ Service Account Key (JSON)
+    [gcp_service_account]
+    type = "service_account"
+    project_id = "..."
+    private_key_id = "..."
+    private_key = "..."
+    client_email = "..."
+    client_id = "..."
+    auth_uri = "https://accounts.google.com/o/oauth2/auth"
+    token_uri = "https://oauth2.googleapis.com/token"
+    auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/certs"
+    client_x509_cert_url = "..."
+    universe_domain = "googleapis.com"
+    
 
