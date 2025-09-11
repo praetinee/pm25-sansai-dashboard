@@ -41,6 +41,8 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     font_advice_header = create_font(font_bold_bytes, 26)
     font_advice = create_font(font_reg_bytes, 22)
     font_footer = create_font(font_light_bytes, 16)
+    font_legend = create_font(font_reg_bytes, 20)
+    font_legend_small = create_font(font_reg_bytes, 18)
     
     # --- Card Creation ---
     width, height = 800, 1000
@@ -60,7 +62,6 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     # --- PM2.5 Value ---
     draw.text((width/2, box_y_start + 140), f"{latest_pm25:.1f}", font=font_pm_value, anchor="ms", fill="#111111")
     draw.text((width/2, box_y_start + 220), "μg/m³", font=font_unit, anchor="ms", fill="#555555")
-    # Removed emoji from this line
     draw.text((width/2, box_y_start + 280), f"{level}", font=font_level, anchor="ms", fill="#111111")
     
     draw.line([(60, box_y_start + 340), (width - 60, box_y_start + 340)], fill="#EEEEEE", width=2)
@@ -69,7 +70,6 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     advice_text = advice.replace('<br>', '\n').replace('<strong>', '').replace('</strong>', '')
     lines = [line.strip() for line in advice_text.split('\n') if line.strip()]
 
-    # Calculate total height of the advice text block
     total_text_height = 0
     line_heights = []
     line_spacing = 15
@@ -82,19 +82,43 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
         if i < len(lines) - 1:
             total_text_height += line_spacing
 
-    # Define the drawing area and calculate starting position
-    advice_area_top = box_y_start + 340 + 20 # 20px padding
-    advice_area_bottom = height - 80 # a bit of padding from footer
+    advice_area_top = box_y_start + 340 + 20
+    advice_area_bottom = height - 220 # Reserve space for legend and footer
     advice_area_height = advice_area_bottom - advice_area_top
-    
     y_text = advice_area_top + (advice_area_height - total_text_height) / 2
 
-    # Draw the text lines
     for i, line in enumerate(lines):
         font_to_use = font_advice_header if t[lang]['general_public'] in line or t[lang]['risk_group'] in line else font_advice
         draw.text((width/2, y_text), line, font=font_to_use, fill="#333333", anchor="mt")
         y_text += line_heights[i] + line_spacing
 
+    # --- AQI Legend Bar ---
+    legend_y = height - 160
+    bar_height = 80
+    segments = [
+        (t[lang]['aqi_level_1'], "0-15", "#0099FF", "#FFFFFF"),
+        (t[lang]['aqi_level_2'], "15-25", "#2ECC71", "#FFFFFF"),
+        (t[lang]['aqi_level_3'], "25-37.5", "#F1C40F", "#000000"),
+        (t[lang]['aqi_level_4_short'], "37.5-75", "#E67E22", "#FFFFFF"),
+        (t[lang]['aqi_level_5_short'], ">75", "#E74C3C", "#FFFFFF")
+    ]
+    
+    bar_width = width - 80
+    segment_width = bar_width / len(segments)
+    start_x = 40
+
+    for i, (level_text, val_text, seg_color, text_color) in enumerate(segments):
+        x0 = start_x + i * segment_width
+        x1 = x0 + segment_width
+        draw.rectangle([x0, legend_y, x1, legend_y + bar_height], fill=seg_color)
+        
+        center_x = x0 + segment_width / 2
+        
+        # Use smaller font for longer text
+        current_font = font_legend_small if len(level_text) > 8 else font_legend
+        
+        draw.text((center_x, legend_y + bar_height/2 - 10), level_text, font=current_font, anchor="mm", fill=text_color, align="center")
+        draw.text((center_x, legend_y + bar_height/2 + 15), val_text, font=font_legend_small, anchor="mm", fill=text_color, align="center")
 
     # --- Footer ---
     footer_text = t[lang]['report_card_footer']
@@ -103,3 +127,4 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     buf = BytesIO()
     img.save(buf, format='PNG')
     return buf.getvalue()
+
