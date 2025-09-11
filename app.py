@@ -117,7 +117,28 @@ with col2:
     st.subheader("คำแนะนำในการปฏิบัติตัว")
     st.info(advice)
     with st.expander("ℹ️ ดูเกณฑ์ดัชนีคุณภาพอากาศ"):
-        st.image("image_a6ac91.png", caption="เกณฑ์ดัชนีคุณภาพอากาศของประเทศไทย")
+        # --- FIX: เปลี่ยนจากการแสดงรูปภาพ เป็นการแสดงข้อมูลจากโค้ดโดยตรง ---
+        st.markdown("""
+            <style>
+                .legend-dot {
+                    height: 15px;
+                    width: 15px;
+                    border-radius: 50%;
+                    display: inline-block;
+                    margin-right: 8px;
+                    vertical-align: middle;
+                }
+                .legend-item {
+                    font-size: 1.1rem;
+                    margin-bottom: 8px;
+                }
+            </style>
+            <div class="legend-item"><span class="legend-dot" style="background-color: #0099FF;"></span><b>ดีมาก:</b> 0 - 15.0 μg/m³</div>
+            <div class="legend-item"><span class="legend-dot" style="background-color: #00CC00;"></span><b>ดี:</b> 15.1 - 25.0 μg/m³</div>
+            <div class="legend-item" style="color: black;"><span class="legend-dot" style="background-color: #FFFF00;"></span><b>ปานกลาง:</b> 25.1 - 37.5 μg/m³</div>
+            <div class="legend-item"><span class="legend-dot" style="background-color: #FF9900;"></span><b>เริ่มมีผลกระทบ:</b> 37.6 - 75.0 μg/m³</div>
+            <div class="legend-item"><span class="legend-dot" style="background-color: #FF0000;"></span><b>มีผลกระทบ:</b> > 75.0 μg/m³</div>
+        """, unsafe_allow_html=True)
 
 
 st.divider()
