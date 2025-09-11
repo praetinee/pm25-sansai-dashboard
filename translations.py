@@ -14,6 +14,7 @@ TRANSLATIONS = {
         'pm25_unit': "PM2.5 (μg/m³)",
         'monthly_calendar_header': "ปฏิทินค่าฝุ่น PM2.5 รายวัน",
         'date_picker_label': "เลือกเดือนและปี",
+        'no_data_for_year': "ไม่มีข้อมูลสำหรับปีนี้",
         'health_impact_title': "สรุปผลกระทบต่อสุขภาพ (ในช่วง {date_range})",
         'unhealthy_days_text': "จำนวนวันที่ค่าฝุ่นเกินเกณฑ์ (PM2.5 > 37.5)",
         'days_unit': "วัน",
@@ -42,7 +43,7 @@ TRANSLATIONS = {
         'aqi_level_2': "ดี",
         'aqi_level_3': "ปานกลาง",
         'aqi_level_4': "เริ่มมีผลกระทบต่อสุขภาพ",
-        'aqi_level_4_short': "เริ่มมีผลกระทบ",
+        'aqi_level_4_short': "เริ่มกระทบ",
         'aqi_level_5': "มีผลกระทบต่อสุขภาพ",
         'aqi_level_5_short': "มีผลกระทบ",
         'general_public': "ประชาชนทั่วไป",
@@ -55,7 +56,7 @@ TRANSLATIONS = {
             'advice_5': "<strong>ประชาชนทั่วไป:</strong> ควรงดกิจกรรมกลางแจ้ง และสวมหน้ากากป้องกันฝุ่นเมื่ออยู่นอกอาคาร<br><strong>กลุ่มเสี่ยง:</strong> ควรงดออกจากอาคารโดยเด็ดขาด และอยู่ในห้องปลอดฝุ่น"
         },
         'month_names': ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"],
-        'days_header': ["จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์", "อาทิตย์"],
+        'days_header_short': ["จ", "อ", "พ", "พฤ", "ศ", "ส", "อา"],
         'knowledge_content': [
             {'title': "PM2.5 คืออะไร ทำไมอันตราย", 'body': "#### PM2.5: ฆาตกรเงียบที่มองไม่เห็น\n**PM2.5** คือฝุ่นพิษขนาดจิ๋วที่เล็กกว่าเส้นผมของเราถึง 25 เท่า มันคือภัยร้ายที่เรามองไม่เห็นด้วยตาเปล่า แต่สามารถเดินทางผ่านการหายใจเข้าสู่ปอดและแทรกซึมเข้าสู่กระแสเลือดได้โดยตรง\n> มันไม่ใช่แค่ \"ฝุ่น\" แต่มันคือ **\"พาหะของสารพิษ\"** ที่พร้อมจะทำลายสุขภาพของเราจากภายใน"},
             {'title': "อันตรายต่อเด็ก", 'body': "#### ทำไม PM2.5 ถึงเป็น \"หายนะ\" สำหรับอนาคตของเด็ก?\nปอดและสมองของเด็กยังคงพัฒนาอย่างต่อเนื่อง การหายใจเอาอากาศพิษเข้าไปในช่วงวัยนี้ **เปรียบเสมือนการวางยาพิษต่อพัฒนาการของพวกเขา**\n- **ปอดถูกทำลาย:** ขัดขวางการเติบโตของปอด เพิ่มความเสี่ยงของโรคหอบหืดและภูมิแพ้ไปตลอดชีวิต\n- **สมองเสียหาย:** ส่งผลกระทบต่อพัฒนาการทางสมองและสติปัญญา ทำให้ศักยภาพของเด็กลดลง\n> การปกป้องเด็กจาก PM2.5 ไม่ใช่ทางเลือก แต่คือ **หน้าที่ในการปกป้องอนาคตของพวกเขา**"},
@@ -82,6 +83,7 @@ TRANSLATIONS = {
         'pm25_unit': "PM2.5 (μg/m³)",
         'monthly_calendar_header': "Daily PM2.5 Calendar",
         'date_picker_label': "Select Month & Year",
+        'no_data_for_year': "No data available for the current year.",
         'health_impact_title': "Health Impact Summary (In {date_range})",
         'unhealthy_days_text': "Days with PM2.5 > 37.5",
         'days_unit': "Days",
@@ -123,7 +125,7 @@ TRANSLATIONS = {
             'advice_5': "<strong>General Public:</strong> Should avoid all outdoor activities and wear a mask if outside.<br><strong>Sensitive Groups:</strong> Must stay indoors, preferably in a clean room."
         },
         'month_names': ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-        'days_header': ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        'days_header_short': ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
         'knowledge_content': [
             {'title': "What is PM2.5 & Why is it Dangerous?", 'body': "#### PM2.5: The Invisible Killer\n**PM2.5** are tiny toxic particles, 25 times smaller than a human hair. They are an invisible danger that can bypass your body's defenses, entering your lungs and bloodstream directly.\n> It's not just \"dust\"; it's a **carrier for toxins** ready to damage our health from the inside out."},
             {'title': "Danger to Children", 'body': "#### Why is PM2.5 a \"Catastrophe\" for a Child's Future?\nA child's lungs and brain are still developing. Breathing toxic air during this critical period is **like poisoning their growth.**\n- **Damaged Lungs:** Hinders lung development, increasing lifelong risks of asthma and allergies.\n- **Brain Impairment:** Affects cognitive development and intelligence, limiting their full potential.\n> Protecting children from PM2.5 isn't an option; it's our **duty to safeguard their future.**"},
