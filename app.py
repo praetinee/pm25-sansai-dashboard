@@ -2,9 +2,10 @@ import streamlit as st
 from data_loader import load_data
 from ui_components import (
     display_realtime_pm,
-    display_health_impact,
+    display_symptom_checker,
     display_24hr_chart,
     display_monthly_calendar,
+    display_health_impact,
     display_historical_data,
     display_knowledge_tabs
 )
@@ -55,13 +56,15 @@ st.markdown(f"{t[lang]['latest_data']} `{date_str}`")
 st.divider()
 
 # --- UI Components ---
-display_realtime_pm(df, lang, t)
+display_realtime_pm(df, lang, t, date_str)
+st.divider()
+display_symptom_checker(lang, t)
+st.divider()
+display_health_impact(df, lang, t)
 st.divider()
 display_24hr_chart(df, lang, t)
 st.divider()
 display_monthly_calendar(df, lang, t)
-st.divider()
-display_health_impact(df, lang, t) # <-- Moved here
 st.divider()
 display_historical_data(df, lang, t)
 st.divider()
