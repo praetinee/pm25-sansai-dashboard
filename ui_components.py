@@ -12,9 +12,9 @@ def inject_custom_css():
             /* Import Google Font 'Sarabun' */
             @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
 
-            /* Apply font to the entire app */
-            html, body, [class*="st-"], .stApp {
-                font-family: 'Sarabun', sans-serif;
+            /* Apply font to the entire app, using !important to override defaults */
+            html, body, [class*="st-"], .stApp, h1, h2, h3, h4, h5, h6 {
+                font-family: 'Sarabun', sans-serif !important;
             }
 
             /* General Card Style */
