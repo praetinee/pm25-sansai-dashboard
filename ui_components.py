@@ -2,12 +2,13 @@ import streamlit as st
 import plotly.graph_objects as go
 from datetime import datetime, timedelta, date
 import calendar
+import pandas as pd
 from utils import get_aqi_level
 
 def display_realtime_pm(df):
     """Displays the current PM2.5 value and advice with a modern UI."""
     latest_pm25 = df['PM2.5'][0]
-    level, color_gradient, emoji, advice = get_aqi_level(latest_pm25)
+    level, color, emoji, advice = get_aqi_level(latest_pm25)
 
     col1, col2 = st.columns([1, 2])
 
@@ -15,7 +16,7 @@ def display_realtime_pm(df):
         st.subheader("ค่า PM2.5 ปัจจุบัน")
         st.markdown(
             f"""
-            <div style="background-image: {color_gradient}; padding: 25px; border-radius: 15px; text-align: center; color: white; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);">
+            <div style="background-color: {color}; padding: 25px; border-radius: 15px; text-align: center; color: white; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);">
                 <h1 style="font-size: 4.5rem; margin: 0; text-shadow: 2px 2px 4px #000000;">{latest_pm25:.1f}</h1>
                 <p style="font-size: 1.5rem; margin: 0;">μg/m³</p>
                 <h2 style="margin-top: 15px;">{level} {emoji}</h2>
@@ -26,39 +27,40 @@ def display_realtime_pm(df):
 
     with col2:
         st.subheader("คำแนะนำในการปฏิบัติตัว")
-        st.markdown(f"<div style='padding: 20px; border-radius: 15px; background-color: #f0f2f6; border: 1px solid #dfe6e9;'>{advice}</div>", unsafe_allow_html=True)
-        with st.expander("ℹ️ ดูเกณฑ์ดัชนีคุณภาพอากาศ"):
-            st.markdown("""
-                <style>
-                    .legend-box {{ display: flex; align-items: center; font-size: 1.1rem; margin-bottom: 8px; }}
-                    .legend-color {{ height: 20px; width: 20px; border-radius: 5px; margin-right: 10px; }}
-                </style>
-                <div class="legend-box"><div class="legend-color" style="background-image: linear-gradient(to right, #4facfe, #00f2fe);"></div><b>ดีมาก:</b> 0 - 15.0 μg/m³</div>
-                <div class="legend-box"><div class="legend-color" style="background-image: linear-gradient(to right, #6a11cb, #2575fc);"></div><b>ดี:</b> 15.1 - 25.0 μg/m³</div>
-                <div class="legend-box"><div class="legend-color" style="background-image: linear-gradient(to right, #f7971e, #ffd200);"></div><b>ปานกลาง:</b> 25.1 - 37.5 μg/m³</div>
-                <div class="legend-box"><div class="legend-color" style="background-image: linear-gradient(to right, #ff416c, #ff4b2b);"></div><b>เริ่มมีผลกระทบ:</b> 37.6 - 75.0 μg/m³</div>
-                <div class="legend-box"><div class="legend-color" style="background-image: linear-gradient(to right, #c31432, #240b36);"></div><b>มีผลกระทบ:</b> > 75.0 μg/m³</div>
-            """, unsafe_allow_html=True)
+        st.markdown(f"<div style='padding: 20px; border-radius: 15px; background-color: #f0f2f6; border: 1px solid #dfe6e9; height: 100%;'>{advice}</div>", unsafe_allow_html=True)
+        
+    with st.expander("ℹ️ ดูเกณฑ์ดัชนีคุณภาพอากาศ"):
+        st.markdown("""
+            <style>
+                .legend-box {{ display: flex; align-items: center; font-size: 1.1rem; margin-bottom: 8px; }}
+                .legend-color {{ height: 20px; width: 20px; border-radius: 5px; margin-right: 10px; }}
+            </style>
+            <div class="legend-box"><div class="legend-color" style="background-color: #0099FF;"></div><b>ดีมาก:</b> 0 - 15.0 μg/m³</div>
+            <div class="legend-box"><div class="legend-color" style="background-color: #2ECC71;"></div><b>ดี:</b> 15.1 - 25.0 μg/m³</div>
+            <div class="legend-box"><div class="legend-color" style="background-color: #F1C40F;"></div><b>ปานกลาง:</b> 25.1 - 37.5 μg/m³</div>
+            <div class="legend-box"><div class="legend-color" style="background-color: #E67E22;"></div><b>เริ่มมีผลกระทบ:</b> 37.6 - 75.0 μg/m³</div>
+            <div class="legend-box"><div class="legend-color" style="background-color: #E74C3C;"></div><b>มีผลกระทบ:</b> > 75.0 μg/m³</div>
+        """, unsafe_allow_html=True)
 
 def display_24hr_chart(df):
-    """Displays the 24-hour PM2.5 trend chart with a modern look."""
+    """Displays the 24-hour PM2.5 trend as a bar chart with colored bars."""
     st.subheader("แนวโน้มค่า PM2.5 ใน 24 ชั่วโมงล่าสุด")
+    
     last_24_hours_data = df[df['Datetime'] >= (df['Datetime'].max() - timedelta(hours=24))].sort_values(by="Datetime", ascending=True)
 
+    colors = [get_aqi_level(pm)[1] for pm in last_24_hours_data['PM2.5']]
+
     fig_24hr = go.Figure()
-    fig_24hr.add_trace(go.Scatter(
+    fig_24hr.add_trace(go.Bar(
         x=last_24_hours_data['Datetime'], 
         y=last_24_hours_data['PM2.5'], 
-        mode='lines+markers', 
-        name='PM2.5', 
-        line=dict(color='#2575fc', width=3), 
-        marker=dict(size=6, symbol='circle-open')
+        name='PM2.5',
+        marker_color=colors
     ))
     fig_24hr.update_layout(
         xaxis_title="เวลา", 
         yaxis_title="PM2.5 (μg/m³)", 
         plot_bgcolor='rgba(0,0,0,0)', 
-        hovermode="x unified",
         template="plotly_white",
         margin=dict(l=20, r=20, t=40, b=20),
         xaxis=dict(gridcolor='#e9e9e9'),
@@ -68,8 +70,65 @@ def display_24hr_chart(df):
 
 def display_monthly_calendar(df):
     """Displays the monthly PM2.5 calendar heatmap."""
-    st.warning("ฟังก์ชันปฏิทินกำลังอยู่ในระหว่างการพัฒนา")
-    pass
+    st.subheader("ปฏิทินค่าฝุ่น PM2.5 รายวัน")
+    df_calendar = df.copy()
+    df_calendar['date'] = df_calendar['Datetime'].dt.date
+    daily_avg_pm25 = df_calendar.groupby('date')['PM2.5'].mean().reset_index()
+    daily_avg_pm25['date'] = pd.to_datetime(daily_avg_pm25['date'])
+
+    latest_date = daily_avg_pm25['date'].max() if not daily_avg_pm25.empty else datetime.now()
+    
+    # Let user select month and year
+    selected_date = st.date_input(
+        "เลือกเดือนและปีที่ต้องการดู",
+        value=latest_date,
+        min_value=df['Datetime'].min().date(),
+        max_value=datetime.now().date(),
+        key="calendar_date_picker"
+    )
+    
+    year, month = selected_date.year, selected_date.month
+
+    month_data = daily_avg_pm25[
+        (daily_avg_pm25['date'].dt.year == year) & (daily_avg_pm25['date'].dt.month == month)
+    ]
+    
+    cal = calendar.monthcalendar(year, month)
+    month_name = selected_date.strftime("%B")
+
+    st.markdown(f"#### {month_name} {year}")
+    
+    days_header = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    cols = st.columns(7)
+    for i, day_name in enumerate(days_header):
+        cols[i].markdown(f"<div style='text-align: center; font-weight: bold;'>{day_name}</div>", unsafe_allow_html=True)
+
+    for week in cal:
+        cols = st.columns(7)
+        for i, day in enumerate(week):
+            if day == 0:
+                cols[i].markdown("")
+            else:
+                day_data = month_data[month_data['date'].dt.day == day]
+                if not day_data.empty:
+                    pm_value = day_data['PM2.5'].iloc[0]
+                    level, color, emoji, _ = get_aqi_level(pm_value)
+                    cols[i].markdown(f"""
+                    <div style="background-color: {color}; color: {'black' if color == '#F1C40F' else 'white'}; 
+                                padding: 10px; border-radius: 5px; text-align: center; height: 80px;">
+                        <div style="font-size: 1.2rem; font-weight: bold;">{day}</div>
+                        <div style="font-size: 0.9rem;">{pm_value:.1f}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    cols[i].markdown(f"""
+                    <div style="background-color: #f0f2f6; color: #a9a9a9; 
+                                padding: 10px; border-radius: 5px; text-align: center; height: 80px;">
+                        <div style="font-size: 1.2rem; font-weight: bold;">{day}</div>
+                        <div style="font-size: 0.9rem;">N/A</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
 
 def display_historical_data(df):
     """Displays the historical data section within a collapsible expander with a modern look."""
