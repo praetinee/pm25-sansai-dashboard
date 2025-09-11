@@ -71,8 +71,7 @@ def inject_custom_css():
     """, unsafe_allow_html=True)
 
 def display_realtime_pm(df):
-    """Displays the current PM2.5 value and advice with a modern UI."""
-    # Inject CSS on first render of a component
+    """Displays the current PM2.5 value and advice using a modern Gauge Chart."""
     inject_custom_css()
     
     latest_pm25 = df['PM2.5'][0]
@@ -82,16 +81,35 @@ def display_realtime_pm(df):
 
     with col1:
         st.subheader("ค่า PM2.5 ปัจจุบัน")
-        st.markdown(
-            f"""
-            <div style="background-color: {color}; padding: 25px; border-radius: 15px; text-align: center; color: white; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2); height: 100%;">
-                <h1 style="font-size: 4.5rem; margin: 0; text-shadow: 2px 2px 4px #000000;">{latest_pm25:.1f}</h1>
-                <p style="font-size: 1.5rem; margin: 0;">μg/m³</p>
-                <h2 style="margin-top: 15px;">{level} {emoji}</h2>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        
+        fig_gauge = go.Figure(go.Indicator(
+            mode = "gauge+number",
+            value = latest_pm25,
+            title = {'text': f"<b>{level}</b> {emoji}", 'font': {'size': 20}},
+            number = {'suffix': " μg/m³", 'font': {'size': 36}},
+            domain = {'x': [0, 1], 'y': [0, 1]},
+            gauge = {
+                'axis': {'range': [0, 150], 'tickwidth': 1, 'tickcolor': "darkblue"},
+                'bar': {'color': "rgba(0,0,0,0.3)", 'thickness': 0.25},
+                'bgcolor': "white",
+                'borderwidth': 2,
+                'bordercolor': "gray",
+                'steps': [
+                    {'range': [0, 15], 'color': '#0099FF'},
+                    {'range': [15, 25], 'color': '#2ECC71'},
+                    {'range': [25, 37.5], 'color': '#F1C40F'},
+                    {'range': [37.5, 75], 'color': '#E67E22'},
+                    {'range': [75, 150], 'color': '#E74C3C'}],
+                'threshold': {
+                    'line': {'color': "red", 'width': 4},
+                    'thickness': 0.75,
+                    'value': latest_pm25
+                }
+            }
+        ))
+        fig_gauge.update_layout(height=250, margin={'t':0, 'b':0, 'l':0, 'r':0})
+        st.plotly_chart(fig_gauge, use_container_width=True)
+
 
     with col2:
         st.subheader("คำแนะนำในการปฏิบัติตัว")
@@ -107,7 +125,7 @@ def display_realtime_pm(df):
         """, unsafe_allow_html=True)
 
 def display_24hr_chart(df):
-    """Displays the PM2.5 trend for the latest day (00:00-23:59) as a colored bar chart."""
+    """Displays the PM2.5 trend for the latest day as a smoothed area chart."""
     st.subheader("แนวโน้มค่า PM2.5 รายชั่วโมงของวันนี้")
     
     latest_date = df['Datetime'].max().date()
@@ -117,18 +135,26 @@ def display_24hr_chart(df):
         st.info("ยังไม่มีข้อมูลสำหรับวันนี้")
         return
 
-    colors = [get_aqi_level(pm)[1] for pm in day_data['PM2.5']]
-
     fig_24hr = go.Figure()
-    fig_24hr.add_trace(go.Bar(
+
+    # Add background color bands
+    fig_24hr.add_hrect(y0=0, y1=15, line_width=0, fillcolor="#0099FF", opacity=0.1)
+    fig_24hr.add_hrect(y0=15, y1=25, line_width=0, fillcolor="#2ECC71", opacity=0.1)
+    fig_24hr.add_hrect(y0=25, y1=37.5, line_width=0, fillcolor="#F1C40F", opacity=0.1)
+    fig_24hr.add_hrect(y0=37.5, y1=75, line_width=0, fillcolor="#E67E22", opacity=0.1)
+    fig_24hr.add_hrect(y0=75, y1=max(100, day_data['PM2.5'].max() * 1.1), line_width=0, fillcolor="#E74C3C", opacity=0.1)
+    
+    # Add smoothed area chart
+    fig_24hr.add_trace(go.Scatter(
         x=day_data['Datetime'], 
         y=day_data['PM2.5'], 
         name='PM2.5',
-        marker_color=colors,
-        marker=dict(cornerradius=5), # Rounded corners
-        text=day_data['PM2.5'].apply(lambda x: f'{x:.1f}'), # Text on bars
-        textposition='outside' # Position of text
+        mode='lines',
+        fill='tozeroy',
+        line=dict(shape='spline', smoothing=0.8, color='#0077b6'),
+        fillcolor='rgba(0, 119, 182, 0.2)'
     ))
+
     fig_24hr.update_layout(
         xaxis_title=None, 
         yaxis_title="PM2.5 (μg/m³)", 
@@ -138,13 +164,10 @@ def display_24hr_chart(df):
         xaxis=dict(
             gridcolor='var(--border-color, #e9e9e9)', 
             showticklabels=True,
-            tickformat='%H:%M', # Format to show HH:MM
-            tickangle=-45      # Angle the ticks to prevent overlap
+            tickformat='%H:%M'
         ),
         yaxis=dict(gridcolor='var(--border-color, #e9e9e9)'),
-        showlegend=False,
-        uniformtext_minsize=8, 
-        uniformtext_mode='hide'
+        showlegend=False
     )
     st.plotly_chart(fig_24hr, use_container_width=True)
 
