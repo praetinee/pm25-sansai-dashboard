@@ -31,11 +31,23 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     if not font_reg_bytes or not font_bold_bytes:
         return None
 
+    # Reset stream pointer before each use to prevent errors
+    font_reg_bytes.seek(0)
     font_main = ImageFont.truetype(font_reg_bytes, 32)
+    
+    font_bold_bytes.seek(0)
     font_pm_value = ImageFont.truetype(font_bold_bytes, 120)
+    
+    font_bold_bytes.seek(0)
     font_level = ImageFont.truetype(font_bold_bytes, 48)
+    
+    font_bold_bytes.seek(0)
     font_advice_header = ImageFont.truetype(font_bold_bytes, 28)
+    
+    font_reg_bytes.seek(0)
     font_advice = ImageFont.truetype(font_reg_bytes, 24)
+    
+    font_reg_bytes.seek(0)
     font_footer = ImageFont.truetype(font_reg_bytes, 18)
 
     # --- Card Creation ---
