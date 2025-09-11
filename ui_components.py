@@ -361,10 +361,10 @@ def display_knowledge_tabs(lang, t):
         """)
     with tabs[3]:
         st.markdown("""
-        - **N95:** US standard, filters 95% of 0.3-micron particles (Best option).
-        - **KN95:** Chinese standard, similar performance to N95.
-        - **KF94:** South Korean standard, filters 94%, offers a comfortable fit.
-        - **Surgical Mask:** Not effective for protecting against PM2.5.
+        - **N95:** มาตรฐานสหรัฐอเมริกา กรองได้ 95% (ดีที่สุด)
+        - **KN95:** มาตรฐานจีน ประสิทธิภาพใกล้เคียง N95
+        - **KF94:** มาตรฐานเกาหลีใต้ กรองได้ 94% รูปทรงกระชับ
+        - **หน้ากากอนามัย:** ไม่สามารถป้องกัน PM2.5 ได้อย่างมีประสิทธิภาพ
         
         > **สิ่งสำคัญ:** คือการเลือกหน้ากากที่ได้มาตรฐานและสวมให้กระชับกับใบหน้า
         """ if lang == 'th' else """
