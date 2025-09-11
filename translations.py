@@ -4,10 +4,12 @@ TRANSLATIONS = {
     'th': {
         # General
         'page_title': "รายงานค่าฝุ่น PM2.5",
-        'header': "💨 รายงานค่าฝุ่น PM2.5 ณ จุดตรวจวัด รพ.สันทราย",
+        'header': "รายงานค่าฝุ่น PM2.5 ณ จุดตรวจวัด รพ.สันทราย",
         'latest_data': "ข้อมูลล่าสุดเมื่อ:",
         'pm25_unit': "PM2.5 (μg/m³)",
         'avg_pm25_unit': "ค่าเฉลี่ย PM2.5 (μg/m³)",
+        'month_names': ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"],
+
 
         # Realtime Section
         'current_pm25': "ค่า PM2.5 ปัจจุบัน",
@@ -59,10 +61,11 @@ TRANSLATIONS = {
     'en': {
         # General
         'page_title': "PM2.5 Report",
-        'header': "💨 PM2.5 Report @ San Sai Hospital Station",
+        'header': "PM2.5 Report @ San Sai Hospital Station",
         'latest_data': "Last updated:",
         'pm25_unit': "PM2.5 (μg/m³)",
         'avg_pm25_unit': "Average PM2.5 (μg/m³)",
+        'month_names': ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
 
         # Realtime Section
         'current_pm25': "Current PM2.5",
@@ -112,3 +115,4 @@ TRANSLATIONS = {
         'tabs': ["What is PM2.5?", "Misconceptions", "DIY Air Purifier", "Mask Selection"]
     }
 }
+
