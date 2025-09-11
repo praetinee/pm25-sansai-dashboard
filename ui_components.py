@@ -66,40 +66,52 @@ def display_monthly_calendar(df):
     pass
 
 def display_historical_data(df):
-    """Displays the historical data section with a date selector."""
-    st.subheader("📊 ดูข้อมูลย้อนหลัง")
+    """Displays the historical data section within a collapsible expander."""
+    with st.expander("📊 ดูข้อมูลย้อนหลัง (คลิกเพื่อเลือกช่วงวัน)"):
+        today = date.today()
+        default_start = today - timedelta(days=7)
+        
+        col_date1, col_date2 = st.columns(2)
+        with col_date1:
+            start_date = st.date_input(
+                "วันที่เริ่มต้น", 
+                value=default_start, 
+                min_value=df['Datetime'].min().date(), 
+                max_value=today,
+                key="start_date_hist"
+            )
+        with col_date2:
+            end_date = st.date_input(
+                "วันที่สิ้นสุด", 
+                value=today, 
+                min_value=df['Datetime'].min().date(), 
+                max_value=today,
+                key="end_date_hist"
+            )
 
-    today = date.today()
-    default_start = today - timedelta(days=7)
-    col_date1, col_date2 = st.columns(2)
-    with col_date1:
-        start_date = st.date_input("วันที่เริ่มต้น", value=default_start, min_value=df['Datetime'].min().date(), max_value=today)
-    with col_date2:
-        end_date = st.date_input("วันที่สิ้นสุด", value=today, min_value=df['Datetime'].min().date(), max_value=today)
-
-    if start_date > end_date:
-        st.error("วันที่เริ่มต้นต้องมาก่อนวันที่สิ้นสุด")
-    else:
-        mask = (df['Datetime'].dt.date >= start_date) & (df['Datetime'].dt.date <= end_date)
-        filtered_df = df.loc[mask].sort_values(by="Datetime", ascending=True)
-
-        if filtered_df.empty:
-            st.warning("ไม่พบข้อมูลในช่วงวันที่ที่เลือก")
+        if start_date > end_date:
+            st.error("วันที่เริ่มต้นต้องมาก่อนวันที่สิ้นสุด")
         else:
-            avg_pm = filtered_df['PM2.5'].mean()
-            max_pm = filtered_df['PM2.5'].max()
-            min_pm = filtered_df['PM2.5'].min()
+            mask = (df['Datetime'].dt.date >= start_date) & (df['Datetime'].dt.date <= end_date)
+            filtered_df = df.loc[mask].sort_values(by="Datetime", ascending=True)
 
-            mcol1, mcol2, mcol3 = st.columns(3)
-            mcol1.metric("ค่าเฉลี่ย", f"{avg_pm:.1f} μg/m³")
-            mcol2.metric("ค่าสูงสุด", f"{max_pm:.1f} μg/m³")
-            mcol3.metric("ค่าต่ำสุด", f"{min_pm:.1f} μg/m³")
+            if filtered_df.empty:
+                st.warning("ไม่พบข้อมูลในช่วงวันที่ที่เลือก")
+            else:
+                avg_pm = filtered_df['PM2.5'].mean()
+                max_pm = filtered_df['PM2.5'].max()
+                min_pm = filtered_df['PM2.5'].min()
 
-            fig_hist = go.Figure()
-            fig_hist.add_trace(go.Scatter(x=filtered_df['Datetime'], y=filtered_df['PM2.5'], mode='lines', name='PM2.5'))
-            fig_hist.update_layout(title=f"ข้อมูล PM2.5 ตั้งแต่ {start_date.strftime('%d/%m/%Y')} ถึง {end_date.strftime('%d/%m/%Y')}",
-                                   xaxis_title="วันที่", yaxis_title="PM2.5 (μg/m³)")
-            st.plotly_chart(fig_hist, use_container_width=True)
+                mcol1, mcol2, mcol3 = st.columns(3)
+                mcol1.metric("ค่าเฉลี่ย", f"{avg_pm:.1f} μg/m³")
+                mcol2.metric("ค่าสูงสุด", f"{max_pm:.1f} μg/m³")
+                mcol3.metric("ค่าต่ำสุด", f"{min_pm:.1f} μg/m³")
+
+                fig_hist = go.Figure()
+                fig_hist.add_trace(go.Scatter(x=filtered_df['Datetime'], y=filtered_df['PM2.5'], mode='lines', name='PM2.5'))
+                fig_hist.update_layout(title=f"ข้อมูล PM2.5 ตั้งแต่ {start_date.strftime('%d/%m/%Y')} ถึง {end_date.strftime('%d/%m/%Y')}",
+                                       xaxis_title="วันที่", yaxis_title="PM2.5 (μg/m³)")
+                st.plotly_chart(fig_hist, use_container_width=True)
 
 def display_knowledge_tabs():
     """Displays the knowledge base section in tabs."""
@@ -111,7 +123,7 @@ def display_knowledge_tabs():
         st.markdown("""
         **PM2.5 (Particulate Matter 2.5)** คือฝุ่นละอองขนาดเล็กที่มีเส้นผ่านศูนย์กลางไม่เกิน 2.5 ไมครอน เล็กกว่าเส้นผมของมนุษย์ประมาณ 25 เท่า ทำให้สามารถเดินทางผ่านขนจมูกเข้าสู่ทางเดินหายใจและแทรกซึมเข้าสู่กระแสเลือดได้ง่าย
         - **แหล่งกำเนิด:** เกิดจากการเผาไหม้ทั้งจากธรรมชาติ (ไฟป่า) และกิจกรรมของมนุษย์ (การจราจร, โรงงานอุตสาหกรรม, การเผาในที่โล่ง)
-        - **ผลกระทบ:** เป็นอันตรายต่อสุขภาพโดยเฉพาะระบบทางเดินหายใจและหัวใจ อาจทำให้เกิดอาการแสบตา, แสบจมูก, ไอ, และเป็นปัจจัยเสี่ยงของโรคหอบหืด, ภูมิแพ้, และมะเร็งปอด
+        - **ผลกระทบ:** เป็นอันรายต่อสุขภาพโดยเฉพาะระบบทางเดินหายใจและหัวใจ อาจทำให้เกิดอาการแสบตา, แสบจมูก, ไอ, และเป็นปัจจัยเสี่ยงของโรคหอบหืด, ภูมิแพ้, และมะเร็งปอด
         """)
     with tab2:
         st.markdown("""
@@ -136,3 +148,4 @@ def display_knowledge_tabs():
         - **หน้ากากอนามัย (Surgical Mask):** ไม่สามารถป้องกัน PM2.5 ได้อย่างมีประสิทธิภาพ
         **ข้อควรจำ:** ควรเลือกหน้ากากที่ได้มาตรฐานและสวมใส่ให้กระชับกับใบหน้า
         """)
+
