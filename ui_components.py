@@ -252,65 +252,65 @@ def display_monthly_calendar(df, lang, t):
                     """, unsafe_allow_html=True)
 
 def display_historical_data(df, lang, t):
-    with st.expander(t[lang]['historical_expander']):
-        today = date.today()
-        default_start = today - timedelta(days=7)
-        
-        col_date1, col_date2 = st.columns(2)
-        with col_date1:
-            start_date = st.date_input(t[lang]['start_date'], value=default_start, min_value=df['Datetime'].min().date(), max_value=today, key="start_date_hist")
-        with col_date2:
-            end_date = st.date_input(t[lang]['end_date'], value=today, min_value=df['Datetime'].min().date(), max_value=today, key="end_date_hist")
+    st.subheader(t[lang]['historical_expander'])
+    today = date.today()
+    default_start = today - timedelta(days=7)
+    
+    col_date1, col_date2 = st.columns(2)
+    with col_date1:
+        start_date = st.date_input(t[lang]['start_date'], value=default_start, min_value=df['Datetime'].min().date(), max_value=today, key="start_date_hist")
+    with col_date2:
+        end_date = st.date_input(t[lang]['end_date'], value=today, min_value=df['Datetime'].min().date(), max_value=today, key="end_date_hist")
 
-        if start_date > end_date:
-            st.error(t[lang]['date_error'])
+    if start_date > end_date:
+        st.error(t[lang]['date_error'])
+    else:
+        mask = (df['Datetime'].dt.date >= start_date) & (df['Datetime'].dt.date <= end_date)
+        filtered_df = df.loc[mask]
+
+        if filtered_df.empty:
+            st.warning(t[lang]['no_data_in_range'])
         else:
-            mask = (df['Datetime'].dt.date >= start_date) & (df['Datetime'].dt.date <= end_date)
-            filtered_df = df.loc[mask]
+            daily_avg_df = filtered_df.groupby(filtered_df['Datetime'].dt.date)['PM2.5'].mean().reset_index()
+            daily_avg_df.rename(columns={'Datetime': 'Date', 'PM2.5': 'Avg PM2.5'}, inplace=True)
 
-            if filtered_df.empty:
-                st.warning(t[lang]['no_data_in_range'])
+            avg_pm = filtered_df['PM2.5'].mean()
+            max_pm = filtered_df['PM2.5'].max()
+            min_pm = filtered_df['PM2.5'].min()
+
+            mcol1, mcol2, mcol3 = st.columns(3)
+            mcol1.metric(t[lang]['metric_avg'], f"{avg_pm:.1f} μg/m³")
+            mcol2.metric(t[lang]['metric_max'], f"{max_pm:.1f} μg/m³")
+            mcol3.metric(t[lang]['metric_min'], f"{min_pm:.1f} μg/m³")
+
+            colors_hist = [get_aqi_level(pm, lang, t)[1] for pm in daily_avg_df['Avg PM2.5']]
+            
+            if lang == 'th':
+                start_date_str = f"{start_date.day} {t['th']['month_names'][start_date.month - 1]} {start_date.year + 543}"
+                end_date_str = f"{end_date.day} {t['th']['month_names'][end_date.month - 1]} {end_date.year + 543}"
+                title_text = f"{t[lang]['daily_avg_chart_title']} ({start_date_str} - {end_date_str})"
             else:
-                daily_avg_df = filtered_df.groupby(filtered_df['Datetime'].dt.date)['PM2.5'].mean().reset_index()
-                daily_avg_df.rename(columns={'Datetime': 'Date', 'PM2.5': 'Avg PM2.5'}, inplace=True)
-
-                avg_pm = filtered_df['PM2.5'].mean()
-                max_pm = filtered_df['PM2.5'].max()
-                min_pm = filtered_df['PM2.5'].min()
-
-                mcol1, mcol2, mcol3 = st.columns(3)
-                mcol1.metric(t[lang]['metric_avg'], f"{avg_pm:.1f} μg/m³")
-                mcol2.metric(t[lang]['metric_max'], f"{max_pm:.1f} μg/m³")
-                mcol3.metric(t[lang]['metric_min'], f"{min_pm:.1f} μg/m³")
-
-                colors_hist = [get_aqi_level(pm, lang, t)[1] for pm in daily_avg_df['Avg PM2.5']]
-                
-                if lang == 'th':
-                    start_date_str = f"{start_date.day} {t['th']['month_names'][start_date.month - 1]} {start_date.year + 543}"
-                    end_date_str = f"{end_date.day} {t['th']['month_names'][end_date.month - 1]} {end_date.year + 543}"
-                    title_text = f"{t[lang]['daily_avg_chart_title']} ({start_date_str} - {end_date_str})"
-                else:
-                    title_text = f"{t[lang]['daily_avg_chart_title']} ({start_date.strftime('%b %d, %Y')} - {end_date.strftime('%b %d, %Y')})"
+                title_text = f"{t[lang]['daily_avg_chart_title']} ({start_date.strftime('%b %d, %Y')} - {end_date.strftime('%b %d, %Y')})"
 
 
-                fig_hist = go.Figure()
-                fig_hist.add_trace(go.Bar(
-                    x=daily_avg_df['Date'], 
-                    y=daily_avg_df['Avg PM2.5'], 
-                    name=t[lang]['avg_pm25_unit'],
-                    marker_color=colors_hist,
-                    marker=dict(cornerradius=5)
-                ))
-                fig_hist.update_layout(
-                    font=dict(family="Sarabun"),
-                    title=title_text,
-                    xaxis_title="วันที่" if lang == 'th' else "Date", 
-                    yaxis_title=t[lang]['avg_pm25_unit'],
-                    template="plotly_white",
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    showlegend=False
-                )
-                st.plotly_chart(fig_hist, use_container_width=True)
+            fig_hist = go.Figure()
+            fig_hist.add_trace(go.Bar(
+                x=daily_avg_df['Date'], 
+                y=daily_avg_df['Avg PM2.5'], 
+                name=t[lang]['avg_pm25_unit'],
+                marker_color=colors_hist,
+                marker=dict(cornerradius=5)
+            ))
+            fig_hist.update_layout(
+                font=dict(family="Sarabun"),
+                title=title_text,
+                xaxis_title="วันที่" if lang == 'th' else "Date", 
+                yaxis_title=t[lang]['avg_pm25_unit'],
+                template="plotly_white",
+                plot_bgcolor='rgba(0,0,0,0)',
+                showlegend=False
+            )
+            st.plotly_chart(fig_hist, use_container_width=True)
 
 def display_knowledge_tabs(lang, t):
     st.subheader(t[lang]['knowledge_header'])
