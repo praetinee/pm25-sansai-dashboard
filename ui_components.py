@@ -9,6 +9,14 @@ def inject_custom_css():
     """Injects custom CSS to make the app responsive and theme-aware."""
     st.markdown("""
         <style>
+            /* Import Google Font 'Kanit' */
+            @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+
+            /* Apply font to the entire app */
+            html, body, [class*="st-"], .stApp {
+                font-family: 'Kanit', sans-serif;
+            }
+
             /* General Card Style */
             .card {
                 padding: 20px;
