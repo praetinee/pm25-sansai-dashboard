@@ -112,6 +112,33 @@ def display_realtime_pm(df, lang, t):
             <div class="legend-box"><div class="legend-color" style="background-color: #E74C3C;"></div><b>{t[lang]['aqi_level_5']}:</b> > 75.0 μg/m³</div>
         """, unsafe_allow_html=True)
 
+def display_health_impact(df, lang, t):
+    """Calculates and displays health impact metrics."""
+    st.subheader(t[lang]['health_impact_title'])
+
+    # Calculate daily averages
+    daily_avg_df = df.groupby(df['Datetime'].dt.date)['PM2.5'].mean().reset_index()
+
+    # Calculate number of unhealthy days
+    unhealthy_days = daily_avg_df[daily_avg_df['PM2.5'] > 37.5]
+    num_unhealthy_days = len(unhealthy_days)
+
+    # Calculate cigarette equivalent from total exposure
+    total_pm_exposure = daily_avg_df['PM2.5'].sum()
+    equivalent_cigarettes = total_pm_exposure / 22
+
+    col1, col2 = st.columns(2)
+    col1.metric(
+        label=t[lang]['unhealthy_days_text'],
+        value=f"{num_unhealthy_days} {t[lang]['days_unit']}"
+    )
+    col2.metric(
+        label=t[lang]['cigarette_equivalent_text'],
+        value=f"{int(equivalent_cigarettes)} {t[lang]['cigarettes_unit']}"
+    )
+    st.caption(t[lang]['health_impact_explanation'])
+
+
 def display_24hr_chart(df, lang, t):
     st.subheader(t[lang]['hourly_trend_today'])
     
