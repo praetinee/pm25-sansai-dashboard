@@ -44,7 +44,7 @@ def inject_custom_css():
             .calendar-day-header { align-self: flex-start; font-size: 0.9rem; font-weight: 500; opacity: 0.8; }
             .calendar-day-value { font-size: 1.5rem; font-weight: 700; line-height: 1; }
             .calendar-day-na { background-color: var(--secondary-background-color); color: var(--text-color); opacity: 0.5; box-shadow: none; }
-            .aqi-legend-bar { display: flex; height: 50px; width: 100%; border-radius: 10px; overflow: hidden; margin-top: 10px; }
+            .aqi-legend-bar { display: flex; height: 50px; width: 100%; border-radius: 10px; overflow: hidden; margin-top: 10px; margin-bottom: 20px; }
             .aqi-legend-segment { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: 500; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); font-size: 0.9rem; line-height: 1.2; text-align: center; }
             .advice-container {
                 display: grid;
@@ -106,6 +106,17 @@ def display_realtime_pm(df, lang, t, date_str):
             </div>
             """, unsafe_allow_html=True)
     with col2:
+        st.subheader(t[lang]['aqi_guideline_header'])
+        st.markdown(f"""
+            <div class="aqi-legend-bar">
+                <div class="aqi-legend-segment" style="background-color: #0099FF; color: white;">{t[lang]['aqi_level_1']}<br>0-15</div>
+                <div class="aqi-legend-segment" style="background-color: #2ECC71; color: white;">{t[lang]['aqi_level_2']}<br>15-25</div>
+                <div class="aqi-legend-segment" style="background-color: #F1C40F; color: black;">{t[lang]['aqi_level_3']}<br>25-37.5</div>
+                <div class="aqi-legend-segment" style="background-color: #E67E22; color: white;">{t[lang]['aqi_level_4_short']}<br>37.5-75</div>
+                <div class="aqi-legend-segment" style="background-color: #E74C3C; color: white;">{t[lang]['aqi_level_5_short']}<br>>75</div>
+            </div>
+        """, unsafe_allow_html=True)
+        
         st.subheader(t[lang]['advice_header'])
         st.markdown(f"""
         <div class="advice-container">
@@ -118,8 +129,8 @@ def display_realtime_pm(df, lang, t, date_str):
                 </div>
             </div>
             <div class="advice-item">
-                <!-- Activity Icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12a2 2 0 1 0-4 0 2 2 0 0 0 4 0Z"/><path d="M18 18a3 3 0 1 0-6 0 3 3 0 0 0 6 0Zm-12 0a3 3 0 1 0-6 0 3 3 0 0 0 6 0Z"/><path d="M15.5 15.5 12 12l-3 3.5"/></svg>
+                <!-- Activity Icon (Cyclist) -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5.5" r="2.5"/><path d="M12 17.5h-2.5l1.5-4 4-2.5 -2.5-2.5"/></svg>
                 <div class="advice-text">
                     <strong>{t[lang]['advice_topics']['activity']}</strong>
                     <span>{advice_details['activity']}</span>
