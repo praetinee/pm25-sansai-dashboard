@@ -21,20 +21,31 @@ def inject_custom_css():
             /* Calendar Styles */
             .calendar-day {
                 padding: 10px;
-                border-radius: 5px;
+                border-radius: 8px; /* More rounded corners */
                 text-align: center;
-                min-height: 80px;
+                min-height: 85px;
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
                 align-items: center;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Subtle shadow */
+                transition: transform 0.2s ease-in-out; /* Hover effect */
+            }
+            .calendar-day:hover {
+                transform: translateY(-3px); /* Lift on hover */
             }
             .calendar-day-header {
-                font-size: 1rem;
-                font-weight: bold;
+                font-size: 1.1rem; /* Bolder day number */
+                font-weight: 600;
             }
             .calendar-day-value {
-                font-size: 0.9rem;
+                font-size: 1rem; /* Bolder value */
+                font-weight: 500;
+            }
+            .calendar-day-na { /* Style for N/A days */
+                 background-color: var(--secondary-background-color);
+                 color: var(--text-color);
+                 opacity: 0.6;
             }
             
             /* Legend Box for AQI */
@@ -102,16 +113,22 @@ def display_24hr_chart(df):
         x=last_24_hours_data['Datetime'], 
         y=last_24_hours_data['PM2.5'], 
         name='PM2.5',
-        marker_color=colors
+        marker_color=colors,
+        marker=dict(cornerradius=5), # Rounded corners
+        text=last_24_hours_data['PM2.5'].apply(lambda x: f'{x:.1f}'), # Text on bars
+        textposition='outside' # Position of text
     ))
     fig_24hr.update_layout(
-        xaxis_title="เวลา", 
+        xaxis_title=None, 
         yaxis_title="PM2.5 (μg/m³)", 
         plot_bgcolor='rgba(0,0,0,0)', 
         template="plotly_white",
         margin=dict(l=20, r=20, t=40, b=20),
-        xaxis=dict(gridcolor='var(--border-color, #e9e9e9)'),
-        yaxis=dict(gridcolor='var(--border-color, #e9e9e9)')
+        xaxis=dict(gridcolor='var(--border-color, #e9e9e9)', showticklabels=False),
+        yaxis=dict(gridcolor='var(--border-color, #e9e9e9)'),
+        showlegend=False,
+        uniformtext_minsize=8, 
+        uniformtext_mode='hide'
     )
     st.plotly_chart(fig_24hr, use_container_width=True)
 
@@ -166,9 +183,8 @@ def display_monthly_calendar(df):
                     """, unsafe_allow_html=True)
                 else:
                     cols[i].markdown(f"""
-                    <div class="calendar-day" style="background-color: var(--secondary-background-color); color: var(--text-color);">
+                    <div class="calendar-day calendar-day-na">
                         <div class="calendar-day-header">{day}</div>
-                        <div class="calendar-day-value">N/A</div>
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -236,7 +252,7 @@ def display_knowledge_tabs():
         """)
     with tab3:
         st.markdown("""
-        - **🌬️ เครื่องฟอกอากาศ DIY:** ใช้พัดลมประกบกับแผ่นกรอง HEPA เป็นวิธีที่ประหยัดและได้ผลดีในห้องขนาดเล็ก
+        - **🌬️ เครื่องฟอกอากาศ DIY:** ใช้พลมประกบกับแผ่นกรอง HEPA เป็นวิธีที่ประหยัดและได้ผลดีในห้องขนาดเล็ก
         - **🚪 การซีลประตูหน้าต่าง:** ใช้ซีลยางปิดช่องว่างตามขอบประตูหน้าต่างเพื่อป้องกันฝุ่นเข้าบ้าน
         - **💨 พัดลมดูดอากาศ:** เปิดเท่าที่จำเป็น เพราะเป็นการดึงอากาศภายนอกเข้ามา
         """)
