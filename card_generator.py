@@ -36,12 +36,13 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
     
     font_paths_to_clean = [p for p in [font_path_reg, font_path_bold, font_path_light, font_path_emoji] if p is not None]
 
-
-    if not all([font_path_reg, font_path_bold, font_path_light, font_path_emoji]):
-        st.error("ไม่สามารถดาวน์โหลดฟอนต์ได้ ไม่สามารถสร้างการ์ดรายงานได้" if lang == 'th' else "Font download failed. Cannot generate report card.")
+    # Check for essential fonts, emoji is optional
+    if not all([font_path_reg, font_path_bold, font_path_light]):
+        st.error("ไม่สามารถดาวน์โหลดฟอนต์หลักได้ ไม่สามารถสร้างการ์ดรายงานได้" if lang == 'th' else "Essential font download failed. Cannot generate report card.")
         # Clean up any fonts that were downloaded
         for path in font_paths_to_clean:
-            os.remove(path)
+            if os.path.exists(path):
+                os.remove(path)
         return None
     
     try:
@@ -54,7 +55,17 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
         font_advice_header = ImageFont.truetype(font_path_bold, 26)
         font_advice = ImageFont.truetype(font_path_reg, 22)
         font_footer = ImageFont.truetype(font_path_light, 16)
-        font_emoji = ImageFont.truetype(font_path_emoji, 40)
+        
+        font_emoji = None
+        # --- Safely load emoji font ---
+        if font_path_emoji:
+            try:
+                # Attempt to load the emoji font
+                font_emoji = ImageFont.truetype(font_path_emoji, 40)
+            except TypeError as e:
+                # This workaround handles a known issue in some environments where Pillow's C extension is mismatched, causing a TypeError on `layout_engine`.
+                st.warning(f"Could not load color emoji font due to an environment issue (TypeError: {e}). The emoji will be skipped.")
+                # font_emoji will remain None, and the card will be generated without it.
         
         # --- Card Creation ---
         width, height = 800, 1000
@@ -75,16 +86,24 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
         draw.text((width/2, box_y_start + 140), f"{latest_pm25:.1f}", font=font_pm_value, anchor="ms", fill="#111111")
         draw.text((width/2, box_y_start + 220), "μg/m³", font=font_unit, anchor="ms", fill="#555555")
         
-        # --- Level and Emoji (Side by side) ---
-        level_bbox = draw.textbbox((0,0), level, font=font_level)
-        emoji_bbox = draw.textbbox((0,0), emoji, font=font_emoji)
-        total_width = level_bbox[2] + emoji_bbox[2] + 10 # 10 is spacing
-        
-        level_x = (width - total_width) / 2
-        emoji_x = level_x + level_bbox[2] + 10
-        
-        draw.text((level_x, box_y_start + 280), level, font=font_level, anchor="ls", fill="#111111")
-        draw.text((emoji_x, box_y_start + 280), emoji, font=font_emoji, anchor="ls", fill="#111111")
+        # --- Level and Emoji (Side by side if emoji font loaded) ---
+        if font_emoji:
+            level_bbox = font_level.getbbox(level)
+            emoji_bbox = font_emoji.getbbox(emoji)
+            
+            level_width = level_bbox[2] - level_bbox[0]
+            emoji_width = emoji_bbox[2] - emoji_bbox[0]
+            total_width = level_width + emoji_width + 15 # 15 is spacing
+            
+            level_x = (width - total_width) / 2
+            emoji_x = level_x + level_width + 15
+            
+            draw.text((level_x, box_y_start + 280), level, font=font_level, anchor="ls", fill="#111111")
+            # embedded_color=True is necessary for color fonts to render correctly
+            draw.text((emoji_x, box_y_start + 280), emoji, font=font_emoji, anchor="ls", fill="#111111", embedded_color=True)
+        else:
+            # Fallback: Just draw the level text, centered.
+            draw.text((width/2, box_y_start + 280), level, font=font_level, anchor="ms", fill="#111111")
         
         draw.line([(60, box_y_start + 340), (width - 60, box_y_start + 340)], fill="#EEEEEE", width=2)
         
@@ -111,6 +130,8 @@ def generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lan
         # --- Cleanup: Remove the temporary font files ---
         for path in font_paths_to_clean:
             try:
-                os.remove(path)
+                if os.path.exists(path):
+                    os.remove(path)
             except OSError as e:
                 st.warning(f"Error removing temporary font file {path}: {e}")
+
