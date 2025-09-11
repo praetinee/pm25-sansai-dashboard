@@ -10,7 +10,6 @@ from ui_components import (
 from translations import TRANSLATIONS as t
 
 # --- Page Configuration ---
-# Use session state to set page config
 if 'lang' not in st.session_state:
     st.session_state.lang = 'th'
 
@@ -40,7 +39,17 @@ if df is None or df.empty:
 
 # --- Header ---
 st.title(t[lang]['header'])
-st.markdown(f"{t[lang]['latest_data']} `{df['Datetime'][0].strftime('%d %B %Y, %H:%M:%S')}`")
+
+# Format date based on selected language
+latest_dt = df['Datetime'][0]
+if lang == 'th':
+    thai_year = latest_dt.year + 543
+    thai_month = t['th']['month_names'][latest_dt.month - 1]
+    date_str = latest_dt.strftime(f"%d {thai_month} {thai_year}, %H:%M:%S")
+else:
+    date_str = latest_dt.strftime('%d %B %Y, %H:%M:%S')
+st.markdown(f"{t[lang]['latest_data']} `{date_str}`")
+
 
 st.divider()
 
