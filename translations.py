@@ -46,14 +46,41 @@ TRANSLATIONS = {
         'aqi_level_4_short': "เสี่ยง",
         'aqi_level_5': "อันตรายต่อสุขภาพ",
         'aqi_level_5_short': "อันตราย",
-        'general_public': "ประชาชนทั่วไป",
-        'risk_group': "กลุ่มเสี่ยง",
+        'advice_cat_mask': "หน้ากาก",
+        'advice_cat_activity': "กิจกรรมกลางแจ้ง",
+        'advice_cat_indoors': "ในอาคาร",
+        'advice_cat_risk_group': "กลุ่มเสี่ยง",
         'advice': {
-            'advice_1': "<strong>ประชาชนทั่วไป:</strong> สนุกกับกิจกรรมกลางแจ้งได้เต็มที่<br><strong>กลุ่มเสี่ยง:</strong> สามารถทำกิจกรรมกลางแจ้งได้ตามปกติ",
-            'advice_2': "<strong>ประชาชนทั่วไป:</strong> ทำกิจกรรมกลางแจ้งได้ตามปกติ<br><strong>กลุ่มเสี่ยง:</strong> ควรสังเกตอาการผิดปกติ เช่น ไอ หรือหายใจลำบาก",
-            'advice_3': "<strong>ประชาชนทั่วไป:</strong> ควรลดการทำกิจกรรมหรือออกกำลังกายกลางแจ้งที่ใช้แรงมาก<br><strong>กลุ่มเสี่ยง:</strong> ควรลดระยะเวลาการทำกิจกรรมกลางแจ้ง และสวมหน้ากากป้องกันฝุ่น",
-            'advice_4': "<strong>ประชาชนทั่วไป:</strong> ควรลดระยะเวลาการทำกิจกรรมกลางแจ้ง และสวมหน้ากากป้องกันฝุ่นเมื่อออกนอกอาคาร<br><strong>กลุ่มเสี่ยง:</strong> ควรงดการทำกิจกรรมกลางแจ้ง หากจำเป็นให้ใช้อุปกรณ์ป้องกันตนเองอย่างเข้มงวด",
-            'advice_5': "<strong>ประชาชนทั่วไป:</strong> ควรงดกิจกรรมกลางแจ้ง และสวมหน้ากากป้องกันฝุ่นเมื่ออยู่นอกอาคาร<br><strong>กลุ่มเสี่ยง:</strong> ควรงดออกจากอาคารโดยเด็ดขาด และอยู่ในห้องปลอดฝุ่น"
+            'advice_1': {
+                'mask': "ไม่จำเป็น",
+                'activity': "ทำได้ตามปกติ",
+                'indoors': "เปิดระบายอากาศได้เต็มที่",
+                'risk_group': "ใช้ชีวิตได้ตามปกติ"
+            },
+            'advice_2': {
+                'mask': "ไม่จำเป็น",
+                'activity': "ทำได้ตามปกติ",
+                'indoors': "เปิดระบายอากาศได้",
+                'risk_group': "ควรสังเกตอาการผิดปกติ"
+            },
+            'advice_3': {
+                'mask': "พิจารณาสวมหน้ากากเมื่ออยู่นอกอาคารนานๆ",
+                'activity': "ลดการออกกำลังกายหนัก",
+                'indoors': "ควรปิดหน้าต่างเป็นบางช่วง",
+                'risk_group': "ควรสวมหน้ากากและลดเวลาอยู่นอกบ้าน"
+            },
+            'advice_4': {
+                'mask': "สวมหน้ากาก N95 เมื่อออกนอกอาคาร",
+                'activity': "งดกิจกรรมที่ใช้แรงมาก",
+                'indoors': "ปิดหน้าต่างให้สนิท, เปิดเครื่องฟอกอากาศ",
+                'risk_group': "ควรงดกิจกรรมกลางแจ้งทั้งหมด"
+            },
+            'advice_5': {
+                'mask': "สวมหน้ากาก N95 อย่างเคร่งครัด",
+                'activity': "งดกิจกรรมกลางแจ้งเด็ดขาด",
+                'indoors': "อยู่ในห้องปลอดฝุ่น, เปิดเครื่องฟอกอากาศตลอดเวลา",
+                'risk_group': "ต้องอยู่ในอาคารเท่านั้น"
+            }
         },
         'month_names': ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"],
         'days_header_short': ["จ", "อ", "พ", "พฤ", "ศ", "ส", "อา"],
@@ -108,21 +135,48 @@ TRANSLATIONS = {
         'daily_avg_chart_title': "Daily Average PM2.5",
         'avg_pm25_unit': "Average PM2.5 (μg/m³)",
         'knowledge_header': "PM2.5 Knowledge Base",
-        'aqi_level_1': "Excellent Air",
-        'aqi_level_2': "Good Air",
+        'aqi_level_1': "Excellent",
+        'aqi_level_2': "Good",
         'aqi_level_3': "Moderate",
-        'aqi_level_4': "Health Risk",
-        'aqi_level_4_short': "Risk",
-        'aqi_level_5': "Hazardous",
-        'aqi_level_5_short': "Hazardous",
-        'general_public': "General Public",
-        'risk_group': "Sensitive Groups",
+        'aqi_level_4': "Unhealthy for Sensitive Groups",
+        'aqi_level_4_short': "Unhealthy (Sen.)",
+        'aqi_level_5': "Unhealthy",
+        'aqi_level_5_short': "Unhealthy",
+        'advice_cat_mask': "Mask",
+        'advice_cat_activity': "Outdoor Activity",
+        'advice_cat_indoors': "Indoors",
+        'advice_cat_risk_group': "Sensitive Groups",
         'advice': {
-            'advice_1': "<strong>General Public:</strong> Enjoy outdoor activities freely.<br><strong>Sensitive Groups:</strong> Can perform outdoor activities as normal.",
-            'advice_2': "<strong>General Public:</strong> Can perform outdoor activities as normal.<br><strong>Sensitive Groups:</strong> Should monitor for symptoms like coughing or difficulty breathing.",
-            'advice_3': "<strong>General Public:</strong> Should reduce strenuous outdoor activities.<br><strong>Sensitive Groups:</strong> Should reduce time spent outdoors and wear a protective mask.",
-            'advice_4': "<strong>General Public:</strong> Should reduce time spent outdoors and wear a mask when outside.<br><strong>Sensitive Groups:</strong> Should avoid all outdoor activities. If necessary, use strict personal protection.",
-            'advice_5': "<strong>General Public:</strong> Should avoid all outdoor activities and wear a mask if outside.<br><strong>Sensitive Groups:</strong> Must stay indoors, preferably in a clean room."
+            'advice_1': {
+                'mask': "Not necessary",
+                'activity': "Enjoy as usual",
+                'indoors': "Feel free to ventilate",
+                'risk_group': "Normal activities"
+            },
+            'advice_2': {
+                'mask': "Not necessary",
+                'activity': "Enjoy as usual",
+                'indoors': "Ventilate as needed",
+                'risk_group': "Monitor for symptoms"
+            },
+            'advice_3': {
+                'mask': "Consider a mask for prolonged outdoor exposure",
+                'activity': "Reduce strenuous exercise",
+                'indoors': "Close windows periodically",
+                'risk_group': "Wear a mask and reduce time outdoors"
+            },
+            'advice_4': {
+                'mask': "Wear an N95 mask when outdoors",
+                'activity': "Avoid strenuous activities",
+                'indoors': "Keep windows closed, run air purifier",
+                'risk_group': "Avoid all outdoor activities"
+            },
+            'advice_5': {
+                'mask': "Strictly wear an N95 mask",
+                'activity': "Avoid all outdoor activities",
+                'indoors': "Stay in a clean room, run purifier continuously",
+                'risk_group': "Must remain indoors"
+            }
         },
         'month_names': ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
         'days_header_short': ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
@@ -138,3 +192,4 @@ TRANSLATIONS = {
         ]
     }
 }
+
