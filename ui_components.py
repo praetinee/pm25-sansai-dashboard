@@ -6,13 +6,6 @@ import pandas as pd
 from utils import get_aqi_level
 from card_generator import generate_report_card
 
-# --- Simple, consistent SVG Icons ---
-ICON_MASK_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="advice-icon"><path d="M20 12V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v4Z"></path><path d="M20 12h-2.5a2 2 0 0 1-4 0H8.5a2 2 0 0 0-4 0H2"></path><path d="M4 12v-2"></path><path d="M20 10V8"></path><path d="M12 6V5"></path><path d="M12 12v-1"></path></svg>"""
-ICON_ACTIVITY_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="advice-icon"><circle cx="18.5" cy="17.5" r="3.5"></circle><circle cx="5.5" cy="17.5" r="3.5"></circle><circle cx="15" cy="5" r="1"></circle><path d="M12 17.5h-4.5l-3-6 4-1 3 6h3"></path><path d="m6.5 14 1 3"></path><path d="M14 5.5 17 9l-2.5 6"></path></svg>"""
-ICON_INDOORS_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="advice-icon"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>"""
-ICON_RISK_GROUP_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="risk-icon"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>"""
-
-
 def inject_custom_css():
     """Injects custom CSS to make the app responsive and theme-aware."""
     st.markdown("""
@@ -30,50 +23,6 @@ def inject_custom_css():
                 background-color: var(--secondary-background-color);
                 border: 1px solid var(--border-color, #dfe6e9);
                 height: 100%;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-            }
-            .advice-container {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 20px;
-                text-align: center;
-                margin-bottom: 20px;
-            }
-            .advice-item {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: flex-start;
-            }
-            .advice-icon {
-                margin-bottom: 10px;
-                color: var(--text-color);
-            }
-            .advice-title {
-                font-weight: 600;
-                font-size: 1.1rem;
-                margin-bottom: 5px;
-            }
-            .advice-body {
-                font-size: 0.95rem;
-                opacity: 0.9;
-                min-height: 50px;
-            }
-            .risk-advice {
-                margin-top: 15px;
-                padding-top: 15px;
-                border-top: 1px solid var(--border-color, #dfe6e9);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 10px;
-                font-size: 1.05rem;
-            }
-            .risk-icon {
-                 display: inline-block;
-                 vertical-align: middle;
             }
             .calendar-day {
                 background-color: var(--secondary-background-color);
@@ -103,7 +52,7 @@ def inject_custom_css():
 def display_realtime_pm(df, lang, t, date_str):
     inject_custom_css()
     latest_pm25 = df['PM2.5'][0]
-    level, color, _, advice_details = get_aqi_level(latest_pm25, lang, t)
+    level, color, emoji, advice = get_aqi_level(latest_pm25, lang, t)
 
     col1, col2 = st.columns([1, 2])
     with col1:
@@ -112,7 +61,7 @@ def display_realtime_pm(df, lang, t, date_str):
             <div style="background-color: {color}; padding: 25px; border-radius: 15px; text-align: center; color: white; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2); height: 100%;">
                 <h1 style="font-family: 'Sarabun', sans-serif; font-size: 4.5rem; margin: 0; text-shadow: 2px 2px 4px #000000;">{latest_pm25:.1f}</h1>
                 <p style="font-family: 'Sarabun', sans-serif; font-size: 1.5rem; margin: 0;">μg/m³</p>
-                <h2 style="font-family: 'Sarabun', sans-serif; margin-top: 15px;">{level}</h2>
+                <h2 style="font-family: 'Sarabun', sans-serif; margin-top: 15px;">{level} {emoji}</h2>
             </div>
             """, unsafe_allow_html=True)
     with col2:
@@ -127,42 +76,18 @@ def display_realtime_pm(df, lang, t, date_str):
             </div>
         """, unsafe_allow_html=True)
         st.subheader(t[lang]['advice_header'])
-        advice_html = f"""
-        <div class="card">
-            <div class="advice-container">
-                <div class="advice-item">
-                    {ICON_MASK_SVG}
-                    <div class="advice-title">{t[lang]['advice_cat_mask']}</div>
-                    <div class="advice-body">{advice_details['mask']}</div>
-                </div>
-                <div class="advice-item">
-                    {ICON_ACTIVITY_SVG}
-                    <div class="advice-title">{t[lang]['advice_cat_activity']}</div>
-                    <div class="advice-body">{advice_details['activity']}</div>
-                </div>
-                <div class="advice-item">
-                    {ICON_INDOORS_SVG}
-                    <div class="advice-title">{t[lang]['advice_cat_indoors']}</div>
-                    <div class="advice-body">{advice_details['indoors']}</div>
-                </div>
-            </div>
-            <div class="risk-advice">
-                {ICON_RISK_GROUP_SVG}
-                <span><b>{t[lang]['advice_cat_risk_group']}:</b> {advice_details['risk_group']}</span>
-            </div>
-        </div>
-        """
-        st.markdown(advice_html, unsafe_allow_html=True)
+        st.markdown(f"<div class='card'>{advice}</div>", unsafe_allow_html=True)
 
-    st.write("") 
+    st.write("") # Add a small space
 
-    b_col1, b_col2, b_col3 = st.columns([2,2,8]) 
+    # --- Action Buttons ---
+    b_col1, b_col2, b_col3 = st.columns([2,2,8]) # Adjust column ratios
     with b_col1:
         if st.button(f"🔄 {t[lang]['refresh_button']}", use_container_width=True):
             st.cache_data.clear()
             st.rerun()
     with b_col2:
-        report_card_bytes = generate_report_card(latest_pm25, level, color, "", advice_details, date_str, lang, t)
+        report_card_bytes = generate_report_card(latest_pm25, level, color, emoji, advice, date_str, lang, t)
         if report_card_bytes:
             st.download_button(
                 label=f"🖼️ {t[lang]['download_button']}",
@@ -250,7 +175,7 @@ def display_monthly_calendar(df, lang, t):
         t[lang]['date_picker_label'],
         options=month_options,
         format_func=format_month,
-        index=len(month_options)-1 
+        index=len(month_options)-1 # Default to the latest month
     )
     
     year, month = selected_month_str.year, selected_month_str.month
@@ -350,4 +275,3 @@ def display_knowledge_base(lang, t):
         if item['title'] == st.session_state.selected_topic:
             st.markdown(item['body'])
             break
-
