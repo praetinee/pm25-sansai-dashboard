@@ -87,9 +87,27 @@ def inject_custom_css():
                 text-align: center;
             }
             /* Custom CSS for Filterable Cards */
+            .filter-buttons {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+                margin-bottom: 24px;
+                justify-content: center;
+            }
             .filter-buttons button {
-                transition: all 0.2s ease-in-out;
+                flex: 1;
+                min-width: 120px;
+                padding: 12px 24px;
+                border-radius: 9999px;
+                background-color: #e2e8f0;
+                color: #4b5563;
                 font-weight: 600;
+                transition: all 0.2s ease-in-out;
+                border: none;
+                cursor: pointer;
+            }
+            .filter-buttons button:hover {
+                background-color: #cbd5e1;
             }
             .filter-buttons button.active {
                 background-color: #1e40af;
@@ -101,7 +119,6 @@ def inject_custom_css():
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
                 gap: 24px;
-                transition: all 0.4s ease-in-out;
             }
             .knowledge-card {
                 background-color: white;
@@ -124,7 +141,7 @@ def inject_custom_css():
                 line-height: 1.6;
                 margin-bottom: 8px;
             }
-            
+
             /* Stlyes for file-tab look */
             div[data-baseweb="tab-list"] button[aria-selected="true"] {
                 background-color: #f0f2f5;
@@ -413,16 +430,15 @@ def display_knowledge_base(lang, t):
     
     # Custom HTML/CSS/JS for Filterable Cards
     html_content = f"""
-    <div class="container">
-        <div class="filter-buttons flex flex-wrap gap-4 mb-8 justify-center md:justify-start">
-            <button class="py-2 px-6 rounded-full bg-white text-gray-700 hover:bg-gray-200 active" onclick="filterCards('all')">{t[lang]['filter_all']}</button>
-            <button class="py-2 px-6 rounded-full bg-white text-gray-700 hover:bg-gray-200" onclick="filterCards('info')">{t[lang]['filter_info']}</button>
-            <button class="py-2 px-6 rounded-full bg-white text-gray-700 hover:bg-gray-200" onclick="filterCards('danger')">{t[lang]['filter_danger']}</button>
-            <button class="py-2 px-6 rounded-full bg-white text-gray-700 hover:bg-gray-200" onclick="filterCards('prevention')">{t[lang]['filter_prevention']}</button>
-            <button class="py-2 px-6 rounded-full bg-white text-gray-700 hover:bg-gray-200" onclick="filterCards('health')">{t[lang]['filter_health']}</button>
-        </div>
-        
-        <div id="card-container" class="card-container-grid">
+    <div class="filter-buttons">
+        <button class="active" onclick="filterCards('all')">{t[lang]['filter_all']}</button>
+        <button onclick="filterCards('info')">{t[lang]['filter_info']}</button>
+        <button onclick="filterCards('danger')">{t[lang]['filter_danger']}</button>
+        <button onclick="filterCards('prevention')">{t[lang]['filter_prevention']}</button>
+        <button onclick="filterCards('health')">{t[lang]['filter_health']}</button>
+    </div>
+    
+    <div id="card-container" class="card-container-grid">
     """
     
     for item in t[lang]['knowledge_content']:
@@ -434,7 +450,6 @@ def display_knowledge_base(lang, t):
         """
         
     html_content += """
-        </div>
     </div>
     <script>
         function filterCards(category) {
@@ -442,7 +457,10 @@ def display_knowledge_base(lang, t):
             buttons.forEach(button => {
                 button.classList.remove('active');
             });
-            document.querySelector(`.filter-buttons button[onclick="filterCards('${category}')"]`).classList.add('active');
+            const active_button = document.querySelector(`.filter-buttons button[onclick="filterCards('${category}')"]`);
+            if (active_button) {
+                active_button.classList.add('active');
+            }
             
             const cards = document.querySelectorAll('.knowledge-card');
             cards.forEach(card => {
