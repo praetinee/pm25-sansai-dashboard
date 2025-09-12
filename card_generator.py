@@ -115,6 +115,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     font_level = create_font(font_bold_bytes, 44)
     font_advice_header = create_font(font_bold_bytes, 26)
     font_advice = create_font(font_reg_bytes, 22)
+    font_advice_risk = create_font(font_reg_bytes, 24) # Bigger font for risk group
     font_footer = create_font(font_light_bytes, 18)
     
     width, height = 800, 1000
@@ -150,18 +151,18 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         
         icon_func(draw, center_x, advice_y_start) # Draw icon
         
-        text_y = advice_y_start + 85 # Adjusted for bigger icon
+        text_y = advice_y_start + 95 # Adjusted for bigger icon + more space
         draw.text((center_x, text_y), title, font=font_advice_header, anchor="ms", fill="#333333")
         draw.text((center_x, text_y + 35), advice_details[key], font=font_advice, anchor="ms", fill="#555555", align="center")
 
-    risk_y_start = advice_y_start + 170
+    risk_y_start = advice_y_start + 180 # Adjusted y position
     draw.line([(60, risk_y_start), (width - 60, risk_y_start)], fill="#EEEEEE", width=2)
     risk_text = f"{t[lang]['risk_group']}: {advice_details['risk_group']}"
-    draw.text((width/2, risk_y_start + 35), risk_text, font=font_advice, anchor="ms", fill="#333333")
+    draw.text((width/2, risk_y_start + 40), risk_text, font=font_advice_risk, anchor="ms", fill="#333333")
 
     # --- AQI Bar ---
     bar_y = height - 150
-    bar_height = 50
+    bar_height = 60 # Made bar taller
     colors_map = {
         '#0099FF': (t[lang]['aqi_level_1'], "0-15"),
         '#2ECC71': (t[lang]['aqi_level_2'], "15-25"),
@@ -171,15 +172,21 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     }
     num_segments = len(colors_map)
     segment_width = (width - 80) / num_segments
-    font_bar = create_font(font_reg_bytes, 18)
+    font_bar = create_font(font_reg_bytes, 20) # Bigger font in bar
     
     for i, (bar_color, (bar_level, bar_range)) in enumerate(colors_map.items()):
         x0 = 40 + i * segment_width
         x1 = x0 + segment_width
         text_color = "black" if bar_color == "#F1C40F" else "white"
         draw.rectangle([(x0, bar_y), (x1, bar_y + bar_height)], fill=bar_color)
-        draw.text((x0 + segment_width/2, bar_y + 15), bar_level, font=font_bar, anchor="ms", fill=text_color)
-        draw.text((x0 + segment_width/2, bar_y + 35), bar_range, font=font_bar, anchor="ms", fill=text_color)
+        
+        # Calculate vertical center for text
+        text_center_y = bar_y + bar_height / 2
+        
+        # Draw text using the calculated center
+        draw.text((x0 + segment_width/2, text_center_y - 10), bar_level, font=font_bar, anchor="ms", fill=text_color)
+        draw.text((x0 + segment_width/2, text_center_y + 10), bar_range, font=font_bar, anchor="ms", fill=text_color)
+
 
     footer_text = t[lang]['report_card_footer']
     draw.text((width - 40, height - 40), footer_text, font=font_footer, anchor="rs", fill="#AAAAAA")
@@ -193,4 +200,3 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     buf = BytesIO()
     img.save(buf, format='PNG')
     return buf.getvalue()
-
