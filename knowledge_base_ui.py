@@ -13,12 +13,11 @@ def display_knowledge_base(lang, t):
         st.session_state.selected_category = 'all'
 
     # Create a function to update the session state.
-    # Streamlit will automatically rerun the app after the callback is executed,
-    # so st.rerun() is not needed here.
+    # This function now also sets the active_tab state to ensure
+    # the correct tab remains visible after a button click.
     def set_category(cat):
         st.session_state.selected_category = cat
-        # st.session_state.active_tab = "เกร็ดความรู้" # This is also redundant as the buttons are on this tab
-        # st.rerun() # REMOVED: This line caused the warning
+        st.session_state.active_tab = "เกร็ดความรู้" 
 
     # We use a key to make each button unique and properly handle the on_click callback
     col1, col2, col3, col4, col5 = st.columns(5)
@@ -49,3 +48,4 @@ def display_knowledge_base(lang, t):
                 </div>
                 """, unsafe_allow_html=True)
                 col_index = (col_index + 1) % num_cols
+
