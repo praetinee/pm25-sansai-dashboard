@@ -15,11 +15,11 @@ def get_font(url):
         return None
 
 # --- Icon Drawing Functions ---
-def draw_mask_icon(draw, center_x, y, size=60, color="#333333"):
+def draw_mask_icon(draw, center_x, y, size=72, color="#333333"):
     """Draws the custom mask icon using Pillow with standardized stroke width."""
     offset_x = center_x - size / 2
     offset_y = y
-    stroke_width = 2.5 # Standardized stroke width
+    stroke_width = 3 # Standardized stroke width
     s = size / 24 # Scale factor from 24x24 viewBox
 
     def p(px, py):
@@ -40,11 +40,11 @@ def draw_mask_icon(draw, center_x, y, size=60, color="#333333"):
     draw.line([p(6, 17), p(12, 15.5), p(18, 17)], fill=color, width=fold_width)
 
 
-def draw_activity_icon(draw, center_x, y, size=60, color="#333333"):
+def draw_activity_icon(draw, center_x, y, size=72, color="#333333"):
     """Draws the custom bicycle icon using Pillow with standardized stroke width."""
     offset_x = center_x - size / 2
     offset_y = y
-    stroke_width = 2.5 # Standardized stroke width
+    stroke_width = 3 # Standardized stroke width
     s = size / 24 # Scale factor from 24x24 viewBox
 
     def p(px, py):
@@ -64,10 +64,10 @@ def draw_activity_icon(draw, center_x, y, size=60, color="#333333"):
     draw.line([p(15, 16.5), p(16.5, 11.25), p(19.5, 10.5)], fill=color, width=int(stroke_width))
 
 
-def draw_indoors_icon(draw, center_x, y, size=60, color="#333333"):
+def draw_indoors_icon(draw, center_x, y, size=72, color="#333333"):
     """Draws the house icon using Pillow."""
     s = size / 24 
-    w = 2.5 # Standardized stroke width
+    w = 3 # Standardized stroke width
     offset_x = center_x - size / 2
     offset_y = y
     
@@ -108,14 +108,14 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         font_bytes.seek(0)
         return ImageFont.truetype(font_bytes, size)
 
-    font_header = create_font(font_bold_bytes, 36)
-    font_date = create_font(font_reg_bytes, 24)
+    font_header = create_font(font_bold_bytes, 38)
+    font_date = create_font(font_reg_bytes, 26)
     font_pm_value = create_font(font_bold_bytes, 150)
-    font_unit = create_font(font_reg_bytes, 30)
-    font_level = create_font(font_bold_bytes, 40)
-    font_advice_header = create_font(font_bold_bytes, 24)
-    font_advice = create_font(font_reg_bytes, 20)
-    font_footer = create_font(font_light_bytes, 16)
+    font_unit = create_font(font_reg_bytes, 32)
+    font_level = create_font(font_bold_bytes, 44)
+    font_advice_header = create_font(font_bold_bytes, 26)
+    font_advice = create_font(font_reg_bytes, 22)
+    font_footer = create_font(font_light_bytes, 18)
     
     width, height = 800, 1000
     base_color = tuple(int(color_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
@@ -124,17 +124,17 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
 
     header_title = t[lang]['page_title']
     draw.text((width/2, 60), header_title, font=font_header, anchor="ms", fill="#FFFFFF")
-    draw.text((width/2, 105), date_str, font=font_date, anchor="ms", fill=(255, 255, 255, 200))
+    draw.text((width/2, 110), date_str, font=font_date, anchor="ms", fill=(255, 255, 255, 200))
 
     box_y_start = 150
     draw.rounded_rectangle([(20, box_y_start), (width - 20, height - 20)], radius=20, fill="#FFFFFF")
     
-    pm_y_pos = box_y_start + 110
+    pm_y_pos = box_y_start + 130 # Moved down
     draw.text((width/2, pm_y_pos), f"{latest_pm25:.1f}", font=font_pm_value, anchor="ms", fill="#111111")
-    draw.text((width/2, pm_y_pos + 80), "μg/m³", font=font_unit, anchor="ms", fill="#555555")
-    draw.text((width/2, pm_y_pos + 130), level, font=font_level, anchor="ms", fill="#111111")
+    draw.text((width/2, pm_y_pos + 85), "μg/m³", font=font_unit, anchor="ms", fill="#555555")
+    draw.text((width/2, pm_y_pos + 135), level, font=font_level, anchor="ms", fill="#111111")
     
-    advice_y_start = pm_y_pos + 220
+    advice_y_start = pm_y_pos + 230
     draw.line([(60, advice_y_start-20), (width - 60, advice_y_start-20)], fill="#EEEEEE", width=2)
     
     # --- Advice with Icons ---
@@ -150,14 +150,14 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         
         icon_func(draw, center_x, advice_y_start) # Draw icon
         
-        text_y = advice_y_start + 75 # Adjusted for bigger icon
+        text_y = advice_y_start + 85 # Adjusted for bigger icon
         draw.text((center_x, text_y), title, font=font_advice_header, anchor="ms", fill="#333333")
-        draw.text((center_x, text_y + 30), advice_details[key], font=font_advice, anchor="ms", fill="#555555", align="center")
+        draw.text((center_x, text_y + 35), advice_details[key], font=font_advice, anchor="ms", fill="#555555", align="center")
 
-    risk_y_start = advice_y_start + 150
+    risk_y_start = advice_y_start + 170
     draw.line([(60, risk_y_start), (width - 60, risk_y_start)], fill="#EEEEEE", width=2)
     risk_text = f"{t[lang]['risk_group']}: {advice_details['risk_group']}"
-    draw.text((width/2, risk_y_start + 30), risk_text, font=font_advice, anchor="ms", fill="#333333")
+    draw.text((width/2, risk_y_start + 35), risk_text, font=font_advice, anchor="ms", fill="#333333")
 
     # --- AQI Bar ---
     bar_y = height - 150
@@ -171,7 +171,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     }
     num_segments = len(colors_map)
     segment_width = (width - 80) / num_segments
-    font_bar = create_font(font_reg_bytes, 16)
+    font_bar = create_font(font_reg_bytes, 18)
     
     for i, (bar_color, (bar_level, bar_range)) in enumerate(colors_map.items()):
         x0 = 40 + i * segment_width
