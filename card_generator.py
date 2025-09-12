@@ -135,7 +135,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     draw.text((width/2, pm_y_pos + 85), "μg/m³", font=font_unit, anchor="ms", fill="#555555")
     draw.text((width/2, pm_y_pos + 135), level, font=font_level, anchor="ms", fill="#111111")
     
-    advice_y_start = pm_y_pos + 230
+    advice_y_start = pm_y_pos + 200 # Moved up
     draw.line([(60, advice_y_start-20), (width - 60, advice_y_start-20)], fill="#EEEEEE", width=2)
     
     # --- Advice with Icons ---
