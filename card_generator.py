@@ -113,9 +113,9 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     font_pm_value = create_font(font_bold_bytes, 150)
     font_unit = create_font(font_reg_bytes, 32)
     font_level = create_font(font_bold_bytes, 44)
-    font_advice_header = create_font(font_bold_bytes, 28) # Bigger
-    font_advice = create_font(font_reg_bytes, 24) # Bigger
-    font_advice_risk = create_font(font_bold_bytes, 26) # Bigger and Bold
+    font_advice_header = create_font(font_bold_bytes, 28) 
+    font_advice = create_font(font_reg_bytes, 24) 
+    font_advice_risk = create_font(font_bold_bytes, 36) # Significantly bigger and Bold
     font_footer = create_font(font_light_bytes, 18)
     
     width, height = 800, 1000
@@ -151,14 +151,14 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         
         icon_func(draw, center_x, advice_y_start) 
         
-        text_y = advice_y_start + 100 # Adjusted for more space
+        text_y = advice_y_start + 100 
         draw.text((center_x, text_y), title, font=font_advice_header, anchor="ms", fill="#333333")
         draw.text((center_x, text_y + 40), advice_details[key], font=font_advice, anchor="ms", fill="#555555", align="center")
 
-    risk_y_start = advice_y_start + 190 # Adjusted y position
+    risk_y_start = advice_y_start + 190 
     draw.line([(60, risk_y_start), (width - 60, risk_y_start)], fill="#EEEEEE", width=2)
     risk_text = f"{t[lang]['risk_group']}: {advice_details['risk_group']}"
-    draw.text((width/2, risk_y_start + 45), risk_text, font=font_advice_risk, anchor="ms", fill="#333333")
+    draw.text((width/2, risk_y_start + 50), risk_text, font=font_advice_risk, anchor="ms", fill="#333333")
 
     # --- AQI Bar ---
     bar_y = height - 150
@@ -172,7 +172,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     }
     num_segments = len(colors_map)
     segment_width = (width - 80) / num_segments
-    font_bar = create_font(font_bold_bytes, 22) # Bigger and Bold font in bar
+    font_bar = create_font(font_bold_bytes, 22) 
     
     for i, (bar_color, (bar_level, bar_range)) in enumerate(colors_map.items()):
         x0 = 40 + i * segment_width
