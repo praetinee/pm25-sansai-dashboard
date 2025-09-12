@@ -15,8 +15,6 @@ def inject_custom_css():
             }
             .st-expander-header p {
                  font-family: 'Sarabun', sans-serif !important;
-                 font-size: 1.1rem; /* Adjust font size for better readability */
-                 font-weight: 500;
             }
             .card {
                 padding: 20px;
@@ -46,17 +44,17 @@ def inject_custom_css():
             .calendar-day-value { font-size: 1.5rem; font-weight: 700; line-height: 1; }
             .calendar-day-na { background-color: var(--secondary-background-color); color: var(--text-color); opacity: 0.5; box-shadow: none; }
             .aqi-legend-bar { display: flex; height: 50px; width: 100%; border-radius: 10px; overflow: hidden; margin-top: 10px; }
-            .aqi-legend-segment { 
-                flex-grow: 1; 
-                display: flex; 
-                flex-direction: column; 
-                align-items: center; 
-                justify-content: center; 
-                color: white; 
-                font-weight: 500; 
-                text-shadow: 1px 1px 2px rgba(0,0,0,0.4); 
-                font-size: 0.9rem; 
-                line-height: 1.2; 
+            .aqi-legend-segment {
+                flex-grow: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: 500;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+                font-size: 0.9rem;
+                line-height: 1.2;
                 text-align: center;
             }
             .advice-container {
@@ -88,30 +86,59 @@ def inject_custom_css():
                 border-top: 1px solid #e0e0e0;
                 text-align: center;
             }
-
-            /* Custom CSS for file tabs */
-            .stTabs [data-baseweb="tab-list"] {
-                gap: 5px;
+            /* Custom CSS for Filterable Cards */
+            .filter-buttons button {
+                transition: all 0.2s ease-in-out;
+                font-weight: 600;
             }
-            .stTabs [data-baseweb="tab"] {
-                background-color: var(--secondary-background-color);
-                border-radius: 10px 10px 0 0 !important;
-                border: 1px solid var(--border-color, #dfe6e9) !important;
-                border-bottom: none !important;
-                padding: 10px 20px !important;
-                box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
-                transition: transform 0.2s ease-in-out;
-            }
-            .stTabs [data-baseweb="tab"]:hover {
+            .filter-buttons button.active {
+                background-color: #1e40af;
+                color: white;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
                 transform: translateY(-2px);
-                box-shadow: 0 -4px 8px rgba(0,0,0,0.1);
             }
-            .stTabs [aria-selected="true"] {
-                background-color: var(--background-color) !important;
-                border-top-color: var(--primary-color) !important;
-                border-top-width: 3px !important;
-                transform: translateY(0);
-                box-shadow: none;
+            .card-container-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 24px;
+                transition: all 0.4s ease-in-out;
+            }
+            .knowledge-card {
+                background-color: white;
+                border-radius: 12px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                padding: 24px;
+                opacity: 1;
+                transform: scale(1);
+                transition: opacity 0.3s ease, transform 0.3s ease;
+            }
+            .knowledge-card.hidden {
+                display: none;
+            }
+            .knowledge-card h4 {
+                color: #1e40af;
+                font-weight: 700;
+                margin-bottom: 8px;
+            }
+            .knowledge-card p {
+                line-height: 1.6;
+                margin-bottom: 8px;
+            }
+            
+            /* Stlyes for file-tab look */
+            div[data-baseweb="tab-list"] button[aria-selected="true"] {
+                background-color: #f0f2f5;
+                color: #1e40af !important;
+                border-bottom: 3px solid #1e40af !important;
+            }
+            div[data-baseweb="tab-list"] {
+                padding: 0 !important;
+                background-color: transparent !important;
+            }
+            div[data-baseweb="tab-list"] button {
+                border-radius: 10px 10px 0 0 !important;
+                margin: 0 5px !important;
+                padding: 10px 20px !important;
             }
         </style>
     """, unsafe_allow_html=True)
@@ -382,8 +409,51 @@ def display_historical_data(df, lang, t):
             st.plotly_chart(fig_hist, use_container_width=True)
 
 def display_knowledge_base(lang, t):
-    st.header(t[lang]['knowledge_header'])
+    st.subheader(t[lang]['knowledge_header'])
+    
+    # Custom HTML/CSS/JS for Filterable Cards
+    html_content = f"""
+    <div class="container">
+        <div class="filter-buttons flex flex-wrap gap-4 mb-8 justify-center md:justify-start">
+            <button class="py-2 px-6 rounded-full bg-white text-gray-700 hover:bg-gray-200 active" onclick="filterCards('all')">{t[lang]['filter_all']}</button>
+            <button class="py-2 px-6 rounded-full bg-white text-gray-700 hover:bg-gray-200" onclick="filterCards('info')">{t[lang]['filter_info']}</button>
+            <button class="py-2 px-6 rounded-full bg-white text-gray-700 hover:bg-gray-200" onclick="filterCards('danger')">{t[lang]['filter_danger']}</button>
+            <button class="py-2 px-6 rounded-full bg-white text-gray-700 hover:bg-gray-200" onclick="filterCards('prevention')">{t[lang]['filter_prevention']}</button>
+            <button class="py-2 px-6 rounded-full bg-white text-gray-700 hover:bg-gray-200" onclick="filterCards('health')">{t[lang]['filter_health']}</button>
+        </div>
+        
+        <div id="card-container" class="card-container-grid">
+    """
     
     for item in t[lang]['knowledge_content']:
-        with st.expander(item['title']):
-            st.markdown(item['body'])
+        html_content += f"""
+        <div class="knowledge-card" data-category="{item['category']}">
+            <h4>{item['title']}</h4>
+            <p>{item['body']}</p>
+        </div>
+        """
+        
+    html_content += """
+        </div>
+    </div>
+    <script>
+        function filterCards(category) {
+            const buttons = document.querySelectorAll('.filter-buttons button');
+            buttons.forEach(button => {
+                button.classList.remove('active');
+            });
+            document.querySelector(`.filter-buttons button[onclick="filterCards('${category}')"]`).classList.add('active');
+            
+            const cards = document.querySelectorAll('.knowledge-card');
+            cards.forEach(card => {
+                if (category === 'all' || card.dataset.category === category) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+    """
+    
+    st.markdown(html_content, unsafe_allow_html=True)
