@@ -1,4 +1,5 @@
 import streamlit as st
+import markdown
 
 def display_knowledge_base(lang, t):
     """
@@ -11,7 +12,7 @@ def display_knowledge_base(lang, t):
     if 'selected_category' not in st.session_state:
         st.session_state.selected_category = 'all'
 
-    # Create a function to update the session state
+    # Create a function to update the session state and switch tab
     def set_category(cat):
         st.session_state.selected_category = cat
 
@@ -31,7 +32,7 @@ def display_knowledge_base(lang, t):
     # Add custom CSS to style the active button
     active_button_style = f"""
     <style>
-    div[data-testid="stButton"] > button[data-testid="stDecoration-{st.session_state.selected_category}"] {{
+    div[data-testid="stButton"] > button[key="btn_{st.session_state.selected_category}"] {{
         background-color: #1e40af;
         color: white;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -51,10 +52,13 @@ def display_knowledge_base(lang, t):
     for item in t[lang]['knowledge_content']:
         if st.session_state.selected_category == 'all' or item['category'] == st.session_state.selected_category:
             with cols[col_index]:
+                # Use Markdown to render the content correctly, replacing the raw text
+                card_body = markdown.markdown(item['body'])
+                
                 st.markdown(f"""
                 <div class="knowledge-card">
                     <h4>{item['title']}</h4>
-                    <p>{item['body']}</p>
+                    <p>{card_body}</p>
                 </div>
                 """, unsafe_allow_html=True)
                 col_index = (col_index + 1) % num_cols
