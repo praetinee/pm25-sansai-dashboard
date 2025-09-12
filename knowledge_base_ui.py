@@ -6,6 +6,15 @@ def display_knowledge_base(lang, t):
     Displays the knowledge base section with filterable cards.
     Separated into its own module for better code organization.
     """
+    # Add specific CSS to ensure Sarabun font is used for card titles and content.
+    st.markdown("""
+        <style>
+            .knowledge-card h4, .knowledge-card p, .knowledge-card li, .knowledge-card strong {
+                font-family: 'Sarabun', sans-serif !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
     st.subheader(t[lang]['knowledge_header'])
 
     # Use session state to handle the selected category
