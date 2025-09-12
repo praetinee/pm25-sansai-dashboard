@@ -267,10 +267,6 @@ def display_realtime_pm(df, lang, t, date_str):
 
 def display_external_assessment(lang, t):
     st.subheader(t[lang]['external_assessment_title'])
-    
-    # SVG Icons for social media
-    line_svg = """<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.03 2 11.01C2 13.98 3.65 16.6 6.31 18.25L5.43 22L9.49 20.08C10.29 20.21 11.12 20.27 12 20.27C17.52 20.27 22 16.24 22 11.26C22 6.28 17.52 2 12 2ZM8.93 13.13H7.22V9.41H8.93V13.13ZM12.39 13.13H10.68V9.41H12.39V10.83C12.72 10.03 13.59 9.29 14.65 9.29C16.33 9.29 16.78 10.32 16.78 11.8V13.13H15.07V11.96C15.07 11.16 14.62 10.67 13.84 10.67C13.06 10.67 12.64 11.22 12.64 12.08L12.39 13.13Z" fill="#00B900"/></svg>"""
-    facebook_svg = """<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 12C22 6.477 17.523 2 12 2C6.477 2 2 6.477 2 12C2 16.99 5.863 21.08 10.5 21.825V14.875H7.5V12H10.5V9.5C10.5 6.533 12.375 5 15.075 5C16.35 5 17.5 5.2 17.5 5.2V7.875H16.05C14.6 7.875 14.25 8.7 14.25 9.8V12H17.25L16.8 14.875H14.25V21.825C18.937 21.08 22 16.99 22 12Z" fill="#1877F2"/></svg>"""
 
     st.markdown(f"""
     <style>
@@ -305,35 +301,6 @@ def display_external_assessment(lang, t):
             transform: translateY(-2px);
             box-shadow: 0 6px 12px rgba(0,0,0,0.1);
         }}
-        .contact-header {{
-            text-align: center;
-            margin-top: 30px;
-            margin-bottom: 15px;
-            font-weight: 500;
-            color: #555;
-        }}
-        .contact-channels {{
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 25px;
-            flex-wrap: wrap;
-        }}
-        .contact-channels a {{
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-            color: #333;
-            font-weight: 500;
-            padding: 8px 15px;
-            border-radius: 20px;
-            background-color: #e9ecef;
-            transition: background-color 0.3s ease;
-        }}
-        .contact-channels a:hover {{
-            background-color: #dde1e5;
-        }}
     </style>
 
     <div class="assessment-card">
@@ -341,11 +308,6 @@ def display_external_assessment(lang, t):
         <a href="https://www.pollutionclinic.com/home/diagnose/?gc=lampoon" target="_blank" class="assessment-button">
             {t[lang]['assessment_button_text']}
         </a>
-        <h5 class="contact-header">{t[lang]['contact_header']}</h5>
-        <div class="contact-channels">
-            <a href="https://line.me/ti/p/gq4t5A-J-c" target="_blank">{line_svg} LINE คลินิกมลพิษ</a>
-            <a href="https://www.facebook.com/pollutionclinic" target="_blank">{facebook_svg} Facebook คลินิกมลพิษ</a>
-        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -493,3 +455,4 @@ def display_historical_data(df, lang, t):
                 yaxis_title=t[lang]['avg_pm25_unit'],
                 template="plotly_white", plot_bgcolor='rgba(0,0,0,0)', showlegend=False)
             st.plotly_chart(fig_hist, use_container_width=True)
+
