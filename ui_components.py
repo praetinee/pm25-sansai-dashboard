@@ -4,6 +4,7 @@ from datetime import datetime
 import calendar
 import pandas as pd
 from utils import get_aqi_level
+from knowledge_base_ui import display_knowledge_base  # Import the new module
 
 def inject_custom_css():
     """Injects custom CSS to make the app responsive and theme-aware."""
@@ -425,53 +426,19 @@ def display_historical_data(df, lang, t):
                 template="plotly_white", plot_bgcolor='rgba(0,0,0,0)', showlegend=False)
             st.plotly_chart(fig_hist, use_container_width=True)
 
-def display_knowledge_base(lang, t):
-    st.subheader(t[lang]['knowledge_header'])
-    
-    # Custom HTML/CSS/JS for Filterable Cards
-    html_content = f"""
-    <div class="filter-buttons">
-        <button class="active" onclick="filterCards('all')">{t[lang]['filter_all']}</button>
-        <button onclick="filterCards('info')">{t[lang]['filter_info']}</button>
-        <button onclick="filterCards('danger')">{t[lang]['filter_danger']}</button>
-        <button onclick="filterCards('prevention')">{t[lang]['filter_prevention']}</button>
-        <button onclick="filterCards('health')">{t[lang]['filter_health']}</button>
-    </div>
-    
-    <div id="card-container" class="card-container-grid">
-    """
-    
-    for item in t[lang]['knowledge_content']:
-        html_content += f"""
-        <div class="knowledge-card" data-category="{item['category']}">
-            <h4>{item['title']}</h4>
-            <p>{item['body']}</p>
-        </div>
-        """
-        
-    html_content += """
-    </div>
-    <script>
-        function filterCards(category) {
-            const buttons = document.querySelectorAll('.filter-buttons button');
-            buttons.forEach(button => {
-                button.classList.remove('active');
-            });
-            const active_button = document.querySelector(`.filter-buttons button[onclick="filterCards('${category}')"]`);
-            if (active_button) {
-                active_button.classList.add('active');
-            }
-            
-            const cards = document.querySelectorAll('.knowledge-card');
-            cards.forEach(card => {
-                if (category === 'all' || card.dataset.category === category) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        }
-    </script>
-    """
-    
-    st.markdown(html_content, unsafe_allow_html=True)
+def display_symptom_checker(lang, t):
+    st.subheader(t[lang]['symptom_checker_title'])
+    st.write(t[lang]['symptom_checker_intro'])
+    symptoms = t[lang]['symptoms']
+    checked_symptoms = 0
+    for symptom in symptoms:
+        if st.checkbox(symptom, key=f"symptom_{symptom}"):
+            checked_symptoms += 1
+    st.write("---")
+    if checked_symptoms == 0:
+        st.success(f"✅ {t[lang]['symptom_results_0']}")
+    elif 1 <= checked_symptoms <= 2:
+        st.warning(f"⚠️ {t[lang]['symptom_results_1_2']}")
+    else:
+        st.error(f"🚨 {t[lang]['symptom_results_3_plus']}")
+    st.caption(t[lang]['symptom_disclaimer'])
