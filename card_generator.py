@@ -149,9 +149,9 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     for i, (key, title, icon_func) in enumerate(advice_items):
         center_x = (item_width * i) + (item_width / 2)
         
-        icon_func(draw, center_x, advice_y_start, size=96) # Increased icon size
+        icon_func(draw, center_x, advice_y_start) 
         
-        text_y = advice_y_start + 110 # Adjusted text position
+        text_y = advice_y_start + 100 
         draw.text((center_x, text_y), title, font=font_advice_header, anchor="ms", fill="#333333")
         draw.text((center_x, text_y + 40), advice_details[key], font=font_advice, anchor="ms", fill="#555555", align="center")
 
@@ -196,3 +196,4 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     buf = BytesIO()
     img.save(buf, format='PNG')
     return buf.getvalue()
+
