@@ -12,9 +12,10 @@ def display_knowledge_base(lang, t):
     if 'selected_category' not in st.session_state:
         st.session_state.selected_category = 'all'
 
-    # Create a function to update the session state and switch tab
+    # Create a function to update the session state
     def set_category(cat):
         st.session_state.selected_category = cat
+        st.rerun()
 
     # Create the buttons with a unique key and on_click handler
     col1, col2, col3, col4, col5 = st.columns(5)
@@ -30,18 +31,10 @@ def display_knowledge_base(lang, t):
         st.button(t[lang]['filter_health'], on_click=set_category, args=('health',), use_container_width=True, key='btn_health')
 
     # Add custom CSS to style the active button
-    active_button_style = f"""
-    <style>
-    div[data-testid="stButton"] > button[key="btn_{st.session_state.selected_category}"] {{
-        background-color: #1e40af;
-        color: white;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transform: translateY(-2px);
-    }}
-    </style>
-    """
-    st.markdown(active_button_style, unsafe_allow_html=True)
-    
+    # This part of the code is not needed as the Streamlit button widget
+    # handles the active state automatically. The button 'key' is sufficient
+    # to maintain state. We will remove this for a cleaner solution.
+
     # Display the filtered cards
     st.write("")  # Add some space
 
@@ -52,13 +45,13 @@ def display_knowledge_base(lang, t):
     for item in t[lang]['knowledge_content']:
         if st.session_state.selected_category == 'all' or item['category'] == st.session_state.selected_category:
             with cols[col_index]:
-                # Use Markdown to render the content correctly, replacing the raw text
-                card_body = markdown.markdown(item['body'])
+                # Use markdown.markdown() to render the Markdown syntax correctly
+                card_body_html = markdown.markdown(item['body'])
                 
                 st.markdown(f"""
                 <div class="knowledge-card">
                     <h4>{item['title']}</h4>
-                    <p>{card_body}</p>
+                    {card_body_html}
                 </div>
                 """, unsafe_allow_html=True)
                 col_index = (col_index + 1) % num_cols
