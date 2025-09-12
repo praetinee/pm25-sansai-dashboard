@@ -5,7 +5,7 @@ from ui_components import (
     display_24hr_chart,
     display_monthly_calendar,
     display_health_impact,
-    display_symptom_checker,
+    display_external_assessment,
     display_historical_data,
 )
 from knowledge_base_ui import display_knowledge_base
@@ -78,7 +78,7 @@ with tabs[0]:
     st.divider()
     display_health_impact(df, lang, t)
     st.divider()
-    display_symptom_checker(lang, t)
+    display_external_assessment(lang, t)
 
 with tabs[1]:
     display_knowledge_base(lang, t)
