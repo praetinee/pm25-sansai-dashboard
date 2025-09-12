@@ -55,19 +55,55 @@ st.markdown(f"{t[lang]['latest_data']} `{date_str}`")
 
 st.divider()
 
-# --- Tabbed UI ---
+# --- Custom CSS for Radio Tabs ---
+st.markdown("""
+<style>
+    /* Hide the default radio buttons circle */
+    div[role="radiogroup"] > label > div:first-child {
+        display: none;
+    }
+    /* Style the labels to look like tabs */
+    div[role="radiogroup"] > label {
+        display: inline-block;
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid transparent;
+        border-radius: 10px 10px 0 0;
+        padding: 10px 20px;
+        margin: 0 5px;
+        font-size: 1rem;
+        font-family: 'Sarabun', sans-serif;
+        color: #808495; /* Inactive tab color */
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+    }
+    /* Style for the selected tab */
+    div[role="radiogroup"] > label[data-baseweb="radio"]:has(input:checked) {
+        background-color: #f0f2f5; /* Light background for selected */
+        color: #1e40af !important; /* Active tab color */
+        border-bottom: 3px solid #1e40af !important; /* Active tab underline */
+        font-weight: 600;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# --- Tabbed UI (Re-implemented with st.radio) ---
 tab_titles = ["ค่า PM2.5 ปัจจุบัน", "เกร็ดความรู้"]
-active_tab = st.session_state.active_tab
 
-# Get the index of the active tab to set it
-try:
-    active_tab_index = tab_titles.index(st.session_state.active_tab)
-except ValueError:
-    active_tab_index = 0
+# The radio button's state is controlled by st.session_state.active_tab
+selected_tab = st.radio(
+    " ", 
+    tab_titles,
+    key='tabs_radio',
+    horizontal=True,
+    label_visibility='collapsed',
+    index=tab_titles.index(st.session_state.active_tab) # Set default from state
+)
+# Ensure our session state is always in sync with the user's selection
+st.session_state.active_tab = selected_tab 
 
-tabs = st.tabs(tab_titles)
-
-with tabs[0]:
+# Render content based on the selected tab
+if selected_tab == "ค่า PM2.5 ปัจจุบัน":
     display_realtime_pm(df, lang, t, date_str)
     st.divider()
     display_24hr_chart(df, lang, t)
@@ -80,8 +116,5 @@ with tabs[0]:
     st.divider()
     display_symptom_checker(lang, t)
 
-with tabs[1]:
+elif selected_tab == "เกร็ดความรู้":
     display_knowledge_base(lang, t)
-
-# Removed the redundant st.rerun() logic here.
-# The app should automatically update based on session state changes.
