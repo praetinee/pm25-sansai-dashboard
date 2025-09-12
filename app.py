@@ -7,15 +7,15 @@ from ui_components import (
     display_health_impact,
     display_symptom_checker,
     display_historical_data,
-    display_knowledge_base
 )
+from knowledge_base_ui import display_knowledge_base
 from translations import TRANSLATIONS as t
 
 # --- Page Configuration ---
 if 'lang' not in st.session_state:
     st.session_state.lang = 'th'
 if 'active_tab' not in st.session_state:
-    st.session_state.active_tab = "pm25_tab" # Set initial tab
+    st.session_state.active_tab = "ค่า PM2.5 ปัจจุบัน"
 
 st.set_page_config(
     page_title=t[st.session_state.lang]['page_title'],
@@ -58,38 +58,18 @@ st.divider()
 # --- Tabbed UI ---
 tab1, tab2 = st.tabs(["ค่า PM2.5 ปัจจุบัน", "เกร็ดความรู้"])
 
-# Change tab based on session state
-if st.session_state.active_tab == "pm25_tab":
-    with tab1:
-        # Display PM2.5 related components in the first tab
-        display_realtime_pm(df, lang, t, date_str)
-        st.divider()
-        display_24hr_chart(df, lang, t)
-        st.divider()
-        display_monthly_calendar(df, lang, t)
-        st.divider()
-        display_historical_data(df, lang, t)
-        st.divider()
-        display_health_impact(df, lang, t)
-        st.divider()
-        display_symptom_checker(lang, t)
-    with tab2:
-        # Display knowledge base in the second tab
-        display_knowledge_base(lang, t)
-else:
-    with tab1:
-        # Display PM2.5 related components in the first tab
-        display_realtime_pm(df, lang, t, date_str)
-        st.divider()
-        display_24hr_chart(df, lang, t)
-        st.divider()
-        display_monthly_calendar(df, lang, t)
-        st.divider()
-        display_historical_data(df, lang, t)
-        st.divider()
-        display_health_impact(df, lang, t)
-        st.divider()
-        display_symptom_checker(lang, t)
-    with tab2:
-        # Display knowledge base in the second tab
-        display_knowledge_base(lang, t)
+with tab1:
+    display_realtime_pm(df, lang, t, date_str)
+    st.divider()
+    display_24hr_chart(df, lang, t)
+    st.divider()
+    display_monthly_calendar(df, lang, t)
+    st.divider()
+    display_historical_data(df, lang, t)
+    st.divider()
+    display_health_impact(df, lang, t)
+    st.divider()
+    display_symptom_checker(lang, t)
+
+with tab2:
+    display_knowledge_base(lang, t)
