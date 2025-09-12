@@ -70,9 +70,8 @@ def inject_custom_css():
                 align-items: center;
             }
             .advice-icon svg {
-                /* Adjusted size for better visibility */
-                width: 60px;
-                height: 60px;
+                width: 48px;
+                height: 48px;
                 margin-bottom: 8px;
             }
             .advice-title {
@@ -173,11 +172,9 @@ def display_realtime_pm(df, lang, t, date_str):
         st.subheader(t[lang]['current_pm25'])
         st.markdown(f"""
             <div style="background-color: {color}; padding: 25px; border-radius: 15px; text-align: center; color: white; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2); height: 100%;">
-                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
-                    <h1 style="font-family: 'Sarabun', sans-serif; font-size: 4.5rem; margin-bottom: -15px; text-shadow: 2px 2px 4px #000000;">{latest_pm25:.1f}</h1>
-                    <p style="font-family: 'Sarabun', sans-serif; font-size: 1.5rem; margin-top: 0;">μg/m³</p>
-                    <h2 style="font-family: 'Sarabun', sans-serif; margin-top: 15px;">{level}</h2>
-                </div>
+                <h1 style="font-family: 'Sarabun', sans-serif; font-size: 4.5rem; margin: 0; text-shadow: 2px 2px 4px #000000;">{latest_pm25:.1f}</h1>
+                <p style="font-family: 'Sarabun', sans-serif; font-size: 1.5rem; margin: 0;">μg/m³</p>
+                <h2 style="font-family: 'Sarabun', sans-serif; margin-top: 15px;">{level}</h2>
             </div>
             """, unsafe_allow_html=True)
     with col2:
