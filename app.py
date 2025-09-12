@@ -7,7 +7,7 @@ from ui_components import (
     display_health_impact,
     display_symptom_checker,
     display_historical_data,
-    display_knowledge_base  # Renamed from display_knowledge_tabs
+    display_knowledge_base
 )
 from translations import TRANSLATIONS as t
 
@@ -53,18 +53,23 @@ st.markdown(f"{t[lang]['latest_data']} `{date_str}`")
 
 st.divider()
 
-# --- UI Components Display Order (Updated) ---
-display_realtime_pm(df, lang, t, date_str)
-st.divider()
-display_24hr_chart(df, lang, t)
-st.divider()
-display_monthly_calendar(df, lang, t)
-st.divider()
-display_historical_data(df, lang, t)
-st.divider()
-display_knowledge_base(lang, t) # New knowledge base display
-st.divider()
-display_health_impact(df, lang, t)
-st.divider()
-display_symptom_checker(lang, t) # Moved to the bottom
+# --- Tabbed UI ---
+tab1, tab2 = st.tabs(["ค่า PM2.5 ปัจจุบัน", "เกร็ดความรู้"])
 
+with tab1:
+    # Display PM2.5 related components in the first tab
+    display_realtime_pm(df, lang, t, date_str)
+    st.divider()
+    display_24hr_chart(df, lang, t)
+    st.divider()
+    display_monthly_calendar(df, lang, t)
+    st.divider()
+    display_historical_data(df, lang, t)
+    st.divider()
+    display_health_impact(df, lang, t)
+    st.divider()
+    display_symptom_checker(lang, t)
+
+with tab2:
+    # Display knowledge base in the second tab
+    display_knowledge_base(lang, t)
