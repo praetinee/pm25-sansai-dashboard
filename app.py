@@ -56,9 +56,12 @@ st.markdown(f"{t[lang]['latest_data']} `{date_str}`")
 st.divider()
 
 # --- Tabbed UI ---
-tab1, tab2 = st.tabs(["ค่า PM2.5 ปัจจุบัน", "เกร็ดความรู้"])
+tab_titles = ["ค่า PM2.5 ปัจจุบัน", "เกร็ดความรู้"]
+active_tab = st.session_state.active_tab
 
-with tab1:
+tabs = st.tabs(tab_titles)
+
+with tabs[0]:
     display_realtime_pm(df, lang, t, date_str)
     st.divider()
     display_24hr_chart(df, lang, t)
@@ -71,5 +74,9 @@ with tab1:
     st.divider()
     display_symptom_checker(lang, t)
 
-with tab2:
+with tabs[1]:
     display_knowledge_base(lang, t)
+
+# Logic to switch tabs if a button in knowledge base is clicked
+if st.session_state.active_tab != "ค่า PM2.5 ปัจจุบัน":
+    st.rerun()
