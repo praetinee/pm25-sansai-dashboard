@@ -355,24 +355,12 @@ def display_historical_data(df, lang, t):
             st.plotly_chart(fig_hist, use_container_width=True)
 
 def display_knowledge_base(lang, t):
-    st.subheader(t[lang]['knowledge_header'])
+    """
+    Displays the knowledge base using Streamlit's expander component.
+    """
+    st.header(t[lang]['knowledge_header'])
+    st.write("เลือกหัวข้อด้านล่างเพื่ออ่านเกร็ดความรู้เกี่ยวกับ PM2.5")
     
-    # Use session state to manage the selected topic
-    if 'selected_topic' not in st.session_state or st.session_state.selected_topic not in [item['title'] for item in t[lang]['knowledge_content']]:
-        st.session_state.selected_topic = t[lang]['knowledge_content'][0]['title']
-
-    # Create buttons in columns, updating the session state on click
-    cols = st.columns(4) 
-    for i, item in enumerate(t[lang]['knowledge_content']):
-        with cols[i % 4]:
-            if st.button(item['title'], key=f"topic_{i}", use_container_width=True):
-                st.session_state.selected_topic = item['title']
-    
-    st.markdown("---")
-    
-    # Display the content of the selected topic
     for item in t[lang]['knowledge_content']:
-        if item['title'] == st.session_state.selected_topic:
+        with st.expander(item['title']):
             st.markdown(item['body'])
-            break
-
