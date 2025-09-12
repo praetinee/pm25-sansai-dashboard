@@ -1,444 +1,59 @@
 import streamlit as st
-import plotly.graph_objects as go
-from datetime import datetime
-import calendar
-import pandas as pd
-from utils import get_aqi_level
-from knowledge_base_ui import display_knowledge_base  # Import the new module
+import markdown
 
-def inject_custom_css():
-    """Injects custom CSS to make the app responsive and theme-aware."""
-    st.markdown("""
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
-            html, body, [class*="st-"], .stApp, h1, h2, h3, h4, h5, h6 {
-                font-family: 'Sarabun', sans-serif !important;
-            }
-            .st-expander-header p {
-                 font-family: 'Sarabun', sans-serif !important;
-            }
-            .card {
-                padding: 20px;
-                border-radius: 15px;
-                background-color: var(--secondary-background-color);
-                border: 1px solid var(--border-color, #dfe6e9);
-                height: 100%;
-            }
-            .calendar-day {
-                background-color: var(--secondary-background-color);
-                border-radius: 10px;
-                padding: 10px;
-                text-align: center;
-                min-height: 90px;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.07);
-                transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-                border-bottom: 5px solid transparent;
-            }
-            .calendar-day:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 8px 12px rgba(0,0,0,0.1);
-            }
-            .calendar-day-header { align-self: flex-start; font-size: 0.9rem; font-weight: 500; opacity: 0.8; }
-            .calendar-day-value { font-size: 1.5rem; font-weight: 700; line-height: 1; }
-            .calendar-day-na { background-color: var(--secondary-background-color); color: var(--text-color); opacity: 0.5; box-shadow: none; }
-            .aqi-legend-bar { display: flex; height: 50px; width: 100%; border-radius: 10px; overflow: hidden; margin-top: 10px; }
-            .aqi-legend-segment {
-                flex-grow: 1;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-weight: 500;
-                text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
-                font-size: 0.9rem;
-                line-height: 1.2;
-                text-align: center;
-            }
-            .advice-container {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 20px;
-                text-align: center;
-            }
-            .advice-item {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }
-            .advice-icon svg {
-                width: 48px;
-                height: 48px;
-                margin-bottom: 8px;
-            }
-            .advice-title {
-                font-weight: 600;
-                margin-bottom: 4px;
-            }
-            .advice-text {
-                font-size: 0.9rem;
-            }
-            .risk-group-advice {
-                margin-top: 20px;
-                padding-top: 20px;
-                border-top: 1px solid #e0e0e0;
-                text-align: center;
-            }
-            /* Custom CSS for Filterable Cards */
-            .filter-buttons {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 12px;
-                margin-bottom: 24px;
-                justify-content: center;
-            }
-            .filter-buttons button {
-                flex: 1;
-                min-width: 120px;
-                padding: 12px 24px;
-                border-radius: 9999px;
-                background-color: #e2e8f0;
-                color: #4b5563;
-                font-weight: 600;
-                transition: all 0.2s ease-in-out;
-                border: none;
-                cursor: pointer;
-            }
-            .filter-buttons button:hover {
-                background-color: #cbd5e1;
-            }
-            .filter-buttons button.active {
-                background-color: #1e40af;
-                color: white;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                transform: translateY(-2px);
-            }
-            .card-container-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                gap: 24px;
-            }
-            .knowledge-card {
-                background-color: white;
-                border-radius: 12px;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                padding: 24px;
-                opacity: 1;
-                transform: scale(1);
-                transition: opacity 0.3s ease, transform 0.3s ease;
-            }
-            .knowledge-card.hidden {
-                display: none;
-            }
-            .knowledge-card h4 {
-                color: #1e40af;
-                font-weight: 700;
-                margin-bottom: 8px;
-            }
-            .knowledge-card p {
-                line-height: 1.6;
-                margin-bottom: 8px;
-            }
+def display_knowledge_base(lang, t):
+    """
+    Displays the knowledge base section with filterable cards.
+    Separated into its own module for better code organization.
+    """
+    st.subheader(t[lang]['knowledge_header'])
 
-            /* Stlyes for file-tab look */
-            div[data-baseweb="tab-list"] button[aria-selected="true"] {
-                background-color: #f0f2f5;
-                color: #1e40af !important;
-                border-bottom: 3px solid #1e40af !important;
-            }
-            div[data-baseweb="tab-list"] {
-                padding: 0 !important;
-                background-color: transparent !important;
-            }
-            div[data-baseweb="tab-list"] button {
-                border-radius: 10px 10px 0 0 !important;
-                margin: 0 5px !important;
-                padding: 10px 20px !important;
-            }
-        </style>
-    """, unsafe_allow_html=True)
+    # Use session state to handle the selected category
+    if 'selected_category' not in st.session_state:
+        st.session_state.selected_category = 'all'
 
-def display_realtime_pm(df, lang, t, date_str):
-    inject_custom_css()
-    latest_pm25 = df['PM2.5'][0]
-    level, color, emoji, advice = get_aqi_level(latest_pm25, lang, t)
-    advice_details = advice['details'] # Get structured advice
+    # Create a function to update the session state
+    def set_category(cat):
+        st.session_state.selected_category = cat
+        st.rerun()
 
-    col1, col2 = st.columns([1, 2])
+    # Create the buttons with a unique key and on_click handler
+    col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
-        st.subheader(t[lang]['current_pm25'])
-        st.markdown(f"""
-            <div style="background-color: {color}; padding: 25px; border-radius: 15px; text-align: center; color: white; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2); height: 100%;">
-                <h1 style="font-family: 'Sarabun', sans-serif; font-size: 4.5rem; margin: 0; text-shadow: 2px 2px 4px #000000;">{latest_pm25:.1f}</h1>
-                <p style="font-family: 'Sarabun', sans-serif; font-size: 1.5rem; margin: 0;">μg/m³</p>
-                <h2 style="font-family: 'Sarabun', sans-serif; margin-top: 15px;">{level}</h2>
-            </div>
-            """, unsafe_allow_html=True)
+        st.button(t[lang]['filter_all'], on_click=set_category, args=('all',), use_container_width=True, key='btn_all')
     with col2:
-        st.subheader(t[lang]['aqi_guideline_header'])
-        st.markdown(f"""
-            <div class="aqi-legend-bar">
-                <div class="aqi-legend-segment" style="background-color: #0099FF; color: white;">{t[lang]['aqi_level_1']}<br>0-15</div>
-                <div class="aqi-legend-segment" style="background-color: #2ECC71; color: white;">{t[lang]['aqi_level_2']}<br>15-25</div>
-                <div class="aqi-legend-segment" style="background-color: #F1C40F; color: black;">{t[lang]['aqi_level_3']}<br>25-37.5</div>
-                <div class="aqi-legend-segment" style="background-color: #E67E22; color: white;">{t[lang]['aqi_level_4_short']}<br>37.5-75</div>
-                <div class="aqi-legend-segment" style="background-color: #E74C3C; color: white;">{t[lang]['aqi_level_5_short']}<br>>75</div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        st.subheader(t[lang]['advice_header'])
-        
-        # --- Standardized SVG Icons ---
-        mask_svg = """
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 9 Q12 4 20 9 Q21 14 20 18 Q12 22 4 18 Q3 14 4 9 Z" />
-            <path d="M4 11 Q0 13 4 16" />
-            <path d="M20 11 Q24 13 20 16" />
-            <path d="M6 11 Q12 9.5 18 11" />
-            <path d="M6 14 Q12 12.5 18 14" />
-            <path d="M6 17 Q12 15.5 18 17" />
-        </svg>
-        """
-        
-        activity_svg = """
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="6.75" cy="16.5" r="3" />
-            <circle cx="17.25" cy="16.5" r="3" />
-            <path d="M6.75 16.5 L11.25 12 L15 16.5 Z" />
-            <path d="M11.25 12 L11.25 9" />
-            <path d="M10.5 9 L12.75 9" />
-            <path d="M15 16.5 L16.5 11.25 L19.5 10.5" />
-        </svg>
-        """
-        indoors_svg = """
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-        </svg>
-        """
-        
-        st.markdown(f"""
-        <div class="card">
-            <div class="advice-container">
-                <div class="advice-item">
-                    <div class="advice-icon">{mask_svg}</div>
-                    <div class="advice-title">{t[lang]['advice_cat_mask']}</div>
-                    <div class="advice-text">{advice_details['mask']}</div>
-                </div>
-                <div class="advice-item">
-                    <div class="advice-icon">{activity_svg}</div>
-                    <div class="advice-title">{t[lang]['advice_cat_activity']}</div>
-                    <div class="advice-text">{advice_details['activity']}</div>
-                </div>
-                <div class="advice-item">
-                    <div class="advice-icon">{indoors_svg}</div>
-                    <div class="advice-title">{t[lang]['advice_cat_indoors']}</div>
-                    <div class="advice-text">{advice_details['indoors']}</div>
-                </div>
-            </div>
-            <div class="risk-group-advice">
-                <strong>{t[lang]['risk_group']}:</strong> {advice_details['risk_group']}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.button(t[lang]['filter_info'], on_click=set_category, args=('info',), use_container_width=True, key='btn_info')
+    with col3:
+        st.button(t[lang]['filter_danger'], on_click=set_category, args=('danger',), use_container_width=True, key='btn_danger')
+    with col4:
+        st.button(t[lang]['filter_prevention'], on_click=set_category, args=('prevention',), use_container_width=True, key='btn_prevention')
+    with col5:
+        st.button(t[lang]['filter_health'], on_click=set_category, args=('health',), use_container_width=True, key='btn_health')
 
+    # Add custom CSS to style the active button
+    active_button_style = f"""
+    <style>
+    div[data-testid="stButton"] > button[key="btn_{st.session_state.selected_category}"] {{
+        background-color: #1e40af;
+        color: white;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }}
+    </style>
+    """
+    st.markdown(active_button_style, unsafe_allow_html=True)
 
-    st.write("") # Add a small space
+    # Display the filtered cards
+    st.write("")  # Add some space
 
-    # --- Action Buttons ---
-    b_col1, b_col2, b_col3 = st.columns([2,2,8]) # Adjust column ratios
-    with b_col1:
-        if st.button(f"🔄 {t[lang]['refresh_button']}", use_container_width=True):
-            st.cache_data.clear()
-            st.rerun()
-    with b_col2:
-        from card_generator import generate_report_card
-        report_card_bytes = generate_report_card(latest_pm25, level, color, "", advice_details, date_str, lang, t)
-        if report_card_bytes:
-            st.download_button(
-                label=f"🖼️ {t[lang]['download_button']}",
-                data=report_card_bytes,
-                file_name=f"pm25_report_{datetime.now().strftime('%Y%m%d_%H%M')}.png",
-                mime="image/png",
-                use_container_width=True)
+    num_cols = 3
+    cols = st.columns(num_cols)
+    col_index = 0
 
-def display_symptom_checker(lang, t):
-    st.subheader(t[lang]['symptom_checker_title'])
-    st.write(t[lang]['symptom_checker_intro'])
-    symptoms = t[lang]['symptoms']
-    checked_symptoms = 0
-    for symptom in symptoms:
-        if st.checkbox(symptom, key=f"symptom_{symptom}"):
-            checked_symptoms += 1
-    st.write("---")
-    if checked_symptoms == 0:
-        st.success(f"✅ {t[lang]['symptom_results_0']}")
-    elif 1 <= checked_symptoms <= 2:
-        st.warning(f"⚠️ {t[lang]['symptom_results_1_2']}")
-    else:
-        st.error(f"🚨 {t[lang]['symptom_results_3_plus']}")
-    st.caption(t[lang]['symptom_disclaimer'])
-
-def display_health_impact(df, lang, t):
-    current_year = datetime.now().year
-    if lang == 'th':
-        start_str = f"1 {t['th']['month_names'][0]} {current_year + 543}"
-        end_str = f"31 {t['th']['month_names'][11]} {current_year + 543}"
-        date_range = f"{start_str} - {end_str}"
-    else:
-        start_date = datetime(current_year, 1, 1)
-        end_date = datetime(current_year, 12, 31)
-        date_range = f"{start_date.strftime('%b %d')} - {end_date.strftime('%b %d, %Y')}"
-    st.subheader(t[lang]['health_impact_title'].format(date_range=date_range))
-    df_current_year = df[df['Datetime'].dt.year == current_year]
-    if df_current_year.empty:
-        st.info(t[lang]['no_data_for_year'])
-        return
-    daily_avg_df = df_current_year.groupby(df_current_year['Datetime'].dt.date)['PM2.5'].mean().reset_index()
-    unhealthy_days = daily_avg_df[daily_avg_df['PM2.5'] > 37.5]
-    num_unhealthy_days = len(unhealthy_days)
-    total_pm_exposure = daily_avg_df['PM2.5'].sum()
-    equivalent_cigarettes = total_pm_exposure / 22
-    col1, col2 = st.columns(2)
-    col1.metric(label=t[lang]['unhealthy_days_text'], value=f"{num_unhealthy_days} {t[lang]['days_unit']}")
-    col2.metric(label=t[lang]['cigarette_equivalent_text'], value=f"{int(equivalent_cigarettes)} {t[lang]['cigarettes_unit']}")
-    st.caption(t[lang]['health_impact_explanation'])
-
-def display_24hr_chart(df, lang, t):
-    st.subheader(t[lang]['hourly_trend_today'])
-    latest_date = df['Datetime'].max().date()
-    day_data = df[df['Datetime'].dt.date == latest_date].sort_values(by="Datetime", ascending=True)
-    if day_data.empty:
-        st.info(t[lang]['no_data_today'])
-        return
-    colors = [get_aqi_level(pm, lang, t)[1] for pm in day_data['PM2.5']]
-    fig_24hr = go.Figure(go.Bar(
-        x=day_data['Datetime'], y=day_data['PM2.5'], name='PM2.5',
-        marker_color=colors, marker=dict(cornerradius=5),
-        text=day_data['PM2.5'].apply(lambda x: f'{x:.1f}'), textposition='outside'))
-    fig_24hr.update_layout(
-        font=dict(family="Sarabun"),
-        yaxis_title=t[lang]['pm25_unit'],
-        plot_bgcolor='rgba(0,0,0,0)', template="plotly_white",
-        margin=dict(l=20, r=20, t=40, b=20),
-        xaxis=dict(gridcolor='var(--border-color, #e9e9e9)', showticklabels=True, tickformat='%H:%M', tickangle=-45),
-        yaxis=dict(gridcolor='var(--border-color, #e9e9e9)'),
-        showlegend=False, uniformtext_minsize=8, uniformtext_mode='hide')
-    st.plotly_chart(fig_24hr, use_container_width=True)
-
-def display_monthly_calendar(df, lang, t):
-    st.subheader(t[lang]['monthly_calendar_header'])
-    
-    unique_months = df['Datetime'].dt.to_period('M').unique()
-    month_options = sorted([period for period in unique_months], reverse=False)
-    
-    def format_month(period):
-        if lang == 'th':
-            return f"{t['th']['month_names'][period.month-1]} {period.year + 543}"
-        return period.strftime('%B %Y')
-
-    selected_month_str = st.selectbox(
-        t[lang]['date_picker_label'],
-        options=month_options,
-        format_func=format_month,
-        index=len(month_options)-1 # Default to the latest month
-    )
-    
-    year, month = selected_month_str.year, selected_month_str.month
-    df_calendar = df.copy()
-    df_calendar['date'] = df_calendar['Datetime'].dt.date
-    daily_avg_pm25 = df_calendar.groupby('date')['PM2.5'].mean().reset_index()
-    daily_avg_pm25['date'] = pd.to_datetime(daily_avg_pm25['date'])
-    month_data = daily_avg_pm25[(daily_avg_pm25['date'].dt.year == year) & (daily_avg_pm25['date'].dt.month == month)]
-    cal = calendar.monthcalendar(year, month)
-    
-    days_header = t[lang]['days_header_short']
-    cols = st.columns(7)
-    for i, day_name in enumerate(days_header):
-        cols[i].markdown(f"<div style='text-align: center; font-weight: bold; opacity: 0.7;'>{day_name}</div>", unsafe_allow_html=True)
-
-    for week in cal:
-        cols = st.columns(7)
-        for i, day in enumerate(week):
-            if day == 0:
-                cols[i].markdown("")
-            else:
-                day_data = month_data[month_data['date'].dt.day == day]
-                if not day_data.empty:
-                    pm_value = day_data['PM2.5'].iloc[0]
-                    _, color, _, _ = get_aqi_level(pm_value, lang, t)
-                    cols[i].markdown(f"""
-                    <div class="calendar-day" style="border-bottom-color: {color};">
-                        <div class="calendar-day-header">{day}</div>
-                        <div class="calendar-day-value">{pm_value:.1f}</div>
-                    </div>""", unsafe_allow_html=True)
-                else:
-                    cols[i].markdown(f"""
-                    <div class="calendar-day calendar-day-na">
-                        <div class="calendar-day-header">{day}</div>
-                    </div>""", unsafe_allow_html=True)
-
-def display_historical_data(df, lang, t):
-    st.subheader(t[lang]['historical_expander'])
-    today = datetime.now().date()
-    default_start = today - pd.DateOffset(days=6)
-    
-    col_date1, col_date2 = st.columns(2)
-    with col_date1:
-        start_date = st.date_input(t[lang]['start_date'], value=default_start, min_value=df['Datetime'].min().date(), max_value=today, key="start_date_hist")
-    with col_date2:
-        end_date = st.date_input(t[lang]['end_date'], value=today, min_value=df['Datetime'].min().date(), max_value=today, key="end_date_hist")
-    
-    if start_date > end_date:
-        st.error(t[lang]['date_error'])
-    else:
-        mask = (df['Datetime'].dt.date >= start_date) & (df['Datetime'].dt.date <= end_date)
-        filtered_df = df.loc[mask]
-        if filtered_df.empty:
-            st.warning(t[lang]['no_data_in_range'])
-        else:
-            daily_avg_df = filtered_df.groupby(filtered_df['Datetime'].dt.date)['PM2.5'].mean().reset_index()
-            daily_avg_df.rename(columns={'Datetime': 'Date', 'PM2.5': 'Avg PM2.5'}, inplace=True)
-            avg_pm, max_pm, min_pm = filtered_df['PM2.5'].mean(), filtered_df['PM2.5'].max(), filtered_df['PM2.5'].min()
-            
-            mcol1, mcol2, mcol3 = st.columns(3)
-            mcol1.metric(t[lang]['metric_avg'], f"{avg_pm:.1f} μg/m³")
-            mcol2.metric(t[lang]['metric_max'], f"{max_pm:.1f} μg/m³")
-            mcol3.metric(t[lang]['metric_min'], f"{min_pm:.1f} μg/m³")
-            
-            colors_hist = [get_aqi_level(pm, lang, t)[1] for pm in daily_avg_df['Avg PM2.5']]
-            if lang == 'th':
-                start_date_str = f"{start_date.day} {t['th']['month_names'][start_date.month - 1]} {start_date.year + 543}"
-                end_date_str = f"{end_date.day} {t['th']['month_names'][end_date.month - 1]} {end_date.year + 543}"
-            else:
-                start_date_str, end_date_str = start_date.strftime('%b %d, %Y'), end_date.strftime('%b %d, %Y')
-            title_text = f"{t[lang]['daily_avg_chart_title']} ({start_date_str} - {end_date_str})"
-            
-            fig_hist = go.Figure(go.Bar(
-                x=daily_avg_df['Date'], y=daily_avg_df['Avg PM2.5'], name=t[lang]['avg_pm25_unit'],
-                marker_color=colors_hist, marker=dict(cornerradius=5)))
-            fig_hist.update_layout(
-                title_text=title_text, font=dict(family="Sarabun"),
-                yaxis_title=t[lang]['avg_pm25_unit'],
-                template="plotly_white", plot_bgcolor='rgba(0,0,0,0)', showlegend=False)
-            st.plotly_chart(fig_hist, use_container_width=True)
-
-def display_symptom_checker(lang, t):
-    st.subheader(t[lang]['symptom_checker_title'])
-    st.write(t[lang]['symptom_checker_intro'])
-    symptoms = t[lang]['symptoms']
-    checked_symptoms = 0
-    for symptom in symptoms:
-        if st.checkbox(symptom, key=f"symptom_{symptom}"):
-            checked_symptoms += 1
-    st.write("---")
-    if checked_symptoms == 0:
-        st.success(f"✅ {t[lang]['symptom_results_0']}")
-    elif 1 <= checked_symptoms <= 2:
-        st.warning(f"⚠️ {t[lang]['symptom_results_1_2']}")
-    else:
-        st.error(f"🚨 {t[lang]['symptom_results_3_plus']}")
-    st.caption(t[lang]['symptom_disclaimer'])
+    for item in t[lang]['knowledge_content']:
+        if st.session_state.selected_category == 'all' or item['category'] == st.session_state.selected_category:
+            with cols[col_index]:
+                # Use markdown to render the body content correctly
+                st.markdown(f"<h4>{item['title']}</h4>", unsafe_allow_html=True)
+                st.markdown(item['body'])
+                col_index = (col_index + 1) % num_cols
