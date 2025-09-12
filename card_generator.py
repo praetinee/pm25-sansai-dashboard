@@ -113,9 +113,9 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     font_pm_value = create_font(font_bold_bytes, 150)
     font_unit = create_font(font_reg_bytes, 32)
     font_level = create_font(font_bold_bytes, 44)
-    font_advice_header = create_font(font_bold_bytes, 26)
-    font_advice = create_font(font_reg_bytes, 22)
-    font_advice_risk = create_font(font_reg_bytes, 24) # Bigger font for risk group
+    font_advice_header = create_font(font_bold_bytes, 28) # Bigger
+    font_advice = create_font(font_reg_bytes, 24) # Bigger
+    font_advice_risk = create_font(font_bold_bytes, 26) # Bigger and Bold
     font_footer = create_font(font_light_bytes, 18)
     
     width, height = 800, 1000
@@ -130,7 +130,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     box_y_start = 150
     draw.rounded_rectangle([(20, box_y_start), (width - 20, height - 20)], radius=20, fill="#FFFFFF")
     
-    pm_y_pos = box_y_start + 130 # Moved down
+    pm_y_pos = box_y_start + 130 
     draw.text((width/2, pm_y_pos), f"{latest_pm25:.1f}", font=font_pm_value, anchor="ms", fill="#111111")
     draw.text((width/2, pm_y_pos + 85), "μg/m³", font=font_unit, anchor="ms", fill="#555555")
     draw.text((width/2, pm_y_pos + 135), level, font=font_level, anchor="ms", fill="#111111")
@@ -149,20 +149,20 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     for i, (key, title, icon_func) in enumerate(advice_items):
         center_x = (item_width * i) + (item_width / 2)
         
-        icon_func(draw, center_x, advice_y_start) # Draw icon
+        icon_func(draw, center_x, advice_y_start) 
         
-        text_y = advice_y_start + 95 # Adjusted for bigger icon + more space
+        text_y = advice_y_start + 100 # Adjusted for more space
         draw.text((center_x, text_y), title, font=font_advice_header, anchor="ms", fill="#333333")
-        draw.text((center_x, text_y + 35), advice_details[key], font=font_advice, anchor="ms", fill="#555555", align="center")
+        draw.text((center_x, text_y + 40), advice_details[key], font=font_advice, anchor="ms", fill="#555555", align="center")
 
-    risk_y_start = advice_y_start + 180 # Adjusted y position
+    risk_y_start = advice_y_start + 190 # Adjusted y position
     draw.line([(60, risk_y_start), (width - 60, risk_y_start)], fill="#EEEEEE", width=2)
     risk_text = f"{t[lang]['risk_group']}: {advice_details['risk_group']}"
-    draw.text((width/2, risk_y_start + 40), risk_text, font=font_advice_risk, anchor="ms", fill="#333333")
+    draw.text((width/2, risk_y_start + 45), risk_text, font=font_advice_risk, anchor="ms", fill="#333333")
 
     # --- AQI Bar ---
     bar_y = height - 150
-    bar_height = 60 # Made bar taller
+    bar_height = 60 
     colors_map = {
         '#0099FF': (t[lang]['aqi_level_1'], "0-15"),
         '#2ECC71': (t[lang]['aqi_level_2'], "15-25"),
@@ -172,7 +172,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     }
     num_segments = len(colors_map)
     segment_width = (width - 80) / num_segments
-    font_bar = create_font(font_reg_bytes, 20) # Bigger font in bar
+    font_bar = create_font(font_bold_bytes, 22) # Bigger and Bold font in bar
     
     for i, (bar_color, (bar_level, bar_range)) in enumerate(colors_map.items()):
         x0 = 40 + i * segment_width
@@ -180,13 +180,9 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         text_color = "black" if bar_color == "#F1C40F" else "white"
         draw.rectangle([(x0, bar_y), (x1, bar_y + bar_height)], fill=bar_color)
         
-        # Calculate vertical center for text
         text_center_y = bar_y + bar_height / 2
         
-        # Draw text using the calculated center
-        draw.text((x0 + segment_width/2, text_center_y - 10), bar_level, font=font_bar, anchor="ms", fill=text_color)
-        draw.text((x0 + segment_width/2, text_center_y + 10), bar_range, font=font_bar, anchor="ms", fill=text_color)
-
+        draw.text((x0 + segment_width/2, text_center_y), f"{bar_level}\n{bar_range}", font=font_bar, anchor="mm", fill=text_color, align="center")
 
     footer_text = t[lang]['report_card_footer']
     draw.text((width - 40, height - 40), footer_text, font=font_footer, anchor="rs", fill="#AAAAAA")
@@ -200,3 +196,4 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     buf = BytesIO()
     img.save(buf, format='PNG')
     return buf.getvalue()
+
