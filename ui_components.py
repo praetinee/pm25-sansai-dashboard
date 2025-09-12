@@ -86,6 +86,31 @@ def inject_custom_css():
                 border-top: 1px solid #e0e0e0;
                 text-align: center;
             }
+
+            /* Custom CSS for file tabs */
+            .stTabs [data-baseweb="tab-list"] {
+                gap: 5px;
+            }
+            .stTabs [data-baseweb="tab"] {
+                background-color: var(--secondary-background-color);
+                border-radius: 10px 10px 0 0 !important;
+                border: 1px solid var(--border-color, #dfe6e9) !important;
+                border-bottom: none !important;
+                padding: 10px 20px !important;
+                box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+                transition: transform 0.2s ease-in-out;
+            }
+            .stTabs [data-baseweb="tab"]:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 -4px 8px rgba(0,0,0,0.1);
+            }
+            .stTabs [aria-selected="true"] {
+                background-color: var(--background-color) !important;
+                border-top-color: var(--primary-color) !important;
+                border-top-width: 3px !important;
+                transform: translateY(0);
+                box-shadow: none;
+            }
         </style>
     """, unsafe_allow_html=True)
 
