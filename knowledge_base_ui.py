@@ -16,6 +16,7 @@ def display_knowledge_base(lang, t):
     def set_category(cat):
         st.session_state.selected_category = cat
         st.session_state.active_tab = "เกร็ดความรู้"
+        st.rerun()
 
     # We use a key to make each button unique and properly handle the on_click callback
     col1, col2, col3, col4, col5 = st.columns(5)
