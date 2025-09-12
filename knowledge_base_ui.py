@@ -12,10 +12,11 @@ def display_knowledge_base(lang, t):
     if 'selected_category' not in st.session_state:
         st.session_state.selected_category = 'all'
 
-    # Create a function to update the session state
+    # Create a function to update the session state and change the tab
     def set_category(cat):
         st.session_state.selected_category = cat
-    
+        st.session_state.active_tab = "เกร็ดความรู้"
+
     col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
         st.button(t[lang]['filter_all'], on_click=set_category, args=('all',), use_container_width=True, key='btn_all')
