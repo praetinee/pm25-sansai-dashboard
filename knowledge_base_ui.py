@@ -34,7 +34,7 @@ def display_knowledge_base(lang, t):
     
     st.write("")  # Add some space
 
-    num_cols = 3
+    num_cols = 2 # Changed from 3 to 2 columns
     cols = st.columns(num_cols)
     col_index = 0
 
