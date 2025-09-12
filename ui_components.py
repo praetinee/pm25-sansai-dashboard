@@ -354,84 +354,25 @@ def display_historical_data(df, lang, t):
                 template="plotly_white", plot_bgcolor='rgba(0,0,0,0)', showlegend=False)
             st.plotly_chart(fig_hist, use_container_width=True)
 
-def display_knowledge_cards(lang, t):
-    """
-    Displays the PM2.5 knowledge base as expandable cards using embedded HTML.
-    """
-    knowledge_content = t[lang]['knowledge_content']
+def display_knowledge_base(lang, t):
+    st.subheader(t[lang]['knowledge_header'])
     
-    # Generate the HTML for the cards dynamically
-    cards_html = ""
-    for item in knowledge_content:
-        title = item['title']
-        body = item['body']
-        
-        # Replace Markdown headers and list items with HTML equivalents
-        body = body.replace('#### ', '<h4>').replace('\n', '<p>').replace('**', '<strong>').replace('>', '<blockquote>')
-        if "<ul>" not in body and "<li>" not in body:
-            # For content without explicit lists, check for list markers
-            lines = body.split('<p>')
-            formatted_lines = []
-            in_list = False
-            for line in lines:
-                if line.strip().startswith("- "):
-                    if not in_list:
-                        formatted_lines.append('<ul>')
-                        in_list = True
-                    formatted_lines.append(f'<li>{line.strip()[2:]}</li>')
-                elif line.strip().startswith("1. ") or line.strip().startswith("2. "):
-                    if not in_list:
-                        formatted_lines.append('<ol>')
-                        in_list = True
-                    formatted_lines.append(f'<li>{line.strip()[3:]}</li>')
-                else:
-                    if in_list:
-                        formatted_lines.append('</ul>')
-                        in_list = False
-                    if line.strip():
-                        formatted_lines.append(f'<p>{line.strip()}</p>')
-            if in_list:
-                formatted_lines.append('</ul>')
-            body = "".join(formatted_lines)
-        
-        # Add a blockquote for the note
-        body = body.replace("<blockquote>มันไม่ใช่แค่", '<p><blockquote>มันไม่ใช่แค่')
+    # Use session state to manage the selected topic
+    if 'selected_topic' not in st.session_state or st.session_state.selected_topic not in [item['title'] for item in t[lang]['knowledge_content']]:
+        st.session_state.selected_topic = t[lang]['knowledge_content'][0]['title']
 
-        cards_html += f"""
-        <div class="card" onclick="toggleCard(this)">
-            <div class="card-header">
-                <h3 class="card-title">{title}</h3>
-                <span class="expand-icon">+</span>
-            </div>
-            <div class="expandable-content">
-                {body}
-            </div>
-        </div>
-        """
-
-    full_html = f"""
-    <h1 class="text-4xl md:text-5xl font-bold text-center mb-12 text-blue-900">{t[lang]['knowledge_header']}</h1>
+    # Create buttons in columns, updating the session state on click
+    cols = st.columns(4) 
+    for i, item in enumerate(t[lang]['knowledge_content']):
+        with cols[i % 4]:
+            if st.button(item['title'], key=f"topic_{i}", use_container_width=True):
+                st.session_state.selected_topic = item['title']
     
-    <div class="card-container">
-        {cards_html}
-    </div>
+    st.markdown("---")
+    
+    # Display the content of the selected topic
+    for item in t[lang]['knowledge_content']:
+        if item['title'] == st.session_state.selected_topic:
+            st.markdown(item['body'])
+            break
 
-    <script>
-        function toggleCard(card) {{
-            const isExpanded = card.classList.contains('expanded');
-            
-            document.querySelectorAll('.card.expanded').forEach(expandedCard => {{
-                if (expandedCard !== card) {{
-                    expandedCard.classList.remove('expanded');
-                }}
-            }});
-            
-            if (!isExpanded) {{
-                card.classList.add('expanded');
-            }} else {{
-                card.classList.remove('expanded');
-            }}
-        }}
-    </script>
-    """
-    st.markdown(full_html, unsafe_allow_html=True)
