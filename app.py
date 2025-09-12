@@ -59,6 +59,12 @@ st.divider()
 tab_titles = ["ค่า PM2.5 ปัจจุบัน", "เกร็ดความรู้"]
 active_tab = st.session_state.active_tab
 
+# Get the index of the active tab to set it
+try:
+    active_tab_index = tab_titles.index(st.session_state.active_tab)
+except ValueError:
+    active_tab_index = 0
+
 tabs = st.tabs(tab_titles)
 
 with tabs[0]:
@@ -77,6 +83,5 @@ with tabs[0]:
 with tabs[1]:
     display_knowledge_base(lang, t)
 
-# Logic to switch tabs if a button in knowledge base is clicked
-if st.session_state.active_tab != "ค่า PM2.5 ปัจจุบัน":
-    st.rerun()
+# Removed the redundant st.rerun() logic here.
+# The app should automatically update based on session state changes.
