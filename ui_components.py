@@ -15,6 +15,8 @@ def inject_custom_css():
             }
             .st-expander-header p {
                  font-family: 'Sarabun', sans-serif !important;
+                 font-size: 1.1rem; /* Adjust font size for better readability */
+                 font-weight: 500;
             }
             .card {
                 padding: 20px;
@@ -379,108 +381,9 @@ def display_historical_data(df, lang, t):
                 template="plotly_white", plot_bgcolor='rgba(0,0,0,0)', showlegend=False)
             st.plotly_chart(fig_hist, use_container_width=True)
 
-
 def display_knowledge_base(lang, t):
-    """
-    Displays the knowledge base using custom HTML/CSS for expandable cards.
-    """
     st.header(t[lang]['knowledge_header'])
     
-    # Generate the HTML for the knowledge cards based on the translations.py file
-    knowledge_html = f"""
-    <div class="container">
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
-
-            body {{
-                font-family: 'Sarabun', sans-serif;
-                background-color: #f0f2f5;
-                color: #333;
-                line-height: 1.6;
-                margin: 0;
-                padding: 20px;
-            }}
-            .card {{
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                margin-bottom: 15px;
-                overflow: hidden;
-                transition: box-shadow 0.3s ease-in-out;
-            }}
-            .card:hover {{
-                box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
-            }}
-            .card-header {{
-                background-color: #e9ecef;
-                padding: 15px;
-                cursor: pointer;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                font-weight: bold;
-                font-size: 1.1rem;
-            }}
-            .card-header::after {{
-                content: '+';
-                font-size: 1.5rem;
-                transition: transform 0.3s ease-in-out;
-            }}
-            .card.active .card-header::after {{
-                content: '-';
-                transform: rotate(180deg);
-            }}
-            .card-content {{
-                padding: 0 15px;
-                max-height: 0;
-                overflow: hidden;
-                transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out;
-            }}
-            .card.active .card-content {{
-                max-height: 500px;
-                padding: 15px;
-            }}
-            .card-content p, .card-content h4, .card-content ul, .card-content li {{
-                margin: 0 0 10px 0;
-            }}
-            .card-content h4 {{
-                color: #0056b3;
-                border-bottom: 2px solid #0056b3;
-                padding-bottom: 5px;
-                margin-bottom: 15px;
-            }}
-            .card-content strong {{
-                color: #e74c3c;
-            }}
-        </style>
-    """
-    
-    # Loop through the knowledge content from the translation dictionary
     for item in t[lang]['knowledge_content']:
-        html_body = item['body'].replace("#### ", "<h4>").replace("\n>", "<br>").replace(">", "<p>").replace("\n- ", "<li>").replace("\n", "</p><p>")
-        html_body = html_body.replace("<ul>", "").replace("</ul>", "").replace("<li>", "")
-
-        knowledge_html += f"""
-        <div class="card">
-            <div class="card-header">
-                {item['title']}
-            </div>
-            <div class="card-content">
-                {html_body}
-            </div>
-        </div>
-        """
-        
-    knowledge_html += """
-    </div>
-    <script>
-        document.querySelectorAll('.card-header').forEach(header => {
-            header.addEventListener('click', () => {
-                const card = header.parentElement;
-                card.classList.toggle('active');
-            });
-        });
-    </script>
-    """
-    
-    # Inject the generated HTML into the Streamlit app
-    st.markdown(knowledge_html, unsafe_allow_html=True)
+        with st.expander(item['title']):
+            st.markdown(item['body'])
