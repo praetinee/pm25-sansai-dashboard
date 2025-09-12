@@ -6,27 +6,17 @@ def display_knowledge_base(lang, t):
     Displays the knowledge base section with filterable cards.
     Separated into its own module for better code organization.
     """
-    # Add specific CSS to ensure Sarabun font is used for card titles and content.
-    st.markdown("""
-        <style>
-            .knowledge-card h4, .knowledge-card p, .knowledge-card li, .knowledge-card strong {
-                font-family: 'Sarabun', sans-serif !important;
-            }
-        </style>
-    """, unsafe_allow_html=True)
-
     st.subheader(t[lang]['knowledge_header'])
 
     # Use session state to handle the selected category
     if 'selected_category' not in st.session_state:
         st.session_state.selected_category = 'all'
 
-    # Create a function to update the session state.
-    # This function now also sets the active_tab state to ensure
-    # the correct tab remains visible after a button click.
+    # Create a function to update the session state and change the tab
     def set_category(cat):
         st.session_state.selected_category = cat
-        st.session_state.active_tab = "เกร็ดความรู้" 
+        st.session_state.active_tab = "เกร็ดความรู้"
+        st.rerun()
 
     # We use a key to make each button unique and properly handle the on_click callback
     col1, col2, col3, col4, col5 = st.columns(5)
@@ -43,7 +33,7 @@ def display_knowledge_base(lang, t):
     
     st.write("")  # Add some space
 
-    num_cols = 2 # Changed from 3 to 2 columns
+    num_cols = 3
     cols = st.columns(num_cols)
     col_index = 0
 
@@ -57,4 +47,3 @@ def display_knowledge_base(lang, t):
                 </div>
                 """, unsafe_allow_html=True)
                 col_index = (col_index + 1) % num_cols
-
