@@ -6,8 +6,7 @@ from ui_components import (
     display_monthly_calendar,
     display_health_impact,
     display_symptom_checker,
-    display_historical_data,
-    display_knowledge_base  # Renamed from display_knowledge_tabs
+    display_historical_data
 )
 from translations import TRANSLATIONS as t
 
@@ -53,18 +52,22 @@ st.markdown(f"{t[lang]['latest_data']} `{date_str}`")
 
 st.divider()
 
-# --- UI Components Display Order (Updated) ---
-display_realtime_pm(df, lang, t, date_str)
-st.divider()
-display_24hr_chart(df, lang, t)
-st.divider()
-display_monthly_calendar(df, lang, t)
-st.divider()
-display_historical_data(df, lang, t)
-st.divider()
-display_knowledge_base(lang, t) # New knowledge base display
-st.divider()
-display_health_impact(df, lang, t)
-st.divider()
-display_symptom_checker(lang, t) # Moved to the bottom
+tab1, tab2 = st.tabs(["หน้าหลัก", "เกร็ดความรู้"])
 
+with tab1:
+    # --- UI Components Display Order (Updated) ---
+    display_realtime_pm(df, lang, t, date_str)
+    st.divider()
+    display_24hr_chart(df, lang, t)
+    st.divider()
+    display_monthly_calendar(df, lang, t)
+    st.divider()
+    display_historical_data(df, lang, t)
+    st.divider()
+    display_health_impact(df, lang, t)
+    st.divider()
+    display_symptom_checker(lang, t) # Moved to the bottom
+
+with tab2:
+    from ui_components import display_knowledge_cards
+    display_knowledge_cards(lang, t)
