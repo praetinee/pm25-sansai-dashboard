@@ -4,19 +4,18 @@ from datetime import datetime
 import calendar
 import pandas as pd
 from utils import get_aqi_level
-# Removed the unused import of display_knowledge_base
 
 def inject_custom_css():
     """Injects custom CSS to make the app responsive and theme-aware."""
     st.markdown("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
-            html, body, [class*="st-"], .stApp, h1, h2, h3, h4, h5, h6 {
+            
+            /* Apply Sarabun font to all elements within the Streamlit app */
+            html, body, [class*="st-"], .stApp, .stApp * {
                 font-family: 'Sarabun', sans-serif !important;
             }
-            .st-expander-header p {
-                 font-family: 'Sarabun', sans-serif !important;
-            }
+
             .card {
                 padding: 20px;
                 border-radius: 15px;
@@ -87,76 +86,62 @@ def inject_custom_css():
                 border-top: 1px solid #e0e0e0;
                 text-align: center;
             }
-            /* Custom CSS for Filterable Cards */
-            .filter-buttons {
+
+            /* Styles for Infographic Cards in Quiz */
+            .infographic-card {
+                background-color: var(--secondary-background-color);
+                border-left: 5px solid #1e40af;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                margin-top: 1rem;
+            }
+            .infographic-card h4 {
+                 color: #1e40af;
+                 margin-bottom: 0.5rem;
+            }
+            .infographic-card ul {
+                list-style-type: none;
+                padding-left: 0;
+                margin-bottom: 0;
+            }
+            .infographic-card li {
                 display: flex;
-                flex-wrap: wrap;
-                gap: 12px;
-                margin-bottom: 24px;
-                justify-content: center;
+                align-items: center;
+                gap: 0.75rem;
+                margin-bottom: 0.5rem;
             }
-            .filter-buttons button {
-                flex: 1;
-                min-width: 120px;
-                padding: 12px 24px;
-                border-radius: 9999px;
-                background-color: #e2e8f0;
-                color: #4b5563;
-                font-weight: 600;
-                transition: all 0.2s ease-in-out;
-                border: none;
-                cursor: pointer;
-            }
-            .filter-buttons button:hover {
-                background-color: #cbd5e1;
-            }
-            .filter-buttons button.active {
-                background-color: #1e40af;
-                color: white;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                transform: translateY(-2px);
-            }
-            .card-container-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                gap: 24px;
-            }
-            .knowledge-card {
-                background-color: white;
-                border-radius: 12px;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                padding: 24px;
-                opacity: 1;
-                transform: scale(1);
-                transition: opacity 0.3s ease, transform 0.3s ease;
-            }
-            .knowledge-card.hidden {
-                display: none;
-            }
-            .knowledge-card h4 {
-                color: #1e40af;
-                font-weight: 700;
-                margin-bottom: 8px;
-            }
-            .knowledge-card p {
-                line-height: 1.6;
-                margin-bottom: 8px;
+            .infographic-card .icon {
+                font-size: 1.2rem;
             }
             
-            /* Stlyes for file-tab look */
-            div[data-baseweb="tab-list"] button[aria-selected="true"] {
-                background-color: #f0f2f5;
-                color: #1e40af !important;
-                border-bottom: 3px solid #1e40af !important;
+            /* Styles to make st.radio look like st.tabs */
+            div[role="radiogroup"] {
+                display: flex;
+                flex-direction: row;
+                gap: 0px !important;
+                border-bottom: 2px solid var(--border-color, #e0e0e0);
+                margin-bottom: 1rem;
+                width: 100%;
             }
-            div[data-baseweb="tab-list"] {
-                padding: 0 !important;
-                background-color: transparent !important;
+            div[role="radiogroup"] label input[type="radio"] {
+                display: none; /* Hide the actual radio button circle */
             }
-            div[data-baseweb="tab-list"] button {
-                border-radius: 10px 10px 0 0 !important;
-                margin: 0 5px !important;
-                padding: 10px 20px !important;
+            div[role="radiogroup"] label {
+                padding: 10px 20px;
+                cursor: pointer;
+                transition: background-color 0.2s, border-bottom 0.2s, color 0.2s;
+                color: var(--text-color);
+                opacity: 0.7;
+                margin-bottom: -2px; /* Pull the label down to cover the radiogroup border */
+                border-bottom: 3px solid transparent;
+            }
+            div[role="radiogroup"] label:hover {
+                 background-color: var(--secondary-background-color);
+            }
+            div[role="radiogroup"] label input[type="radio"]:checked + div {
+                color: var(--primary-color, #1e40af);
+                border-bottom: 3px solid var(--primary-color, #1e40af);
+                opacity: 1.0;
             }
         </style>
     """, unsafe_allow_html=True)
@@ -455,3 +440,4 @@ def display_historical_data(df, lang, t):
                 yaxis_title=t[lang]['avg_pm25_unit'],
                 template="plotly_white", plot_bgcolor='rgba(0,0,0,0)', showlegend=False)
             st.plotly_chart(fig_hist, use_container_width=True)
+
