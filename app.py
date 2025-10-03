@@ -21,7 +21,7 @@ def merge_dicts(d1, d2):
             d1[k] = v
     return d1
 
-t = merge_dicts(MAIN_T, QUIZ_T)
+t = merge_dicts(MAIN_T.copy(), QUIZ_T)
 
 
 # --- Page Configuration ---
@@ -42,9 +42,11 @@ st.set_page_config(
 _, col1, col2 = st.columns([10, 1, 1])
 if col1.button('ไทย'):
     st.session_state.lang = 'th'
+    # When switching language, stay on the same logical tab
     st.rerun()
 if col2.button('English'):
     st.session_state.lang = 'en'
+    # When switching language, stay on the same logical tab
     st.rerun()
 
 lang = st.session_state.lang
