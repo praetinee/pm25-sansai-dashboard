@@ -7,6 +7,7 @@ from ui_components import (
     display_health_impact,
     display_external_assessment,
     display_historical_data,
+    inject_custom_css, # Import the CSS function
 )
 from knowledge_base_ui import display_knowledge_base
 from translations import TRANSLATIONS as MAIN_T
@@ -37,6 +38,9 @@ st.set_page_config(
     page_icon="🍃",
     layout="wide"
 )
+
+# --- Inject CSS globally ---
+inject_custom_css()
 
 # --- Language Selection ---
 _, col1, col2 = st.columns([10, 1, 1])
