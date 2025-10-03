@@ -8,12 +8,29 @@ from ui_components import (
     display_external_assessment,
     display_historical_data,
 )
-from knowledge_base_ui import display_knowledge_quiz
-from translations import TRANSLATIONS as t
+from knowledge_base_ui import display_knowledge_base
+from translations import TRANSLATIONS as MAIN_T
+from quiz_translations import TRANSLATIONS as QUIZ_T
+
+# --- Deep merge translation dictionaries ---
+def merge_dicts(d1, d2):
+    for k, v in d2.items():
+        if k in d1 and isinstance(d1[k], dict) and isinstance(v, dict):
+            d1[k] = merge_dicts(d1[k], v)
+        else:
+            d1[k] = v
+    return d1
+
+t = merge_dicts(MAIN_T, QUIZ_T)
+
 
 # --- Page Configuration ---
 if 'lang' not in st.session_state:
     st.session_state.lang = 'th'
+
+# Initialize active_tab with a language-independent key if it doesn't exist
+if 'active_tab_key' not in st.session_state:
+    st.session_state.active_tab_key = 'main' # 'main' or 'quiz'
 
 st.set_page_config(
     page_title=t[st.session_state.lang]['page_title'],
@@ -27,7 +44,7 @@ if col1.button('ไทย'):
     st.session_state.lang = 'th'
     st.rerun()
 if col2.button('English'):
-    st.session_state.lang = 'th' 
+    st.session_state.lang = 'en'
     st.rerun()
 
 lang = st.session_state.lang
@@ -36,7 +53,7 @@ lang = st.session_state.lang
 df = load_data()
 
 if df is None or df.empty:
-    st.warning("ไม่สามารถโหลดข้อมูลได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง")
+    st.warning(t[lang]['no_data_for_year'])
     st.stop()
 
 # --- Header ---
@@ -53,11 +70,26 @@ st.markdown(f"{t[lang]['latest_data']} `{date_str}`")
 
 st.divider()
 
-# --- Tabbed UI using st.tabs ---
+# --- Tabbed UI using Radio Button Hack ---
+tab_keys = ['main', 'quiz']
 tab_titles = [t[lang]['main_tab_title'], t[lang]['quiz_header']]
-tab1, tab2 = st.tabs(tab_titles)
 
-with tab1:
+# Get the index of the currently active tab
+active_tab_index = tab_keys.index(st.session_state.active_tab_key)
+
+selected_tab_title = st.radio(
+    "Main navigation",
+    options=tab_titles,
+    index=active_tab_index,
+    horizontal=True,
+    label_visibility="collapsed"
+)
+
+# Update session state with the key of the selected tab
+st.session_state.active_tab_key = tab_keys[tab_titles.index(selected_tab_title)]
+
+# --- Display content based on selected tab ---
+if st.session_state.active_tab_key == 'main':
     display_realtime_pm(df, lang, t, date_str)
     st.divider()
     display_24hr_chart(df, lang, t)
@@ -70,6 +102,6 @@ with tab1:
     st.divider()
     display_external_assessment(lang, t)
 
-with tab2:
-    display_knowledge_quiz(lang, t)
+elif st.session_state.active_tab_key == 'quiz':
+    display_knowledge_base(lang, t)
 
