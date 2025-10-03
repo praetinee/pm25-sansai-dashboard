@@ -14,6 +14,8 @@ TRANSLATIONS = {
         'eval_low': "ไม่เป็นไรเลย! 💡 การเรียนรู้ความเชื่อผิดๆ คือก้าวแรกของการป้องกันที่ดีขึ้น ทุกข้อที่คุณได้เรียนรู้ในวันนี้มีประโยชน์มากครับ",
         'quiz_disclaimer': "*นี่เป็นเพียงแบบทดสอบเพื่อความสนุกและทบทวนความเข้าใจเบื้องต้นเท่านั้น*",
         'restart_quiz': "เริ่มเล่นใหม่",
+        'correct_feedback': "✅ ถูกต้องครับ!",
+        'incorrect_feedback': "❌ ยังไม่ถูกต้องครับ",
         'quiz_questions': [
             {'id': 'q1','question': "อากาศหนาวตอนเช้า หมายถึงอากาศสะอาด",'answer': False,'explanation': "**ไม่จริง!** เพราะอากาศเย็นอาจทำให้เกิดปรากฏการณ์ \"ฝาชีครอบ\" (Inversion) ซึ่งกักฝุ่น PM2.5 ไว้ใกล้พื้นดิน ทำให้สถานการณ์แย่ลงได้",'infographic_key': 'inversion_phenomenon'},
             {'id': 'q2','question': "การใส่หน้ากากอนามัยธรรมดาก็เพียงพอสำหรับป้องกัน PM2.5",'answer': False,'explanation': "**ไม่จริง!** ต้องใช้หน้ากากมาตรฐาน N95/KF94 ที่กระชับกับใบหน้าเท่านั้นจึงจะมีประสิทธิภาพในการป้องกันฝุ่นจิ๋วได้",'infographic_key': 'protection_pyramid'},
@@ -64,6 +66,8 @@ TRANSLATIONS = {
         'eval_low': "That's okay! 💡 Learning about myths is the first step to better protection. Everything you've learned today is valuable.",
         'quiz_disclaimer': "*This is a quiz for fun and for reviewing basic understanding only.*",
         'restart_quiz': "Play Again",
+        'correct_feedback': "✅ Correct!",
+        'incorrect_feedback': "❌ Incorrect.",
         'quiz_questions': [
              {'id': 'q1','question': "Cold morning air means the air is clean.",'answer': False,'explanation': "**False!** Cold air can cause an \"inversion\" effect, trapping PM2.5 near the ground and making the situation worse.",'infographic_key': 'inversion_phenomenon'},
             {'id': 'q2','question': "A standard surgical mask is sufficient to protect against PM2.5.",'answer': False,'explanation': "**False!** Only standard N95/KF94 masks that fit snugly to the face are effective at filtering fine particles.",'infographic_key': 'protection_pyramid'},
