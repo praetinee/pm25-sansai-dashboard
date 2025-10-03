@@ -14,10 +14,6 @@ from translations import TRANSLATIONS as t
 # --- Page Configuration ---
 if 'lang' not in st.session_state:
     st.session_state.lang = 'th'
-# --- Session State for Tabs ---
-if 'active_tab' not in st.session_state:
-    st.session_state.active_tab = t[st.session_state.lang]['main_tab_title']
-
 
 st.set_page_config(
     page_title=t[st.session_state.lang]['page_title'],
@@ -57,33 +53,11 @@ st.markdown(f"{t[lang]['latest_data']} `{date_str}`")
 
 st.divider()
 
-# --- Tabbed UI Simulation with st.radio ---
+# --- Tabbed UI using st.tabs ---
 tab_titles = [t[lang]['main_tab_title'], t[lang]['quiz_header']]
+tab1, tab2 = st.tabs(tab_titles)
 
-# Update session state when radio button changes
-def handle_tab_change():
-    st.session_state.active_tab = st.session_state.tab_selection
-
-# Find the index of the active tab for the radio button
-try:
-    active_tab_index = tab_titles.index(st.session_state.active_tab)
-except ValueError:
-    active_tab_index = 0
-
-# Create the radio button that looks like tabs
-st.radio(
-    label="Navigation",
-    options=tab_titles,
-    index=active_tab_index,
-    key="tab_selection",
-    horizontal=True,
-    on_change=handle_tab_change,
-    label_visibility="collapsed"
-)
-
-
-# Display content based on the selected tab
-if st.session_state.active_tab == tab_titles[0]:
+with tab1:
     display_realtime_pm(df, lang, t, date_str)
     st.divider()
     display_24hr_chart(df, lang, t)
@@ -96,6 +70,6 @@ if st.session_state.active_tab == tab_titles[0]:
     st.divider()
     display_external_assessment(lang, t)
 
-elif st.session_state.active_tab == tab_titles[1]:
+with tab2:
     display_knowledge_quiz(lang, t)
 
