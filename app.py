@@ -8,14 +8,12 @@ from ui_components import (
     display_external_assessment,
     display_historical_data,
 )
-from knowledge_base_ui import display_knowledge_base
+from knowledge_base_ui import display_knowledge_quiz # Updated import
 from translations import TRANSLATIONS as t
 
 # --- Page Configuration ---
 if 'lang' not in st.session_state:
     st.session_state.lang = 'th'
-if 'active_tab' not in st.session_state:
-    st.session_state.active_tab = "ค่า PM2.5 ปัจจุบัน"
 
 st.set_page_config(
     page_title=t[st.session_state.lang]['page_title'],
@@ -29,7 +27,9 @@ if col1.button('ไทย'):
     st.session_state.lang = 'th'
     st.rerun()
 if col2.button('English'):
-    st.session_state.lang = 'en'
+    # Note: English translations for the quiz are not yet available.
+    # It will show Thai content for now.
+    st.session_state.lang = 'th' 
     st.rerun()
 
 lang = st.session_state.lang
@@ -38,7 +38,7 @@ lang = st.session_state.lang
 df = load_data()
 
 if df is None or df.empty:
-    st.warning(t[lang]['no_data_for_year'])
+    st.warning("ไม่สามารถโหลดข้อมูลได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง")
     st.stop()
 
 # --- Header ---
@@ -56,14 +56,8 @@ st.markdown(f"{t[lang]['latest_data']} `{date_str}`")
 st.divider()
 
 # --- Tabbed UI ---
-tab_titles = ["ค่า PM2.5 ปัจจุบัน", "เกร็ดความรู้"]
-active_tab = st.session_state.active_tab
-
-# Get the index of the active tab to set it
-try:
-    active_tab_index = tab_titles.index(st.session_state.active_tab)
-except ValueError:
-    active_tab_index = 0
+# Updated tab titles using the new translation key
+tab_titles = [t[lang]['main_tab_title'], t[lang]['quiz_header']] 
 
 tabs = st.tabs(tab_titles)
 
@@ -81,7 +75,6 @@ with tabs[0]:
     display_external_assessment(lang, t)
 
 with tabs[1]:
-    display_knowledge_base(lang, t)
+    # Updated function call to the new quiz UI
+    display_knowledge_quiz(lang, t)
 
-# Removed the redundant st.rerun() logic here.
-# The app should automatically update based on session state changes.
