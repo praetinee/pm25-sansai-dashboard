@@ -114,7 +114,7 @@ def inject_custom_css():
                 font-size: 1.2rem;
             }
             
-            /* --- NEW: Clean Underline Tab Style --- */
+            /* --- NEW: Clean Underline Tab Style (FIXED) --- */
             div[role="radiogroup"] {
                 display: flex;
                 flex-direction: row;
@@ -129,8 +129,13 @@ def inject_custom_css():
             div[role="radiogroup"] label {
                 cursor: pointer;
             }
+            
+            /* HIDE the Streamlit radio button's visual indicator (the dot) */
+            div[data-testid="stRadio"] label > div:first-child {
+                display: none;
+            }
 
-            /* The visible part of the tab */
+            /* The visible part of the tab (the text) */
             div[role="radiogroup"] label > div {
                 padding: 12px 4px;
                 transition: color 0.2s, opacity 0.2s;
