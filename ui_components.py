@@ -114,40 +114,50 @@ def inject_custom_css():
                 font-size: 1.2rem;
             }
             
-            /* Styles to make st.radio look like st.tabs */
+            /* --- NEW: Modern Pill/Segmented Control Style for Tabs --- */
             div[role="radiogroup"] {
                 display: flex;
                 flex-direction: row;
-                gap: 0px !important;
-                border-bottom: 2px solid var(--border-color, #e0e0e0);
-                margin-bottom: 1rem;
-                width: 100%;
+                background-color: #e5e7eb; /* Light grey background for the container */
+                padding: 6px;
+                border-radius: 9999px; /* Pill shape */
+                margin-bottom: 1.5rem;
+                border-bottom: none; /* Remove the old border */
+                width: fit-content; /* Make the container fit its content */
+                margin-left: auto;
+                margin-right: auto;
             }
             div[role="radiogroup"] label input[type="radio"] {
                 display: none; /* Hide the actual radio button circle */
             }
             div[role="radiogroup"] label {
-                padding: 10px 20px;
+                padding: 8px 24px;
                 cursor: pointer;
-                transition: background-color 0.2s, border-bottom 0.2s, color 0.2s;
-                color: var(--text-color);
-                opacity: 0.7;
-                margin-bottom: -2px; /* Pull the label down to cover the radiogroup border */
-                border-bottom: 3px solid transparent;
+                transition: background-color 0.3s, color 0.3s;
+                color: #4b5563; /* Grey text for inactive tabs */
+                border-radius: 9999px; /* Pill shape for each item */
+                font-weight: 500;
+                border-bottom: none; /* Remove old border style */
+                margin-bottom: 0; /* Reset margin */
             }
+            /* Remove hover effect for the container */
             div[role="radiogroup"] label:hover {
-                 background-color: var(--secondary-background-color);
+                 background-color: transparent; 
             }
+            /* Style for the selected tab */
             div[role="radiogroup"] label input[type="radio"]:checked + div {
-                color: var(--primary-color, #1e40af);
-                border-bottom: 3px solid var(--primary-color, #1e40af);
+                color: #1e40af; /* Primary color text for active tab */
+                background-color: #ffffff; /* White background for active tab */
+                font-weight: 700;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Subtle shadow for active tab */
+                border-bottom: none; /* Remove old border style */
                 opacity: 1.0;
             }
         </style>
     """, unsafe_allow_html=True)
 
 def display_realtime_pm(df, lang, t, date_str):
-    inject_custom_css()
+    # inject_custom_css() is now called globally in app.py
     latest_pm25 = df['PM2.5'][0]
     level, color, emoji, advice = get_aqi_level(latest_pm25, lang, t)
     advice_details = advice['details'] # Get structured advice
