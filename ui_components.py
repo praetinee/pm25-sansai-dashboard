@@ -114,13 +114,13 @@ def inject_custom_css():
                 font-size: 1.2rem;
             }
             
-            /* --- NEW: Modern Underline Tab Style --- */
+            /* --- NEW: Clean Underline Tab Style --- */
             div[role="radiogroup"] {
                 display: flex;
                 flex-direction: row;
                 border-bottom: 1px solid var(--border-color, #dfe6e9);
                 margin-bottom: 1.5rem;
-                gap: 8px; /* Space between tabs */
+                gap: 16px; /* Increased space between tabs */
                 width: 100%;
             }
             div[role="radiogroup"] label input[type="radio"] {
@@ -132,27 +132,26 @@ def inject_custom_css():
 
             /* The visible part of the tab */
             div[role="radiogroup"] label > div {
-                padding: 12px 16px; /* Adjust padding */
-                transition: border-color 0.2s, color 0.2s;
+                padding: 12px 4px;
+                transition: color 0.2s, opacity 0.2s;
                 color: var(--text-color);
-                opacity: 0.7;
+                opacity: 0.6; /* Make inactive tabs faded */
                 font-weight: 500;
-                border-bottom: 3px solid transparent; /* Prepare space for the active indicator */
+                border-bottom: 2px solid transparent;
                 margin-bottom: -1px; /* Align with the main border */
             }
 
             /* Hover style for inactive tabs */
             div[role="radiogroup"] label:hover > div {
                 opacity: 1.0;
-                border-bottom: 3px solid var(--border-color, #dfe6e9);
             }
 
             /* Active tab style */
             div[role="radiogroup"] label input[type="radio"]:checked + div {
-                color: var(--primary-color, #1e40af);
-                border-bottom: 3px solid var(--primary-color, #1e40af); /* Active indicator line */
+                color: var(--text-color);
+                border-bottom: 2px solid #D92D20; /* Red underline for active tab */
                 opacity: 1.0;
-                font-weight: 700;
+                font-weight: 600;
             }
         </style>
     """, unsafe_allow_html=True)
