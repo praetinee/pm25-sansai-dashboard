@@ -114,37 +114,48 @@ def inject_custom_css():
                 font-size: 1.2rem;
             }
             
-            /* --- NEW: Clear & Modern Tab Style --- */
+            /* --- NEW: File Tab Style --- */
             div[role="radiogroup"] {
                 display: flex;
                 flex-direction: row;
-                border-bottom: 1px solid var(--border-color, #dfe6e9); /* A subtle line to separate from content */
+                border-bottom: 1px solid var(--border-color, #dfe6e9);
                 margin-bottom: 1.5rem;
-                gap: 8px; /* Add some space between tabs */
+                gap: 4px; /* A small gap between tabs */
                 width: 100%;
             }
             div[role="radiogroup"] label input[type="radio"] {
                 display: none; /* Hide the actual radio button */
             }
             div[role="radiogroup"] label {
-                padding: 12px 20px;
                 cursor: pointer;
-                transition: background-color 0.2s, border-color 0.2s, color 0.2s;
-                color: var(--text-color); /* Use theme text color */
-                opacity: 0.7; /* Make inactive tabs slightly faded */
-                border-bottom: 3px solid transparent; /* Prepare space for the active indicator */
-                margin-bottom: -1px; /* Align with the main border */
+                /* The label is just a clickable wrapper now */
+            }
+
+            /* Common style for the visible part of the tab (the inner div) */
+            div[role="radiogroup"] label > div {
+                padding: 12px 20px;
+                transition: background-color 0.2s, color 0.2s;
+                color: var(--text-color);
+                opacity: 0.7;
                 font-weight: 500;
+                border-radius: 8px 8px 0 0;
             }
-            div[role="radiogroup"] label:hover {
-                 background-color: var(--secondary-background-color); /* Subtle hover effect */
-                 opacity: 1.0;
+
+            /* Hover style for inactive tabs */
+            div[role="radiogroup"] label:hover > div {
+                background-color: var(--secondary-background-color);
+                opacity: 1.0;
             }
+
+            /* Active tab style */
             div[role="radiogroup"] label input[type="radio"]:checked + div {
-                color: var(--primary-color, #1e40af); /* Highlight color for text */
-                border-bottom: 3px solid var(--primary-color, #1e40af); /* Active indicator line */
+                background-color: var(--background-color); /* Match page background to "cut out" the border */
+                border: 1px solid var(--border-color, #dfe6e9);
+                border-bottom: 1px solid var(--background-color); /* Magic line to make it look connected */
+                color: var(--primary-color, #1e40af);
                 opacity: 1.0;
                 font-weight: 700;
+                margin-bottom: -1px; /* Overlap the main border-bottom */
             }
         </style>
     """, unsafe_allow_html=True)
