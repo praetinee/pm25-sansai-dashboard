@@ -42,6 +42,7 @@ def display_knowledge_base(lang, t):
             st.session_state.current_question = random.choice(available_questions)
             st.session_state.asked_question_ids.append(st.session_state.current_question['id'])
         else:
+            # If all questions have been asked, but quiz is not finished (rare case), finish it.
             st.session_state.quiz_finished = True
         st.session_state.answer_submitted = False
 
@@ -102,9 +103,9 @@ def display_knowledge_base(lang, t):
                 # --- Display feedback after answer ---
                 is_correct = (st.session_state.user_answer == q['answer'])
                 if is_correct:
-                    st.success("✅ ถูกต้องครับ!")
+                    st.success(t[lang]['correct_feedback'])
                 else:
-                    st.error("❌ ยังไม่ถูกต้องครับ")
+                    st.error(t[lang]['incorrect_feedback'])
 
                 st.markdown(q['explanation'])
                 
@@ -114,6 +115,7 @@ def display_knowledge_base(lang, t):
                     st.subheader(t[lang]['infographic_title'])
                     info_data = t[lang]['infographics'][q['infographic_key']]
                     
+                    # Using a more robust card-like structure for infographics
                     info_html = f"<div class='infographic-card'><h4>{info_data['title']}</h4><ul>"
                     for point in info_data['points']:
                         info_html += f"<li><span class='icon'>{point['icon']}</span> {point['text']}</li>"
