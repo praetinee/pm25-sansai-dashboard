@@ -4,7 +4,7 @@ from datetime import datetime
 import calendar
 import pandas as pd
 from utils import get_aqi_level
-from knowledge_base_ui import display_knowledge_base
+# Removed the unused import of display_knowledge_base
 
 def inject_custom_css():
     """Injects custom CSS to make the app responsive and theme-aware."""
@@ -455,4 +455,3 @@ def display_historical_data(df, lang, t):
                 yaxis_title=t[lang]['avg_pm25_unit'],
                 template="plotly_white", plot_bgcolor='rgba(0,0,0,0)', showlegend=False)
             st.plotly_chart(fig_hist, use_container_width=True)
-
