@@ -1,73 +1,124 @@
 import streamlit as st
 import random
 
+def display_infographic(infographic_data, lang, t):
+    """
+    Displays a styled infographic card based on the provided data.
+    """
+    st.write("") # Spacer
+    st.subheader(t[lang]['infographic_title'])
+
+    # CSS for the infographic card, embedded here to keep the component self-contained
+    st.markdown(f"""
+    <style>
+        .infographic-card {{
+            background-color: #f0f8ff; /* Light AliceBlue background */
+            border-left: 5px solid #1e90ff; /* DodgerBlue accent */
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }}
+        .infographic-card h4 {{
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #1e40af;
+        }}
+        .infographic-card ul {{
+            list-style-type: none;
+            padding-left: 0;
+        }}
+        .infographic-card li {{
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            font-size: 1.05rem;
+        }}
+        .infographic-card .icon {{
+            font-size: 1.5rem;
+            margin-right: 15px;
+            width: 30px; /* Ensures text alignment */
+            text-align: center;
+        }}
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Build the list of points for the infographic
+    html_points = "<ul>"
+    for point in infographic_data.get('points', []):
+        icon = point.get('icon', '🔹') 
+        text = point.get('text', '')
+        html_points += f"<li><span class='icon'>{icon}</span><span>{text}</span></li>"
+    html_points += "</ul>"
+
+    # Display the final infographic card
+    st.markdown(f"""
+    <div class="infographic-card">
+        <h4>{infographic_data.get('title', '')}</h4>
+        {html_points}
+    </div>
+    """, unsafe_allow_html=True)
+
 def display_knowledge_quiz(lang, t):
     """
-    Displays an interactive quiz about PM2.5 facts,
-    followed by a simple infographic-style summary.
+    Displays an interactive "Fact or Myth" quiz about PM2.5.
+    After answering, it shows an explanation and a related infographic.
     """
-    st.subheader(t[lang]['quiz_header'])
+    st.header(t[lang]['quiz_header'])
     st.markdown(t[lang]['quiz_intro'])
-    st.write("---")
 
-    quiz_items = t[lang]['quiz_content']
+    # Initialize session state for quiz
+    if 'quiz_question_id' not in st.session_state:
+        st.session_state.quiz_question_id = None
+        st.session_state.quiz_answered = False
 
-    # --- Session State Initialization ---
-    if 'current_question_index' not in st.session_state:
-        st.session_state.current_question_index = 0
-    if 'user_answer' not in st.session_state:
-        st.session_state.user_answer = None
-    if 'quiz_order' not in st.session_state:
-        st.session_state.quiz_order = random.sample(range(len(quiz_items)), len(quiz_items))
-
-
-    # Get the current question based on the randomized order
-    q_index = st.session_state.quiz_order[st.session_state.current_question_index]
-    question_data = quiz_items[q_index]
-    correct_answer = question_data['answer']
-
-    # --- Display Question ---
-    st.markdown(f"#### {t[lang]['question_title']} {st.session_state.current_question_index + 1}:")
-    st.markdown(f"### {question_data['question']}")
-    st.write("")
-
-    # --- Answer Submission Logic ---
-    def submit_answer(answer):
-        st.session_state.user_answer = answer
-
-    # --- Display Answer Buttons ---
-    if st.session_state.user_answer is None:
-        col1, col2 = st.columns(2)
-        with col1:
-            st.button(t[lang]['quiz_true'], on_click=submit_answer, args=(True,), use_container_width=True)
-        with col2:
-            st.button(t[lang]['quiz_false'], on_click=submit_answer, args=(False,), use_container_width=True)
+    # Get the list of questions
+    questions = t[lang]['quiz_questions']
     
-    # --- Display Result and Explanation ---
-    if st.session_state.user_answer is not None:
-        is_correct = (st.session_state.user_answer == correct_answer)
+    # --- Question Selection ---
+    if st.session_state.quiz_question_id is None:
+        st.session_state.quiz_question_id = random.choice([q['id'] for q in questions])
+
+    # Find the current question from the list
+    current_q = next((q for q in questions if q['id'] == st.session_state.quiz_question_id), None)
+    if not current_q: # Fallback if ID not found
+        st.error("Error loading question.")
+        return
+        
+    st.subheader(t[lang]['quiz_question_title'])
+    st.markdown(f"### {current_q['question']}")
+
+    # --- Answer Buttons ---
+    col1, col2, col3 = st.columns([1,1,5])
+    
+    def handle_answer(user_answer):
+        st.session_state.user_answer = user_answer
+        st.session_state.quiz_answered = True
+
+    with col1:
+        st.button(f"👍 {t[lang]['quiz_true']}", on_click=handle_answer, args=(True,), use_container_width=True, disabled=st.session_state.quiz_answered)
+    with col2:
+        st.button(f"👎 {t[lang]['quiz_false']}", on_click=handle_answer, args=(False,), use_container_width=True, disabled=st.session_state.quiz_answered)
+
+    # --- Display Result and Infographic ---
+    if st.session_state.quiz_answered:
+        is_correct = (st.session_state.user_answer == current_q['answer'])
         
         if is_correct:
-            st.success(f"**{t[lang]['quiz_correct']}** {question_data['explanation']}")
+            st.success(f"**ถูกต้องครับ!** {current_q['explanation']}")
         else:
-            st.error(f"**{t[lang]['quiz_incorrect']}** {question_data['explanation']}")
-
-        # --- Display Infographic ---
-        st.markdown(f"""
-        <div style="border: 2px solid #1E90FF; border-radius: 10px; padding: 20px; margin-top: 20px; background-color: #F0F8FF;">
-            <h4 style="color: #1E90FF; text-align: center;">{question_data['infographic_title']}</h4>
-            <ul style="list-style-type: '✅ '; padding-left: 20px;">
-                {''.join([f"<li>{point}</li>" for point in question_data['infographic_points']])}
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
+            st.error(f"**ยังไม่ถูกนะครับ** {current_q['explanation']}")
         
-        st.write("---")
+        # Display Infographic if it exists for this question
+        infographic_key = current_q.get('infographic_key')
+        if infographic_key:
+            infographic_data = t[lang].get('infographics', {}).get(infographic_key)
+            if infographic_data:
+                display_infographic(infographic_data, lang, t)
 
-        def next_question():
-            next_idx = (st.session_state.current_question_index + 1) % len(quiz_items)
-            st.session_state.current_question_index = next_idx
+        st.write("") # Spacer
+        if st.button(f"🔁 {t[lang]['quiz_next_question']}"):
+            st.session_state.quiz_question_id = None
+            st.session_state.quiz_answered = False
             st.session_state.user_answer = None
-        
-        st.button(t[lang]['quiz_next_question'], on_click=next_question, use_container_width=True)
-
+            st.rerun()
