@@ -114,44 +114,37 @@ def inject_custom_css():
                 font-size: 1.2rem;
             }
             
-            /* --- NEW: Modern Pill/Segmented Control Style for Tabs --- */
+            /* --- NEW: Clear & Modern Tab Style --- */
             div[role="radiogroup"] {
                 display: flex;
                 flex-direction: row;
-                background-color: #e5e7eb; /* Light grey background for the container */
-                padding: 6px;
-                border-radius: 9999px; /* Pill shape */
+                border-bottom: 1px solid var(--border-color, #dfe6e9); /* A subtle line to separate from content */
                 margin-bottom: 1.5rem;
-                border-bottom: none; /* Remove the old border */
-                width: fit-content; /* Make the container fit its content */
-                margin-left: auto;
-                margin-right: auto;
+                gap: 8px; /* Add some space between tabs */
+                width: 100%;
             }
             div[role="radiogroup"] label input[type="radio"] {
-                display: none; /* Hide the actual radio button circle */
+                display: none; /* Hide the actual radio button */
             }
             div[role="radiogroup"] label {
-                padding: 8px 24px;
+                padding: 12px 20px;
                 cursor: pointer;
-                transition: background-color 0.3s, color 0.3s;
-                color: #4b5563; /* Grey text for inactive tabs */
-                border-radius: 9999px; /* Pill shape for each item */
+                transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+                color: var(--text-color); /* Use theme text color */
+                opacity: 0.7; /* Make inactive tabs slightly faded */
+                border-bottom: 3px solid transparent; /* Prepare space for the active indicator */
+                margin-bottom: -1px; /* Align with the main border */
                 font-weight: 500;
-                border-bottom: none; /* Remove old border style */
-                margin-bottom: 0; /* Reset margin */
             }
-            /* Remove hover effect for the container */
             div[role="radiogroup"] label:hover {
-                 background-color: transparent; 
+                 background-color: var(--secondary-background-color); /* Subtle hover effect */
+                 opacity: 1.0;
             }
-            /* Style for the selected tab */
             div[role="radiogroup"] label input[type="radio"]:checked + div {
-                color: #1e40af; /* Primary color text for active tab */
-                background-color: #ffffff; /* White background for active tab */
-                font-weight: 700;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Subtle shadow for active tab */
-                border-bottom: none; /* Remove old border style */
+                color: var(--primary-color, #1e40af); /* Highlight color for text */
+                border-bottom: 3px solid var(--primary-color, #1e40af); /* Active indicator line */
                 opacity: 1.0;
+                font-weight: 700;
             }
         </style>
     """, unsafe_allow_html=True)
