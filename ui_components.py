@@ -114,13 +114,13 @@ def inject_custom_css():
                 font-size: 1.2rem;
             }
             
-            /* --- NEW: File Tab Style --- */
+            /* --- NEW: Modern Underline Tab Style --- */
             div[role="radiogroup"] {
                 display: flex;
                 flex-direction: row;
                 border-bottom: 1px solid var(--border-color, #dfe6e9);
                 margin-bottom: 1.5rem;
-                gap: 4px; /* A small gap between tabs */
+                gap: 8px; /* Space between tabs */
                 width: 100%;
             }
             div[role="radiogroup"] label input[type="radio"] {
@@ -128,34 +128,31 @@ def inject_custom_css():
             }
             div[role="radiogroup"] label {
                 cursor: pointer;
-                /* The label is just a clickable wrapper now */
             }
 
-            /* Common style for the visible part of the tab (the inner div) */
+            /* The visible part of the tab */
             div[role="radiogroup"] label > div {
-                padding: 12px 20px;
-                transition: background-color 0.2s, color 0.2s;
+                padding: 12px 16px; /* Adjust padding */
+                transition: border-color 0.2s, color 0.2s;
                 color: var(--text-color);
                 opacity: 0.7;
                 font-weight: 500;
-                border-radius: 8px 8px 0 0;
+                border-bottom: 3px solid transparent; /* Prepare space for the active indicator */
+                margin-bottom: -1px; /* Align with the main border */
             }
 
             /* Hover style for inactive tabs */
             div[role="radiogroup"] label:hover > div {
-                background-color: var(--secondary-background-color);
                 opacity: 1.0;
+                border-bottom: 3px solid var(--border-color, #dfe6e9);
             }
 
             /* Active tab style */
             div[role="radiogroup"] label input[type="radio"]:checked + div {
-                background-color: var(--background-color); /* Match page background to "cut out" the border */
-                border: 1px solid var(--border-color, #dfe6e9);
-                border-bottom: 1px solid var(--background-color); /* Magic line to make it look connected */
                 color: var(--primary-color, #1e40af);
+                border-bottom: 3px solid var(--primary-color, #1e40af); /* Active indicator line */
                 opacity: 1.0;
                 font-weight: 700;
-                margin-bottom: -1px; /* Overlap the main border-bottom */
             }
         </style>
     """, unsafe_allow_html=True)
