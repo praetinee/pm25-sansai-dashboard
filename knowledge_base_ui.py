@@ -1,124 +1,126 @@
 import streamlit as st
 import random
+import markdown
 
-def display_infographic(infographic_data, lang, t):
-    """
-    Displays a styled infographic card based on the provided data.
-    """
-    st.write("") # Spacer
-    st.subheader(t[lang]['infographic_title'])
-
-    # CSS for the infographic card, embedded here to keep the component self-contained
-    st.markdown(f"""
-    <style>
-        .infographic-card {{
-            background-color: #f0f8ff; /* Light AliceBlue background */
-            border-left: 5px solid #1e90ff; /* DodgerBlue accent */
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }}
-        .infographic-card h4 {{
-            margin-top: 0;
-            margin-bottom: 15px;
-            color: #1e40af;
-        }}
-        .infographic-card ul {{
-            list-style-type: none;
-            padding-left: 0;
-        }}
-        .infographic-card li {{
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            font-size: 1.05rem;
-        }}
-        .infographic-card .icon {{
-            font-size: 1.5rem;
-            margin-right: 15px;
-            width: 30px; /* Ensures text alignment */
-            text-align: center;
-        }}
-    </style>
-    """, unsafe_allow_html=True)
-
-    # Build the list of points for the infographic
-    html_points = "<ul>"
-    for point in infographic_data.get('points', []):
-        icon = point.get('icon', '🔹') 
-        text = point.get('text', '')
-        html_points += f"<li><span class='icon'>{icon}</span><span>{text}</span></li>"
-    html_points += "</ul>"
-
-    # Display the final infographic card
-    st.markdown(f"""
-    <div class="infographic-card">
-        <h4>{infographic_data.get('title', '')}</h4>
-        {html_points}
-    </div>
-    """, unsafe_allow_html=True)
-
-def display_knowledge_quiz(lang, t):
-    """
-    Displays an interactive "Fact or Myth" quiz about PM2.5.
-    After answering, it shows an explanation and a related infographic.
-    """
+def display_knowledge_base(lang, t):
     st.header(t[lang]['quiz_header'])
-    st.markdown(t[lang]['quiz_intro'])
+    st.write(t[lang]['quiz_intro'])
+    st.divider()
 
-    # Initialize session state for quiz
-    if 'quiz_question_id' not in st.session_state:
-        st.session_state.quiz_question_id = None
-        st.session_state.quiz_answered = False
-
-    # Get the list of questions
-    questions = t[lang]['quiz_questions']
+    # --- Initialize session state for the quiz ---
+    if 'quiz_started' not in st.session_state:
+        st.session_state.quiz_started = False
+    if 'quiz_finished' not in st.session_state:
+        st.session_state.quiz_finished = False
+    if 'quiz_score' not in st.session_state:
+        st.session_state.quiz_score = 0
+    if 'questions_answered' not in st.session_state:
+        st.session_state.questions_answered = 0
+    if 'asked_question_ids' not in st.session_state:
+        st.session_state.asked_question_ids = []
+    if 'current_question' not in st.session_state:
+        st.session_state.current_question = None
+    if 'answer_submitted' not in st.session_state:
+        st.session_state.answer_submitted = False
     
-    # --- Question Selection ---
-    if st.session_state.quiz_question_id is None:
-        st.session_state.quiz_question_id = random.choice([q['id'] for q in questions])
+    QUIZ_LENGTH = 5
 
-    # Find the current question from the list
-    current_q = next((q for q in questions if q['id'] == st.session_state.quiz_question_id), None)
-    if not current_q: # Fallback if ID not found
-        st.error("Error loading question.")
-        return
-        
-    st.subheader(t[lang]['quiz_question_title'])
-    st.markdown(f"### {current_q['question']}")
+    # --- Callback function to start/restart the quiz ---
+    def start_quiz():
+        st.session_state.quiz_started = True
+        st.session_state.quiz_finished = False
+        st.session_state.quiz_score = 0
+        st.session_state.questions_answered = 0
+        st.session_state.asked_question_ids = []
+        st.session_state.answer_submitted = False
+        select_new_question()
 
-    # --- Answer Buttons ---
-    col1, col2, col3 = st.columns([1,1,5])
-    
-    def handle_answer(user_answer):
-        st.session_state.user_answer = user_answer
-        st.session_state.quiz_answered = True
-
-    with col1:
-        st.button(f"👍 {t[lang]['quiz_true']}", on_click=handle_answer, args=(True,), use_container_width=True, disabled=st.session_state.quiz_answered)
-    with col2:
-        st.button(f"👎 {t[lang]['quiz_false']}", on_click=handle_answer, args=(False,), use_container_width=True, disabled=st.session_state.quiz_answered)
-
-    # --- Display Result and Infographic ---
-    if st.session_state.quiz_answered:
-        is_correct = (st.session_state.user_answer == current_q['answer'])
-        
-        if is_correct:
-            st.success(f"**ถูกต้องครับ!** {current_q['explanation']}")
+    # --- Select a new, unasked question ---
+    def select_new_question():
+        available_questions = [q for q in t[lang]['quiz_questions'] if q['id'] not in st.session_state.asked_question_ids]
+        if available_questions:
+            st.session_state.current_question = random.choice(available_questions)
+            st.session_state.asked_question_ids.append(st.session_state.current_question['id'])
         else:
-            st.error(f"**ยังไม่ถูกนะครับ** {current_q['explanation']}")
-        
-        # Display Infographic if it exists for this question
-        infographic_key = current_q.get('infographic_key')
-        if infographic_key:
-            infographic_data = t[lang].get('infographics', {}).get(infographic_key)
-            if infographic_data:
-                display_infographic(infographic_data, lang, t)
+            st.session_state.quiz_finished = True
+        st.session_state.answer_submitted = False
 
-        st.write("") # Spacer
-        if st.button(f"🔁 {t[lang]['quiz_next_question']}"):
-            st.session_state.quiz_question_id = None
-            st.session_state.quiz_answered = False
-            st.session_state.user_answer = None
-            st.rerun()
+    # --- Handle user's answer ---
+    def handle_answer(user_answer):
+        st.session_state.answer_submitted = True
+        st.session_state.user_answer = user_answer
+        if user_answer == st.session_state.current_question['answer']:
+            st.session_state.quiz_score += 1
+
+    # --- Handle moving to the next question ---
+    def next_question():
+        st.session_state.questions_answered += 1
+        if st.session_state.questions_answered >= QUIZ_LENGTH:
+            st.session_state.quiz_finished = True
+        else:
+            select_new_question()
+
+    # --- UI Logic ---
+    if not st.session_state.quiz_started or st.session_state.quiz_finished:
+        if st.session_state.quiz_finished:
+            # --- Display final score and evaluation ---
+            score = st.session_state.quiz_score
+            total = QUIZ_LENGTH
+            st.subheader(t[lang]['score_summary'].format(score=score, total=total))
+
+            percentage = score / total
+            if percentage >= 0.8: # 4-5 correct answers
+                evaluation_text = t[lang]['eval_high']
+                st.success(evaluation_text)
+            elif percentage >= 0.5: # 2-3 correct answers
+                evaluation_text = t[lang]['eval_medium']
+                st.info(evaluation_text)
+            else: # 0-1 correct answers
+                evaluation_text = t[lang]['eval_low']
+                st.warning(evaluation_text)
+            
+            st.caption(t[lang]['quiz_disclaimer'])
+            st.divider()
+        
+        button_text = t[lang]['start_quiz'] if not st.session_state.quiz_finished else t[lang]['restart_quiz']
+        st.button(button_text, on_click=start_quiz, use_container_width=True)
+
+    else:
+        # --- Display the current question ---
+        q = st.session_state.current_question
+        if q:
+            st.subheader(f"{t[lang]['quiz_question_title']} ({st.session_state.questions_answered + 1}/{QUIZ_LENGTH})")
+            st.write(q['question'])
+
+            if not st.session_state.answer_submitted:
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.button(t[lang]['quiz_true'], on_click=handle_answer, args=(True,), use_container_width=True)
+                with col2:
+                    st.button(t[lang]['quiz_false'], on_click=handle_answer, args=(False,), use_container_width=True)
+            else:
+                # --- Display feedback after answer ---
+                is_correct = (st.session_state.user_answer == q['answer'])
+                if is_correct:
+                    st.success("✅ ถูกต้องครับ!")
+                else:
+                    st.error("❌ ยังไม่ถูกต้องครับ")
+
+                st.markdown(q['explanation'])
+                
+                # --- Display Infographic ---
+                if 'infographic_key' in q and q['infographic_key'] in t[lang]['infographics']:
+                    st.divider()
+                    st.subheader(t[lang]['infographic_title'])
+                    info_data = t[lang]['infographics'][q['infographic_key']]
+                    
+                    info_html = f"<div class='infographic-card'><h4>{info_data['title']}</h4><ul>"
+                    for point in info_data['points']:
+                        info_html += f"<li><span class='icon'>{point['icon']}</span> {point['text']}</li>"
+                    info_html += "</ul></div>"
+                    
+                    st.markdown(info_html, unsafe_allow_html=True)
+                
+                st.divider()
+                st.button(t[lang]['quiz_next_question'], on_click=next_question, use_container_width=True)
+
