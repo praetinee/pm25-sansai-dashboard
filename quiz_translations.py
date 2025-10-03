@@ -5,8 +5,15 @@ TRANSLATIONS = {
         'quiz_question_title': "จริงหรือไม่?",
         'quiz_true': "จริง",
         'quiz_false': "ไม่จริง",
-        'quiz_next_question': "เล่นคำถามถัดไป",
+        'quiz_next_question': "คำถามถัดไป",
         'infographic_title': "ภาพเดียวเข้าใจฝุ่น",
+        'start_quiz': "เริ่มทำแบบทดสอบ (5 ข้อ)",
+        'score_summary': "คะแนนของคุณ: {score}/{total}",
+        'eval_high': "ยอดเยี่ยม! 🏆 คุณมีความเข้าใจเรื่องฝุ่นเป็นอย่างดี สามารถนำความรู้นี้ไปดูแลตัวเองและคนรอบข้างได้เลย",
+        'eval_medium': "เยี่ยมมาก! 👍 มีความเข้าใจที่ดี แต่ยังมีบางเรื่องที่น่าทบทวนเพิ่มเติม ลองดูข้อมูลสรุปเพื่อความเข้าใจที่สมบูรณ์ขึ้นนะครับ",
+        'eval_low': "ไม่เป็นไรเลย! 💡 การเรียนรู้ความเชื่อผิดๆ คือก้าวแรกของการป้องกันที่ดีขึ้น ทุกข้อที่คุณได้เรียนรู้ในวันนี้มีประโยชน์มากครับ",
+        'quiz_disclaimer': "*นี่เป็นเพียงแบบทดสอบเพื่อความสนุกและทบทวนความเข้าใจเบื้องต้นเท่านั้น*",
+        'restart_quiz': "เริ่มเล่นใหม่",
         'quiz_questions': [
             {'id': 'q1','question': "อากาศหนาวตอนเช้า หมายถึงอากาศสะอาด",'answer': False,'explanation': "**ไม่จริง!** เพราะอากาศเย็นอาจทำให้เกิดปรากฏการณ์ \"ฝาชีครอบ\" (Inversion) ซึ่งกักฝุ่น PM2.5 ไว้ใกล้พื้นดิน ทำให้สถานการณ์แย่ลงได้",'infographic_key': 'inversion_phenomenon'},
             {'id': 'q2','question': "การใส่หน้ากากอนามัยธรรมดาก็เพียงพอสำหรับป้องกัน PM2.5",'answer': False,'explanation': "**ไม่จริง!** ต้องใช้หน้ากากมาตรฐาน N95/KF94 ที่กระชับกับใบหน้าเท่านั้นจึงจะมีประสิทธิภาพในการป้องกันฝุ่นจิ๋วได้",'infographic_key': 'protection_pyramid'},
@@ -50,8 +57,15 @@ TRANSLATIONS = {
         'quiz_false': "False",
         'quiz_next_question': "Next Question",
         'infographic_title': "PM2.5 at a Glance",
+        'start_quiz': "Start Quiz (5 Questions)",
+        'score_summary': "Your Score: {score}/{total}",
+        'eval_high': "Excellent! 🏆 You have a great understanding of PM2.5. You can use this knowledge to protect yourself and others.",
+        'eval_medium': "Great job! 👍 You have a good understanding, but there are a few points worth reviewing. Check out the summaries to learn more.",
+        'eval_low': "That's okay! 💡 Learning about myths is the first step to better protection. Everything you've learned today is valuable.",
+        'quiz_disclaimer': "*This is a quiz for fun and for reviewing basic understanding only.*",
+        'restart_quiz': "Play Again",
         'quiz_questions': [
-            {'id': 'q1','question': "Cold morning air means the air is clean.",'answer': False,'explanation': "**False!** Cold air can cause an \"inversion\" effect, trapping PM2.5 near the ground and making the situation worse.",'infographic_key': 'inversion_phenomenon'},
+             {'id': 'q1','question': "Cold morning air means the air is clean.",'answer': False,'explanation': "**False!** Cold air can cause an \"inversion\" effect, trapping PM2.5 near the ground and making the situation worse.",'infographic_key': 'inversion_phenomenon'},
             {'id': 'q2','question': "A standard surgical mask is sufficient to protect against PM2.5.",'answer': False,'explanation': "**False!** Only standard N95/KF94 masks that fit snugly to the face are effective at filtering fine particles.",'infographic_key': 'protection_pyramid'},
             {'id': 'q3','question': "Running the air conditioner is the same as using an air purifier.",'answer': False,'explanation': "**False!** ACs are designed to cool and filter coarse dust, but they cannot effectively filter fine PM2.5 particles like a HEPA air purifier.",'infographic_key': 'air_conditioner_vs_purifier'},
             {'id': 'q4','question': "PM2.5 only comes from outside the home.",'answer': False,'explanation': "**False!** Indoor activities like cooking (grilling, frying), burning incense, or smoking can also be significant sources of dangerous PM2.5.",'infographic_key': 'indoor_sources'},
@@ -86,3 +100,4 @@ TRANSLATIONS = {
         }
     }
 }
+
