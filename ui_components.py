@@ -239,7 +239,7 @@ def display_realtime_pm(df, lang, t, date_str):
                     <div class="advice-text">{advice_details['indoors']}</div>
                 </div>
             </div>
-            <div class="risk-group-advice">
+            <div classs="risk-group-advice">
                 <strong>{t[lang]['risk_group']}:</strong> {advice_details['risk_group']}
             </div>
         </div>
@@ -362,22 +362,49 @@ def display_24hr_chart(df, lang, t):
 def display_monthly_calendar(df, lang, t):
     st.subheader(t[lang]['monthly_calendar_header'])
     
-    unique_months = df['Datetime'].dt.to_period('M').unique()
-    month_options = sorted([period for period in unique_months], reverse=False)
+    # --- START: New Year/Month Selection Logic ---
+    st.caption(t[lang]['date_picker_label'])
     
-    def format_month(period):
-        if lang == 'th':
-            return f"{t['th']['month_names'][period.month-1]} {period.year + 543}"
-        return period.strftime('%B %Y')
-
-    selected_month_str = st.selectbox(
-        t[lang]['date_picker_label'],
-        options=month_options,
-        format_func=format_month,
-        index=len(month_options)-1 # Default to the latest month
+    all_years = sorted(df['Datetime'].dt.year.unique(), reverse=True)
+    
+    # Format function for year display
+    def format_year(y):
+        return y + 543 if lang == 'th' else y
+    
+    col1, col2 = st.columns(2)
+    
+    # Column 1: Year Selection
+    selected_year = col1.selectbox(
+        "ปี" if lang == 'th' else "Year", # Simple label
+        options=all_years,
+        format_func=format_year,
+        index=0 # Default to the latest year
     )
     
-    year, month = selected_month_str.year, selected_month_str.month
+    # Get available months for the selected year
+    df_year = df[df['Datetime'].dt.year == selected_year]
+    available_months_num = sorted(df_year['Datetime'].dt.month.unique())
+    
+    # Create a map of month_number -> month_name
+    month_map = {m: t[lang]['month_names'][m-1] for m in available_months_num}
+    
+    # Find default month index (latest available month for that year)
+    default_month_index = len(available_months_num) - 1
+    
+    # Column 2: Month Selection
+    selected_month_num = col2.selectbox(
+        "เดือน" if lang == 'th' else "Month", # Simple label
+        options=available_months_num,
+        format_func=lambda m: month_map[m], # Use map to show name
+        index=default_month_index # Default to the latest month
+    )
+    
+    # Set year and month for the rest of the function
+    year, month = selected_year, selected_month_num
+    # --- END: New Year/Month Selection Logic ---
+
+    
+    # (The rest of the function remains the same)
     df_calendar = df.copy()
     df_calendar['date'] = df_calendar['Datetime'].dt.date
     daily_avg_pm25 = df_calendar.groupby('date')['PM2.5'].mean().reset_index()
@@ -455,4 +482,3 @@ def display_historical_data(df, lang, t):
                 yaxis_title=t[lang]['avg_pm25_unit'],
                 template="plotly_white", plot_bgcolor='rgba(0,0,0,0)', showlegend=False)
             st.plotly_chart(fig_hist, use_container_width=True)
-
