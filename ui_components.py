@@ -369,7 +369,8 @@ def display_monthly_calendar(df, lang, t):
     
     # Format function for year display
     def format_year(y):
-        return y + 543 if lang == 'th' else y
+        # FIX: format_func MUST return a string
+        return str(y + 543) if lang == 'th' else str(y)
     
     col1, col2 = st.columns(2)
     
@@ -482,3 +483,4 @@ def display_historical_data(df, lang, t):
                 yaxis_title=t[lang]['avg_pm25_unit'],
                 template="plotly_white", plot_bgcolor='rgba(0,0,0,0)', showlegend=False)
             st.plotly_chart(fig_hist, use_container_width=True)
+
