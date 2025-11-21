@@ -1,22 +1,17 @@
-from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageOps, ImageChops
 import requests
 from io import BytesIO
 import streamlit as st
 import math
+import random
 
-# --- 1. Scene Assets (ปรับรูปให้สื่อถึงคำแนะนำการปฏิบัติตัว) ---
-SCENE_URLS = {
-    # อากาศดี (0-25): แนะนำให้ทำกิจกรรมกลางแจ้งได้เต็มที่ -> รูปคนวิ่งเล่นในสวน สดใส
-    'good': "https://img.freepik.com/free-vector/isometric-park-composition-with-view-public-garden-with-infrastructure-elements-walking-people_1284-59279.jpg?w=826", 
-    
-    # ปานกลาง (26-37.5): เริ่มระวัง -> รูปเมืองที่มีคนใช้ชีวิตปกติแต่ท้องฟ้าเริ่มไม่ใสมาก
-    'moderate': "https://img.freepik.com/free-vector/isometric-city-street-composition-with-view-modern-city-block-with-buildings-transport-people_1284-63092.jpg?w=826",
-    
-    # เริ่มมีผล (37.6-75): ลดกิจกรรม/ใส่หน้ากาก -> รูปเมืองที่มีมลพิษ คนใส่หน้ากาก (ถ้าหาได้) หรือกิจกรรมในร่ม
-    'unhealthy': "https://img.freepik.com/free-vector/polluted-city-isometric-composition_1284-25634.jpg?w=826",
-    
-    # อันตราย (>75): งดกิจกรรม/อยู่แต่ในบ้าน -> รูปเมืองที่ดูอันตราย หมอกควันหนา หรือเน้นตึกปิดทึบ
-    'hazardous': "https://img.freepik.com/free-vector/air-pollution-isometric-composition_1284-25634.jpg?w=826" 
+# --- 1. Assets (Modern 3D Icons Only) ---
+# ใช้ไอคอน 3D ที่มีอยู่ (เพราะมันเข้ากับสไตล์ Bento มากที่สุด)
+ICON_URLS = {
+    'mask': "https://i.postimg.cc/wB0w9rd9/Gemini-Generated-Image-rkwajtrkwajtrkwa.png",
+    'activity': "https://i.postimg.cc/FFdXnyj1/Gemini-Generated-Image-16wol216wol216wo.png",
+    'indoors': "https://i.postimg.cc/RVw5vvpJ/Gemini-Generated-Image-8gbf4e8gbf4e8gbf.png",
+    'risk_group': "https://i.postimg.cc/8CKxZccL/Gemini-Generated-Image-4oj4z84oj4z84oj4.png"
 }
 
 @st.cache_data
@@ -43,51 +38,108 @@ def get_image_from_url(url, size=None):
         print(f"Image download failed for {url}: {e}")
         return None
 
-# --- 2. Dynamic Background & Colors ---
+# --- 2. Modern Theme Engine (Mesh Gradients) ---
 
-def get_theme_settings(pm):
-    """คืนค่าสีพื้นหลังและสี Pill ตามระดับฝุ่น (สอดคล้องกับคำแนะนำ)"""
-    if pm <= 25: 
+def get_theme_config(pm):
+    """คืนค่าสีสำหรับสร้าง Mesh Gradient ตามระดับฝุ่น"""
+    if pm <= 25: # Teal/Mint/Cyan
         return {
-            'bg': '#1E3A2F', # Dark Green Slate (บรรยากาศร่มรื่น เหมาะแก่การออกกำลังกาย)
-            'pill': '#2ECC71',
-            'scene': 'good'
+            'base': '#ccfbf1', # Teal 100
+            'orb1': '#2dd4bf', # Teal 400
+            'orb2': '#3b82f6', # Blue 500
+            'orb3': '#a7f3d0', # Emerald 200
+            'text': '#0f766e', # Teal 700
+            'pill_bg': '#0d9488',
+            'pill_text': '#ffffff'
         }
-    elif pm <= 37.5: 
+    elif pm <= 37.5: # Yellow/Orange/Cream
         return {
-            'bg': '#3E382C', # Dark Yellow/Brown Slate (เริ่มระวัง)
-            'pill': '#F1C40F',
-            'scene': 'moderate'
+            'base': '#fefce8', # Yellow 50
+            'orb1': '#facc15', # Yellow 400
+            'orb2': '#fb923c', # Orange 400
+            'orb3': '#fef08a', # Yellow 200
+            'text': '#a16207', # Yellow 700
+            'pill_bg': '#ca8a04',
+            'pill_text': '#ffffff'
         }
-    elif pm <= 75: 
+    elif pm <= 75: # Orange/Red/Peach
         return {
-            'bg': '#3E2E2C', # Dark Orange/Rust Slate (ลดกิจกรรม)
-            'pill': '#E67E22',
-            'scene': 'unhealthy'
+            'base': '#fff7ed', # Orange 50
+            'orb1': '#fb923c', # Orange 400
+            'orb2': '#f87171', # Red 400
+            'orb3': '#ffedd5', # Orange 100
+            'text': '#c2410c', # Orange 700
+            'pill_bg': '#ea580c',
+            'pill_text': '#ffffff'
         }
-    else: 
+    else: # Red/Purple/Dark
         return {
-            'bg': '#2C1E1E', # Dark Red/Purple Slate (งดกิจกรรม/อันตราย)
-            'pill': '#E74C3C',
-            'scene': 'hazardous'
+            'base': '#fef2f2', # Red 50
+            'orb1': '#f87171', # Red 400
+            'orb2': '#c084fc', # Purple 400
+            'orb3': '#fecaca', # Red 200
+            'text': '#be123c', # Rose 700
+            'pill_bg': '#e11d48',
+            'pill_text': '#ffffff'
         }
 
-# --- 3. Graphics Helpers ---
+# --- 3. Graphics Generators ---
 
-def draw_rounded_rect(draw, bbox, radius, fill, outline=None, width=1):
-    draw.rounded_rectangle(bbox, radius=radius, fill=fill, outline=outline, width=width)
+def create_mesh_gradient_bg(width, height, theme):
+    """Creates a trendy mesh gradient background with noise."""
+    # Base Layer
+    base = Image.new('RGB', (width, height), theme['base'])
+    
+    # Create Orbs Layer
+    orbs = Image.new('RGBA', (width, height), (0,0,0,0))
+    draw = ImageDraw.Draw(orbs)
+    
+    # Helper to draw soft orb
+    def draw_orb(hex_color, bbox):
+        r, g, b = tuple(int(hex_color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+        draw.ellipse(bbox, fill=(r, g, b, 180)) # Semi-transparent
+
+    # Draw random-ish orbs
+    draw_orb(theme['orb1'], [-200, -200, 600, 600]) # Top Left
+    draw_orb(theme['orb2'], [width-600, height-600, width+200, height+200]) # Bottom Right
+    draw_orb(theme['orb3'], [width//2-300, height//2-300, width//2+300, height//2+300]) # Center
+    
+    # Blur heavily to create mesh effect
+    orbs = orbs.filter(ImageFilter.GaussianBlur(120))
+    
+    # Composite
+    bg = Image.alpha_composite(base.convert('RGBA'), orbs).convert('RGB')
+    
+    # Add Noise (Film Grain) - Key for modern look
+    noise = Image.effect_noise((width, height), 15).convert('RGB')
+    bg = Image.blend(bg, noise, 0.03) # 3% Noise
+    
+    return bg
+
+def draw_bento_card(draw, x, y, w, h, radius=35, fill=(255,255,255,180)):
+    """Draws a glass-like bento card."""
+    draw.rounded_rectangle([x, y, x+w, y+h], radius=radius, fill=fill)
+    # Subtle border
+    draw.rounded_rectangle([x, y, x+w, y+h], radius=radius, outline=(255,255,255,200), width=2)
+
+def draw_squircle_icon_bg(img, x, y, size, color, radius=30):
+    """Draws a squircle background for icons."""
+    draw = ImageDraw.Draw(img, 'RGBA')
+    # Convert hex to rgba with opacity
+    r, g, b = tuple(int(color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+    fill = (r, g, b, 30) # Very light tint
+    draw.rounded_rectangle([x, y, x+size, y+size], radius=radius, fill=fill)
 
 # --- 4. Main Generator ---
 
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
-    """Generates an 'Isometric Scene' report card with dynamic atmosphere reflecting advice."""
+    """Generates 'The Air Bento' report card."""
     
-    # Settings
-    width, height = 900, 900 
-    theme = get_theme_settings(latest_pm25)
+    width, height = 1000, 1600
+    theme = get_theme_config(latest_pm25)
     
-    # สร้างพื้นหลังตามธีมสี (Dynamic Background)
-    img = Image.new('RGB', (width, height), theme['bg'])
+    # 1. Background
+    img = create_mesh_gradient_bg(width, height, theme)
     draw = ImageDraw.Draw(img, 'RGBA')
 
     # Fonts
@@ -106,87 +158,119 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         return ImageFont.truetype(font_bytes, size)
 
     # Typography
-    f_title = create_font(font_bold, 50)
-    f_subtitle = create_font(font_reg, 24)
-    f_pm_val = create_font(font_bold, 180)
-    f_unit = create_font(font_med, 40)
-    f_badge = create_font(font_bold, 24)
-    f_footer = create_font(font_reg, 20)
+    f_hero_num = create_font(font_bold, 280)
+    f_hero_unit = create_font(font_med, 40)
+    f_status = create_font(font_bold, 48)
+    f_header = create_font(font_bold, 32)
+    f_date = create_font(font_med, 22)
+    f_card_title = create_font(font_bold, 26)
+    f_card_desc = create_font(font_med, 22)
+    f_footer = create_font(font_med, 18)
 
     margin = 50
 
-    # --- 1. Header ---
-    draw.text((margin, 50), "รายงานคุณภาพอากาศ (PM2.5)", font=f_title, fill="white")
+    # --- Header Row ---
+    # Hospital & Date Pill
+    header_y = 60
+    # Left: Hospital
+    draw.text((margin, header_y), "San Sai Hospital", font=f_header, fill="#1e293b")
     
-    time_text = f"อัปเดตล่าสุด: {date_str.split(',')[1].strip()} น." if ',' in date_str else date_str
-    # สี subtitle จางๆ
-    draw.text((margin, 120), time_text, font=f_subtitle, fill=(255,255,255, 180))
+    # Right: Date Pill
+    date_w = draw.textlength(date_str, font=f_date) + 40
+    draw.rounded_rectangle([width-margin-date_w, header_y-5, width-margin, header_y+45], radius=25, fill="white")
+    draw.text((width-margin-date_w/2, header_y+20), date_str, font=f_date, anchor="mm", fill="#64748b")
 
-    # --- 2. Dynamic Scene Image (สะท้อนคำแนะนำ) ---
-    # เลือกรูปจาก theme['scene'] ซึ่งผูกกับค่า PM2.5
-    scene_img = get_image_from_url(SCENE_URLS.get(theme['scene']))
+    # --- Hero Section (Big Number) ---
+    hero_y = 200
     
-    if scene_img:
-        target_w = width - (margin * 2)
-        ratio = scene_img.height / scene_img.width
-        target_h = int(target_w * ratio)
+    # PM2.5 Value (Massive)
+    # Draw text with blend mode simulation (Darker theme text)
+    draw.text((margin, hero_y), f"{latest_pm25:.0f}", font=f_hero_num, fill=theme['text'])
+    
+    # Unit (Next to number bottom)
+    val_w = draw.textlength(f"{latest_pm25:.0f}", font=f_hero_num)
+    draw.text((margin + val_w + 20, hero_y + 230), "μg/m³", font=f_hero_unit, fill="#64748b")
+    
+    # Status Pill (Next to number top)
+    status_y = hero_y + 40
+    label_text = level
+    l_w = draw.textlength(label_text, font=f_status) + 60
+    
+    draw.rounded_rectangle([margin + val_w + 20, status_y, margin + val_w + 20 + l_w, status_y + 80], radius=40, fill=theme['pill_bg'])
+    draw.text((margin + val_w + 20 + l_w/2, status_y + 40), label_text, font=f_status, anchor="mm", fill=theme['pill_text'])
+
+    # --- Bento Grid (Advice) ---
+    grid_start_y = 650
+    col_gap = 30
+    row_gap = 30
+    
+    # Grid Layout:
+    # Row 1: Mask (Large Left) | Activity (Small Right Top)
+    # Row 2: Risk Group (Small Right Bottom)
+    # Let's make a uniform 2x2 grid for consistency and cleanliness
+    
+    card_w = (width - (margin * 2) - col_gap) / 2
+    card_h = 360 # Tall cards
+    
+    cards_data = [
+        {'title': t[lang]['advice_cat_mask'], 'desc': advice_details['mask'], 'icon_key': 'mask'},
+        {'title': t[lang]['advice_cat_activity'], 'desc': advice_details['activity'], 'icon_key': 'activity'},
+        {'title': t[lang]['advice_cat_indoors'], 'desc': advice_details['indoors'], 'icon_key': 'indoors'},
+        {'title': t[lang]['advice_cat_risk_group'] if 'advice_cat_risk_group' in t[lang] else t[lang]['risk_group'], 'desc': advice_details['risk_group'], 'icon_key': 'risk_group'},
+    ]
+
+    for i, item in enumerate(cards_data):
+        col = i % 2
+        row = i // 2
+        x = margin + col * (card_w + col_gap)
+        y = grid_start_y + row * (card_h + row_gap)
         
-        max_h = 450
-        if target_h > max_h:
-            target_h = max_h
-            target_w = int(target_h / ratio)
+        # Draw Bento Card
+        draw_bento_card(draw, x, y, card_w, card_h, fill=(255,255,255, 200)) # White Glass
+        
+        # Icon Area
+        icon_size = 140
+        icon_x = x + (card_w - icon_size) // 2
+        icon_y = y + 40
+        
+        # Soft Glow behind icon
+        glow_r = 60
+        cx, cy = icon_x + icon_size//2, icon_y + icon_size//2
+        draw.ellipse([cx-glow_r, cy-glow_r, cx+glow_r, cy+glow_r], fill=(255,255,255, 150))
+        
+        icon_img = get_image_from_url(ICON_URLS.get(item['icon_key']), size=(icon_size, icon_size))
+        if icon_img:
+            img.paste(icon_img, (icon_x, icon_y), icon_img)
             
-        scene_img = scene_img.resize((target_w, target_h), Image.Resampling.LANCZOS)
+        # Text Content
+        text_y = icon_y + icon_size + 30
+        draw.text((x + card_w/2, text_y), item['title'], font=f_card_title, anchor="ms", fill="#1e293b")
         
-        img_x = (width - target_w) // 2
-        img_y = 180 
+        # Desc (Wrap)
+        desc = item['desc']
+        words = desc.split()
+        line1, line2, curr = [], [], []
+        curr = line1
+        for w in words:
+            curr.append(w)
+            if draw.textlength(" ".join(curr), font=f_card_desc) > (card_w - 60):
+                curr.pop()
+                if curr == line1:
+                    line1.append(w)
+                    curr = line2
+                    curr.append(w)
+                else:
+                    break
         
-        # Mask for softer edges
-        mask = Image.new("L", scene_img.size, 0)
-        draw_mask = ImageDraw.Draw(mask)
-        draw_mask.rounded_rectangle([(0,0), scene_img.size], radius=30, fill=255)
-        
-        img.paste(scene_img, (img_x, img_y), mask)
-    
-    # --- 3. Bottom Info Section ---
-    bottom_y = 650 
-    
-    # Status Pill (Label)
-    label_text = f"{level}"
-    pill_w = draw.textlength(label_text, font=f_badge) + 60
-    pill_h = 50
-    pill_x = margin
-    pill_y = bottom_y - 40 
-    
-    draw_rounded_rect(draw, [pill_x, pill_y, pill_x + pill_w, pill_y + pill_h], 10, fill=theme['pill'])
-    draw.text((pill_x + pill_w/2, pill_y + 25), label_text, font=f_badge, anchor="mm", fill="#FFFFFF")
+        draw.text((x + card_w/2, text_y + 40), " ".join(line1), font=f_card_desc, anchor="ms", fill="#64748b")
+        if line2:
+            draw.text((x + card_w/2, text_y + 75), " ".join(line2), font=f_card_desc, anchor="ms", fill="#64748b")
 
-    # Big PM2.5 Number
-    num_y = bottom_y + 20
-    draw.text((margin, num_y), f"{latest_pm25:.0f}", font=f_pm_val, anchor="lt", fill="white")
-    
-    # Unit
-    num_w = draw.textlength(f"{latest_pm25:.0f}", font=f_pm_val)
-    draw.text((margin + num_w + 20, num_y + 110), "µg/m³", font=f_unit, fill=(255,255,255, 150))
+    # --- Footer ---
+    footer_y = height - 60
+    draw.text((width/2, footer_y), t[lang]['report_card_footer'], font=f_footer, anchor="ms", fill="#94a3b8")
 
-    # --- 4. Footer ---
-    draw.text((margin, height - 60), "ข้อมูลจาก: โรงพยาบาลสันทราย (DustBoy)", font=f_footer, fill=(255,255,255, 150))
-    
-    # Sparkle Decor
-    star_x = width - 60
-    star_y = height - 60
-    star_size = 30
-    draw.polygon([
-        (star_x, star_y - star_size), 
-        (star_x + star_size/4, star_y - star_size/4),
-        (star_x + star_size, star_y),
-        (star_x + star_size/4, star_y + star_size/4),
-        (star_x, star_y + star_size),
-        (star_x - star_size/4, star_y + star_size/4),
-        (star_x - star_size, star_y),
-        (star_x - star_size/4, star_y - star_size/4)
-    ], fill="white")
-
+    # Output
     buf = BytesIO()
     img.save(buf, format='PNG', quality=95)
     return buf.getvalue()
