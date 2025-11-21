@@ -1,4 +1,4 @@
-from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageOps
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageOps, ImageChops
 import requests
 from io import BytesIO
 import streamlit as st
@@ -23,7 +23,7 @@ def get_font(url):
         return None
 
 @st.cache_data
-def get_image_from_url(url, size=(180, 180)): # Increased fetch size for better quality
+def get_image_from_url(url, size=(200, 200)):
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -37,84 +37,110 @@ def get_image_from_url(url, size=(180, 180)): # Increased fetch size for better 
 
 # --- Graphics Helpers ---
 
-def mask_image_rounded(img, radius=40):
-    """Crops an image into a rounded rectangle (Squircle)."""
-    mask = Image.new("L", img.size, 0)
-    draw = ImageDraw.Draw(mask)
-    draw.rounded_rectangle([(0, 0), img.size], radius=radius, fill=255)
+def create_rounded_icon_bg(img, radius=50, size=(180, 180)):
+    """
+    Places image on a white square background and crops to rounded corners.
+    Fixes the 'black background' issue.
+    """
+    # 1. Create White Base
+    base = Image.new('RGBA', size, (255, 255, 255, 255))
     
-    # Apply mask
-    output = ImageOps.fit(img, mask.size, centering=(0.5, 0.5))
-    output.putalpha(mask)
-    return output
+    # 2. Resize and Center Icon onto Base
+    # We scale the icon down slightly so it fits nicely inside the rounded shape
+    icon_w, icon_h = img.size
+    target_w, target_h = int(size[0] * 0.85), int(size[1] * 0.85)
+    img_resized = img.resize((target_w, target_h), Image.Resampling.LANCZOS)
+    
+    offset_x = (size[0] - target_w) // 2
+    offset_y = (size[1] - target_h) // 2
+    
+    # Use alpha_composite for proper transparency handling
+    base.alpha_composite(img_resized, (offset_x, offset_y))
+    
+    # 3. Create Mask
+    mask = Image.new("L", size, 0)
+    draw = ImageDraw.Draw(mask)
+    draw.rounded_rectangle([(0, 0), size], radius=radius, fill=255)
+    
+    # 4. Apply Mask
+    base.putalpha(mask)
+    return base
 
-def create_premium_gradient(width, height, hex_color):
-    """Creates a soft, luxurious mesh-like gradient."""
+def create_soft_shadow(size, radius, blur=30, opacity=40):
+    """Creates a diffused, soft shadow."""
+    shadow_size = (size[0] + blur*4, size[1] + blur*4)
+    shadow = Image.new('RGBA', shadow_size, (0,0,0,0))
+    draw = ImageDraw.Draw(shadow)
+    
+    # Draw black shape
+    draw.rounded_rectangle(
+        [blur*2, blur*2, blur*2 + size[0], blur*2 + size[1]], 
+        radius=radius, 
+        fill=(0, 0, 0, opacity)
+    )
+    return shadow.filter(ImageFilter.GaussianBlur(blur))
+
+def create_mesh_gradient(width, height, hex_color):
+    """Creates a soft, airy background gradient."""
+    # Parse color
     try:
         r, g, b = tuple(int(hex_color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
     except:
-        r, g, b = 50, 50, 50
-
-    # Base background (Slightly darker than main color for depth)
-    base = Image.new('RGB', (width, height), (int(r*0.9), int(g*0.9), int(b*0.9)))
+        r, g, b = 200, 200, 200
+        
+    # Base: White
+    base = Image.new('RGB', (width, height), "#FFFFFF")
+    draw = ImageDraw.Draw(base)
     
-    # Create "Spotlights" using radial gradients
+    # 1. Top Mesh (Main Color) - Large Soft Blob
     overlay = Image.new('RGBA', (width, height), (0,0,0,0))
-    draw = ImageDraw.Draw(overlay)
+    o_draw = ImageDraw.Draw(overlay)
     
-    # Top-Left Highlight (White/Bright)
-    draw.ellipse([-200, -200, 600, 600], fill=(255, 255, 255, 50))
+    # Large circle at top-left, bleeding out
+    o_draw.ellipse([-300, -300, width, 600], fill=(r, g, b, 40))
     
-    # Bottom-Right Shadow (Darker)
-    draw.ellipse([width-600, height-600, width+200, height+200], fill=(0, 0, 0, 60))
+    # Smaller circle at bottom-right
+    o_draw.ellipse([width-600, height-600, width+200, height+200], fill=(r, g, b, 20))
     
-    # Extreme Blur to blend
-    overlay = overlay.filter(ImageFilter.GaussianBlur(120))
+    # Blur heavily
+    overlay = overlay.filter(ImageFilter.GaussianBlur(150))
     
     return Image.alpha_composite(base.convert('RGBA'), overlay).convert('RGB')
 
-def draw_glass_panel(draw, x, y, w, h, radius=40, opacity=240):
-    """Draws a high-quality glass panel with border."""
-    # 1. Subtle Shadow
-    shadow_offset = 10
-    draw.rounded_rectangle([x, y+shadow_offset, x+w, y+h+shadow_offset], radius=radius, fill=(0,0,0, 30))
+def draw_clean_gauge(draw, cx, cy, radius, percent, color_hex):
+    """Draws a super-clean, modern gauge."""
+    thickness = 15
     
-    # 2. Main Glass Body (White)
-    draw.rounded_rectangle([x, y, x+w, y+h], radius=radius, fill=(255, 255, 255, opacity))
+    # Background Track (Very Light Grey)
+    draw.arc([cx-radius, cy-radius, cx+radius, cy+radius], start=135, end=405, fill="#F0F0F0", width=thickness)
     
-    # 3. Inner Border (Stroke) - Adds "crispness"
-    draw.rounded_rectangle([x, y, x+w, y+h], radius=radius, outline=(255, 255, 255, 255), width=2)
-
-def draw_elegant_gauge(draw, cx, cy, radius, percent, color_hex):
-    """Draws a thin, elegant gauge ring."""
-    thickness = 12
-    
-    # Track (White with low opacity)
-    draw.arc([cx-radius, cy-radius, cx+radius, cy+radius], start=135, end=405, fill=(255,255,255, 60), width=thickness)
-    
-    # Progress
+    # Active Progress
     active_end = 135 + (270 * percent)
     if percent > 0:
-        draw.arc([cx-radius, cy-radius, cx+radius, cy+radius], start=135, end=active_end, fill=(255,255,255, 255), width=thickness)
+        # Draw with round cap simulation
+        draw.arc([cx-radius, cy-radius, cx+radius, cy+radius], start=135, end=active_end, fill=color_hex, width=thickness)
         
-        # End Dot (Glossy)
-        er = math.radians(active_end)
-        ex = cx + radius * math.cos(er)
-        ey = cy + radius * math.sin(er)
+        # Add simple round ends using circles
+        start_rad = math.radians(135)
+        end_rad = math.radians(active_end)
         
-        # Outer Glow
-        draw.ellipse([ex-10, ey-10, ex+10, ey+10], fill=(255,255,255, 100))
-        # Core
-        draw.ellipse([ex-5, ey-5, ex+5, ey+5], fill=(255,255,255, 255))
+        # Start Cap
+        sx = cx + radius * math.cos(start_rad)
+        sy = cy + radius * math.sin(start_rad)
+        draw.ellipse([sx-thickness/2+1, sy-thickness/2+1, sx+thickness/2-1, sy+thickness/2-1], fill=color_hex)
+        
+        # End Cap
+        ex = cx + radius * math.cos(end_rad)
+        ey = cy + radius * math.sin(end_rad)
+        draw.ellipse([ex-thickness/2+1, ey-thickness/2+1, ex+thickness/2-1, ey+thickness/2-1], fill=color_hex)
 
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
-    """Generates a 'Premium & Shareable' report card."""
+    """Generates a 'Soft & Modern' report card."""
     
-    # Canvas Size: Taller for better proportions
-    width, height = 1000, 1500 
+    width, height = 1000, 1450
     
-    # 1. Background
-    img = create_premium_gradient(width, height, color_hex)
+    # 1. Background: Airy Mesh Gradient
+    img = create_mesh_gradient(width, height, color_hex)
     draw = ImageDraw.Draw(img, 'RGBA')
 
     # Fonts
@@ -133,60 +159,59 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         font_bytes.seek(0)
         return ImageFont.truetype(font_bytes, size)
 
-    # Optimized Font Sizes
-    f_hero_val = create_font(font_bold_bytes, 160)
-    f_hero_unit = create_font(font_med_bytes, 36)
-    f_header = create_font(font_bold_bytes, 32)
+    f_brand = create_font(font_bold_bytes, 28)
     f_date = create_font(font_med_bytes, 22)
-    f_status = create_font(font_bold_bytes, 50)
+    f_pm_val = create_font(font_bold_bytes, 160)
+    f_pm_unit = create_font(font_med_bytes, 32)
+    f_level = create_font(font_bold_bytes, 50)
     
     f_card_title = create_font(font_bold_bytes, 26)
     f_card_desc = create_font(font_reg_bytes, 22)
-    f_footer = create_font(font_med_bytes, 20)
+    f_footer = create_font(font_med_bytes, 18)
 
-    # --- Header Section ---
-    # Brand Name
-    draw.text((60, 70), "PM2.5 MONITOR", font=f_header, anchor="ls", fill=(255, 255, 255, 240))
-    draw.text((width - 60, 70), "San Sai Hospital", font=f_header, anchor="rs", fill=(255, 255, 255, 240))
+    # --- Header ---
+    # Clean, Minimal Header
+    draw.text((60, 60), "PM2.5 MONITOR", font=f_brand, anchor="ls", fill="#333333")
+    draw.text((width-60, 60), "San Sai Hospital", font=f_brand, anchor="rs", fill="#333333")
     
-    # Date Pill (Centered, Glassy)
-    date_w = draw.textlength(date_str, font=f_date) + 50
-    draw.rounded_rectangle([(width-date_w)/2, 100, (width+date_w)/2, 150], radius=25, fill=(255,255,255, 40))
-    draw.text((width/2, 125), date_str, font=f_date, anchor="mm", fill="white")
+    # Date line
+    draw.line([(60, 80), (width-60, 80)], fill="#E0E0E0", width=2)
+    draw.text((width/2, 110), date_str, font=f_date, anchor="ms", fill="#888888")
 
-    # --- Hero Section (The Gauge) ---
-    hero_cy = 420
-    gauge_radius = 160
+    # --- Hero Section (Gauge) ---
+    hero_cy = 380
+    gauge_radius = 150
     
-    # Draw Gauge
-    draw_elegant_gauge(draw, width/2, hero_cy, gauge_radius, min(latest_pm25/200, 1.0), color_hex)
+    draw_clean_gauge(draw, width/2, hero_cy, gauge_radius, min(latest_pm25/200, 1.0), color_hex)
     
     # Value
-    draw.text((width/2, hero_cy + 10), f"{latest_pm25:.0f}", font=f_hero_val, anchor="ms", fill="white")
-    draw.text((width/2, hero_cy + 80), "μg/m³", font=f_hero_unit, anchor="ms", fill=(255,255,255, 200))
+    draw.text((width/2, hero_cy + 15), f"{latest_pm25:.0f}", font=f_pm_val, anchor="ms", fill="#333333")
+    draw.text((width/2, hero_cy + 80), "μg/m³", font=f_pm_unit, anchor="ms", fill="#AAAAAA")
     
-    # Status Badge (Below Gauge)
-    status_y = hero_cy + 140
+    # Status Pill
+    pill_y = hero_cy + 140
     level_text = level
-    l_w = draw.textlength(level_text, font=f_status) + 80
+    bbox = draw.textbbox((0,0), level_text, font=f_level)
+    l_w = bbox[2] - bbox[0] + 80
     
-    draw.rounded_rectangle([(width-l_w)/2, status_y, (width+l_w)/2, status_y+80], radius=40, fill="white")
+    # Draw Shadow for Pill
+    pill_shadow = create_soft_shadow((l_w, 80), 40, blur=20, opacity=30)
+    img.paste(pill_shadow, (int(width-l_w)//2 - 40, pill_y - 35), pill_shadow)
     
-    # Text Color logic for contrast inside white badge
-    # Using a dark gray for best readability
-    draw.text((width/2, status_y + 40), level_text, font=f_status, anchor="mm", fill="#2D3748")
+    # Draw Pill Body (White)
+    draw.rounded_rectangle([(width-l_w)/2, pill_y, (width+l_w)/2, pill_y+80], radius=40, fill="#FFFFFF")
+    # Text in Pill (Colored)
+    draw.text((width/2, pill_y + 40), level_text, font=f_level, anchor="mm", fill=color_hex)
 
-    # --- Grid Layout (Perfectly Proportioned) ---
-    grid_y_start = status_y + 140
+    # --- Widget Grid ---
+    grid_start_y = pill_y + 140
     
-    # Layout Math
     margin_x = 50
-    col_gap = 30
-    row_gap = 30
+    col_gap = 40
+    row_gap = 40
     
-    # Two columns
-    card_width = (width - (margin_x * 2) - col_gap) / 2
-    card_height = 320 # Taller cards to fit text better
+    card_w = (width - (margin_x * 2) - col_gap) / 2
+    card_h = 340 # Tall enough for vertical layout
     
     cards_data = [
         {'title': t[lang]['advice_cat_mask'], 'desc': advice_details['mask'], 'icon_key': 'mask'},
@@ -198,55 +223,54 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     for i, item in enumerate(cards_data):
         col = i % 2
         row = i // 2
-        x = margin_x + col * (card_width + col_gap)
-        y = grid_y_start + row * (card_height + row_gap)
+        x = margin_x + col * (card_w + col_gap)
+        y = grid_start_y + row * (card_h + row_gap)
         
-        # 1. Draw Glass Card Background
-        draw_glass_panel(draw, x, y, card_width, card_height, radius=35, opacity=245) # Nearly opaque white
+        # 1. Widget Shadow
+        w_shadow = create_soft_shadow((int(card_w), int(card_h)), 35, blur=25, opacity=15)
+        img.paste(w_shadow, (int(x)-50, int(y)-40), w_shadow)
         
-        # 2. Icon (Round & Beautiful)
-        icon_img = get_image_from_url(ICON_URLS.get(item['icon_key']), size=(160, 160))
-        if icon_img:
-            # Apply rounding mask to icon
-            icon_img = mask_image_rounded(icon_img, radius=30)
+        # 2. Widget Body (White)
+        draw.rounded_rectangle([x, y, x+card_w, y+card_h], radius=35, fill="#FFFFFF")
+        
+        # 3. Icon (Now with White BG Fix)
+        icon_source = get_image_from_url(ICON_URLS.get(item['icon_key']), size=(180, 180))
+        if icon_source:
+            # Convert to nice rounded icon with white bg
+            icon_final = create_rounded_icon_bg(icon_source, radius=40, size=(140, 140))
             
-            # Centered horizontally, top padding
-            ix = int(x + (card_width - 160) / 2)
-            iy = int(y + 25)
-            img.paste(icon_img, (ix, iy), icon_img)
-            
-        # 3. Text Content
-        text_center_x = x + card_width / 2
-        text_start_y = y + 200
+            # Center Icon Top
+            ix = int(x + (card_w - 140) / 2)
+            iy = int(y + 30)
+            img.paste(icon_final, (ix, iy), icon_final)
         
-        # Title (Bold, Dark)
-        draw.text((text_center_x, text_start_y), item['title'], font=f_card_title, anchor="ms", fill="#1A202C")
+        # 4. Text
+        tx = x + card_w / 2
+        ty = y + 200
         
-        # Description (Lighter, wrapped)
+        draw.text((tx, ty), item['title'], font=f_card_title, anchor="ms", fill="#333333")
+        
+        # Desc Wrap
         desc = item['desc']
-        
-        # Smart Wrapping
         words = desc.split()
         lines = []
-        curr_line = []
+        curr = []
         for w in words:
-            curr_line.append(w)
-            w_bbox = draw.textbbox((0,0), " ".join(curr_line), font=f_card_desc)
-            if (w_bbox[2] - w_bbox[0]) > (card_width - 40):
-                curr_line.pop()
-                lines.append(" ".join(curr_line))
-                curr_line = [w]
-        lines.append(" ".join(curr_line))
+            curr.append(w)
+            bbox = draw.textbbox((0,0), " ".join(curr), font=f_card_desc)
+            if (bbox[2]-bbox[0]) > (card_w - 40):
+                curr.pop()
+                lines.append(" ".join(curr))
+                curr = [w]
+        lines.append(" ".join(curr))
         
-        line_y = text_start_y + 35
+        ly = ty + 30
         for line in lines:
-            draw.text((text_center_x, line_y), line, font=f_card_desc, anchor="ms", fill="#4A5568")
-            line_y += 28
+            draw.text((tx, ly), line, font=f_card_desc, anchor="ms", fill="#666666")
+            ly += 28
 
     # --- Footer ---
-    footer_y = height - 60
-    draw.line([(100, footer_y - 40), (width-100, footer_y - 40)], fill=(255,255,255, 80), width=1)
-    draw.text((width/2, footer_y), t[lang]['report_card_footer'], font=f_footer, anchor="ms", fill=(255,255,255, 200))
+    draw.text((width/2, height - 40), t[lang]['report_card_footer'], font=f_footer, anchor="ms", fill="#BBBBBB")
 
     # --- Output ---
     buf = BytesIO()
