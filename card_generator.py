@@ -4,13 +4,18 @@ from io import BytesIO
 import streamlit as st
 import math
 
-# --- 1. Minimalist Medical Glyphs (Icons8) ---
-# ใช้ไอคอนเส้นบาง (Outline) สีดำ เพื่อความคมชัดและดูแพง
-ICON_URLS = {
-    'mask': "https://img.icons8.com/?size=200&id=9828&format=png&color=000000", # หน้ากากอนามัย
-    'activity': "https://img.icons8.com/?size=200&id=9965&format=png&color=000000", # คนวิ่ง
-    'indoors': "https://img.icons8.com/?size=200&id=5342&format=png&color=000000", # บ้าน
-    'risk_group': "https://img.icons8.com/?size=200&id=43632&format=png&color=000000" # หัวใจ/การแพทย์
+# --- 1. Scene Assets (ภาพฉากตามระดับฝุ่น) ---
+# แนะนำให้ใช้รูป Isometric Scene (1:1 หรือ 4:3) พื้นหลังใส หรือพื้นหลังสีเดียวกับตัวการ์ดจะสวยมาก
+# คุณสามารถเปลี่ยน Link ตรงนี้เป็นรูปที่คุณเจนมาใหม่ได้เลย
+SCENE_URLS = {
+    # อากาศดี: สวนสาธารณะ/เมืองสดใส
+    'good': "https://img.freepik.com/free-vector/isometric-park-composition-with-view-public-garden-with-infrastructure-elements-walking-people_1284-59279.jpg?w=826", 
+    # ปานกลาง: เริ่มมีเมฆ/หมอกจางๆ
+    'moderate': "https://img.freepik.com/free-vector/smart-city-isometric-illustration_1284-20208.jpg?w=826",
+    # แย่: เมืองที่มีมลพิษ/คนใส่หน้ากาก
+    'unhealthy': "https://img.freepik.com/free-vector/polluted-city-isometric-composition_1284-25634.jpg?w=826",
+    # อันตราย: โรงงาน/ควันพิษ
+    'hazardous': "https://img.freepik.com/free-vector/air-pollution-isometric-composition_1284-25634.jpg?w=826" 
 }
 
 @st.cache_data
@@ -24,118 +29,45 @@ def get_font(url):
         return None
 
 @st.cache_data
-def get_image_from_url(url, size=None, colorize=None):
+def get_image_from_url(url, size=None):
     try:
         response = requests.get(url)
         response.raise_for_status()
-        img = Image.open(BytesIO(response.content)).convert("RGBA")
-        
-        # Resize
+        img = Image.open(BytesIO(response.content))
+        img = img.convert("RGBA")
         if size:
             img = img.resize(size, Image.Resampling.LANCZOS)
-            
-        # Colorize (เปลี่ยนสีไอคอนให้เข้ากับธีม)
-        if colorize:
-            r, g, b = tuple(int(colorize.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
-            color_layer = Image.new('RGBA', img.size, (r, g, b, 255))
-            img = Image.composite(color_layer, Image.new('RGBA', img.size, (0,0,0,0)), img)
-            
         return img
     except Exception as e:
         print(f"Image download failed for {url}: {e}")
         return None
 
-# --- 2. Smart Color Theme (Medical Standard) ---
+# --- 2. Theme & Colors ---
 
-def get_theme(pm):
-    """คืนค่าชุดสีตามระดับความรุนแรงของฝุ่น (มาตรฐานการแพทย์)"""
-    if pm <= 25:
-        return {
-            'name': 'Good',
-            'primary': '#059669',   # Emerald 600 (เขียวเข้ม)
-            'light': '#D1FAE5',     # Emerald 100 (เขียวอ่อน)
-            'bg': '#ECFDF5',        # Emerald 50 (พื้นหลังเขียวจางๆ)
-            'text_main': '#064E3B', # Emerald 900 (ตัวหนังสือเขียวเกือบดำ)
-            'text_sub': '#047857',  # Emerald 700
-            'icon_tint': '#059669'
-        }
-    elif pm <= 37.5:
-        return {
-            'name': 'Moderate',
-            'primary': '#D97706',   # Amber 600 (เหลืองเข้ม)
-            'light': '#FEF3C7',     # Amber 100
-            'bg': '#FFFBEB',        # Amber 50
-            'text_main': '#78350F', # Amber 900
-            'text_sub': '#B45309',  # Amber 700
-            'icon_tint': '#D97706'
-        }
-    elif pm <= 50: 
-        return {
-            'name': 'Unhealthy',
-            'primary': '#EA580C',   # Orange 600 (ส้มเข้ม)
-            'light': '#FFEDD5',     # Orange 100
-            'bg': '#FFF7ED',        # Orange 50
-            'text_main': '#7C2D12', # Orange 900
-            'text_sub': '#C2410C',  # Orange 700
-            'icon_tint': '#EA580C'
-        }
-    else: # Hazardous
-        return {
-            'name': 'Hazardous',
-            'primary': '#E11D48',   # Rose 600 (แดงเข้ม)
-            'light': '#FFE4E6',     # Rose 100
-            'bg': '#FFF1F2',        # Rose 50
-            'text_main': '#881337', # Rose 900
-            'text_sub': '#BE123C',  # Rose 700
-            'icon_tint': '#E11D48'
-        }
+def get_aqi_color(pm):
+    if pm <= 25: return '#2ECC71' # Green
+    elif pm <= 37.5: return '#F1C40F' # Yellow
+    elif pm <= 75: return '#E67E22' # Orange
+    else: return '#E74C3C' # Red
 
-# --- 3. Graphic Helpers ---
+# --- 3. Graphics Helpers ---
 
-def draw_card_shadow(draw, x, y, w, h, radius, color=(0,0,0,15)):
-    """วาดเงาการ์ดแบบนุ่มนวล"""
-    offset = 6
-    draw.rounded_rectangle([x, y+offset/2, x+w, y+h+offset], radius=radius, fill=color)
+def draw_rounded_rect(draw, bbox, radius, fill, outline=None, width=1):
+    draw.rounded_rectangle(bbox, radius=radius, fill=fill, outline=outline, width=width)
 
-def draw_progress_circle(draw, cx, cy, radius, percent, color, bg_color, thickness=25):
-    """วาดวงแหวนวัดค่าแบบ Modern Thin"""
-    bbox = [cx-radius, cy-radius, cx+radius, cy+radius]
-    # วงแหวนพื้นหลัง
-    draw.arc(bbox, start=135, end=405, fill=bg_color, width=thickness)
-    # วงแหวนแสดงค่าจริง
-    if percent > 0:
-        end_angle = 135 + (270 * percent)
-        draw.arc(bbox, start=135, end=end_angle, fill=color, width=thickness)
-        
-        # หัวมน (Round Caps)
-        start_rad = math.radians(135)
-        end_rad = math.radians(end_angle)
-        cap_r = thickness/2 - 0.5
-        
-        # จุดเริ่ม
-        sx = cx + radius * math.cos(start_rad)
-        sy = cy + radius * math.sin(start_rad)
-        draw.ellipse([sx-cap_r, sy-cap_r, sx+cap_r, sy+cap_r], fill=color)
-        
-        # จุดจบ
-        ex = cx + radius * math.cos(end_rad)
-        ey = cy + radius * math.sin(end_rad)
-        draw.ellipse([ex-cap_r, ey-cap_r, ex+cap_r, ey+cap_r], fill=color)
-
-# --- 4. Main Generator Function ---
+# --- 4. Main Generator ---
 
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
-    """สร้างการ์ดรายงานสไตล์ Clinical Dashboard (เน้นข้อมูล ไม่เน้นรูป)"""
+    """Generates an 'Isometric Scene' report card like the reference image."""
     
-    # ตั้งค่าหน้ากระดาษ
-    width, height = 900, 1350
-    theme = get_theme(latest_pm25)
+    # Settings
+    width, height = 900, 900 # Square-ish format like the reference
+    bg_color = "#2C3E50" # Dark Slate Blue/Grey (เหมือนในรูปตัวอย่าง)
     
-    # พื้นหลังสีตามธีม (อ่อนๆ สบายตา)
-    img = Image.new('RGB', (width, height), theme['bg'])
+    img = Image.new('RGB', (width, height), bg_color)
     draw = ImageDraw.Draw(img, 'RGBA')
 
-    # โหลดฟอนต์ Sarabun
+    # Fonts
     font_url_bold = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
     font_url_reg = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
     font_url_med = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Medium.ttf"
@@ -150,140 +82,102 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         font_bytes.seek(0)
         return ImageFont.truetype(font_bytes, size)
 
-    # กำหนดขนาดตัวอักษร (Typography Scale)
-    f_h1 = create_font(font_bold, 36)       # ชื่อโรงพยาบาล
-    f_sub = create_font(font_med, 24)       # ชื่ออังกฤษ/หน่วยงาน
-    f_hero_num = create_font(font_bold, 180) # ตัวเลข PM2.5 (ใหญ่มาก)
-    f_hero_label = create_font(font_bold, 40) # สถานะอากาศ
-    f_unit = create_font(font_med, 32)      # หน่วย ug/m3
-    f_section = create_font(font_bold, 28)  # หัวข้อ section
-    f_card_title = create_font(font_bold, 30) # หัวข้อการ์ดเล็ก
-    f_card_desc = create_font(font_med, 24)   # เนื้อหาการ์ดเล็ก
-    f_footer = create_font(font_reg, 20)      # เครดิตท้าย
+    # Typography
+    f_title = create_font(font_bold, 50)
+    f_subtitle = create_font(font_reg, 24)
+    f_pm_val = create_font(font_bold, 180)
+    f_unit = create_font(font_med, 40)
+    f_badge = create_font(font_bold, 24)
+    f_footer = create_font(font_reg, 20)
 
     margin = 50
-    
-    # --- ส่วนที่ 1: Header (หัวกระดาษ) ---
-    header_y = 60
-    
-    # โลโก้โรงพยาบาล (ใช้สัญลักษณ์ + แทนโลโก้จริง เพื่อความมินิมอล)
-    logo_size = 80
-    draw.rounded_rectangle([margin, header_y, margin+logo_size, header_y+logo_size], radius=25, fill=theme['primary'])
-    draw.text((margin+23, header_y+15), "+", font=create_font(font_bold, 50), fill="white")
-    
-    # ข้อความชื่อโรงพยาบาล
-    text_x = margin + logo_size + 25
-    draw.text((text_x, header_y), "โรงพยาบาลสันทราย", font=f_h1, fill=theme['text_main'])
-    draw.text((text_x, header_y+45), "Sansai Hospital", font=f_sub, fill=theme['text_sub'])
-    
-    # วันที่และเวลา (มุมขวาบน)
-    date_w = draw.textlength(date_str, font=f_footer) + 40
-    draw.rounded_rectangle([width-margin-date_w, header_y+15, width-margin, header_y+65], radius=25, fill="white")
-    draw.text((width-margin-date_w/2, header_y+40), date_str, font=f_footer, anchor="mm", fill=theme['text_sub'])
 
-    # --- ส่วนที่ 2: Hero Section (แสดงค่าฝุ่น) ---
-    hero_cy = 450
-    ring_r = 180
+    # --- 1. Header ---
+    # Title: รายงานคุณภาพอากาศ (PM2.5)
+    draw.text((margin, 50), "รายงานคุณภาพอากาศ (PM2.5)", font=f_title, fill="white")
     
-    # วงแหวนวัดค่า (Progress Ring)
-    percent = min(latest_pm25 / 200, 1.0)
-    # วงแหวนพื้นหลัง (สีอ่อน)
-    draw_progress_circle(draw, width/2, hero_cy, ring_r, 1.0, theme['light'], theme['light'], thickness=25)
-    # วงแหวนค่าจริง (สีเข้ม)
-    draw_progress_circle(draw, width/2, hero_cy, ring_r, percent, theme['primary'], theme['light'], thickness=25)
-    
-    # ตัวเลขค่าฝุ่นตรงกลาง
-    draw.text((width/2, hero_cy+10), f"{latest_pm25:.0f}", font=f_hero_num, anchor="ms", fill=theme['text_main'])
-    draw.text((width/2, hero_cy+100), "μg/m³", font=f_unit, anchor="ms", fill=theme['text_sub'])
-    
-    # ป้ายสถานะ (Capsule) ใต้วงแหวน
-    status_y = hero_cy + 220
-    level_text = level
-    l_w = draw.textlength(level_text, font=f_hero_label) + 80
-    draw.rounded_rectangle([(width-l_w)/2, status_y, (width+l_w)/2, status_y+80], radius=40, fill=theme['primary'])
-    draw.text((width/2, status_y+40), level_text, font=f_hero_label, anchor="mm", fill="white")
+    # Subtitle: อัปเดตล่าสุด...
+    time_text = f"อัปเดตล่าสุด: {date_str.split(',')[1].strip()} น." if ',' in date_str else date_str
+    draw.text((margin, 120), time_text, font=f_subtitle, fill="#BDC3C7")
 
-    # --- ส่วนที่ 3: Advice Section (คำแนะนำ) ---
-    # รวมคำแนะนำเป็น 2 กลุ่มใหญ่ เพื่อความสะอาดตา: ประชาชนทั่วไป & กลุ่มเสี่ยง
+    # --- 2. Scene Image (The Hero) ---
+    # เลือกรูปตามระดับฝุ่น
+    if latest_pm25 <= 25: scene_key = 'good'
+    elif latest_pm25 <= 37.5: scene_key = 'moderate'
+    elif latest_pm25 <= 75: scene_key = 'unhealthy'
+    else: scene_key = 'hazardous'
     
-    section_y = status_y + 130
-    draw.text((margin, section_y), "คำแนะนำสุขภาพ (Health Advice)", font=f_section, fill=theme['text_main'])
+    scene_img = get_image_from_url(SCENE_URLS.get(scene_key))
     
-    cards_y = section_y + 50
-    card_h = 200
-    card_w = width - (margin * 2)
-    gap = 30
+    if scene_img:
+        # ปรับขนาดรูปให้เต็มความกว้าง (เว้นขอบนิดหน่อย)
+        target_w = width - (margin * 2)
+        ratio = scene_img.height / scene_img.width
+        target_h = int(target_w * ratio)
+        
+        # จำกัดความสูงไม่ให้กินที่ส่วนล่างเกินไป
+        max_h = 450
+        if target_h > max_h:
+            target_h = max_h
+            target_w = int(target_h / ratio)
+            
+        scene_img = scene_img.resize((target_w, target_h), Image.Resampling.LANCZOS)
+        
+        # วางกึ่งกลางแนวนอน
+        img_x = (width - target_w) // 2
+        img_y = 180 # ต่อจาก Header
+        
+        # สร้าง Mask ขอบมนให้รูปฉาก (Optional: ถ้าอยากให้รูปดู Soft ขึ้น)
+        mask = Image.new("L", scene_img.size, 0)
+        draw_mask = ImageDraw.Draw(mask)
+        draw_mask.rounded_rectangle([(0,0), scene_img.size], radius=30, fill=255)
+        
+        img.paste(scene_img, (img_x, img_y), mask)
     
-    # การ์ดที่ 1: ประชาชนทั่วไป
-    c1_rect = [margin, cards_y, margin+card_w, cards_y+card_h]
-    draw_card_shadow(draw, margin, cards_y, card_w, card_h, 30, color=(0,0,0,10)) # เงาบางๆ
-    draw.rounded_rectangle(c1_rect, radius=30, fill="white")
+    # --- 3. Bottom Info Section ---
+    bottom_y = 650 # พื้นที่ด้านล่าง
     
-    # กล่องไอคอน 1
-    icon_box_size = 120
-    ib1_x = margin + 40
-    ib1_y = cards_y + (card_h - icon_box_size)//2
-    draw.rounded_rectangle([ib1_x, ib1_y, ib1_x+icon_box_size, ib1_y+icon_box_size], radius=25, fill=theme['light'])
+    # Status Pill (Label) - วางซ้อนทับมุมซ้ายล่างของรูปนิดๆ หรืออยู่เหนือตัวเลข
+    # สีพื้นหลัง Pill ตามค่าฝุ่น
+    pill_color = get_aqi_color(latest_pm25)
+    label_text = f"{level}"
+    pill_w = draw.textlength(label_text, font=f_badge) + 60
+    pill_h = 50
+    pill_x = margin
+    pill_y = bottom_y - 40 
     
-    # ไอคอน 1 (คนวิ่ง/กิจกรรม) - ย้อมสีตามธีม
-    icon1 = get_image_from_url(ICON_URLS['activity'], size=(80, 80), colorize=theme['primary'])
-    if icon1: img.paste(icon1, (ib1_x+20, ib1_y+20), icon1)
-    
-    # ข้อความ 1
-    tx1 = ib1_x + icon_box_size + 30
-    draw.text((tx1, ib1_y+15), "ประชาชนทั่วไป", font=f_card_title, fill=theme['text_main'])
-    
-    # ตัดคำอธิบายไม่ให้ยาวเกินไป
-    desc1 = advice_details['activity']
-    words1 = desc1.split()
-    line1 = []
-    for w in words1:
-        line1.append(w)
-        if draw.textlength(" ".join(line1), font=f_card_desc) > (card_w - icon_box_size - 100):
-            line1.pop()
-            break
-    draw.text((tx1, ib1_y+65), " ".join(line1), font=f_card_desc, fill=theme['text_sub'])
-    # ถ้าข้อความยาวเกิน ให้ใส่ "อ่านเพิ่มเติม..."
-    if len(line1) < len(words1):
-        draw.text((tx1, ib1_y+100), "อ่านเพิ่มเติม...", font=create_font(font_med, 20), fill=theme['primary'])
+    draw_rounded_rect(draw, [pill_x, pill_y, pill_x + pill_w, pill_y + pill_h], 10, fill=pill_color)
+    draw.text((pill_x + pill_w/2, pill_y + 25), label_text, font=f_badge, anchor="mm", fill="#FFFFFF") # White Text
 
-    # การ์ดที่ 2: กลุ่มเสี่ยง
-    cards_y2 = cards_y + card_h + gap
-    c2_rect = [margin, cards_y2, margin+card_w, cards_y2+card_h]
-    draw_card_shadow(draw, margin, cards_y2, card_w, card_h, 30, color=(0,0,0,10))
-    draw.rounded_rectangle(c2_rect, radius=30, fill="white")
+    # Big PM2.5 Number
+    # วางชิดซ้ายล่าง (เหมือนตัวอย่างเลข 8)
+    num_y = bottom_y + 20
+    draw.text((margin, num_y), f"{latest_pm25:.0f}", font=f_pm_val, anchor="lt", fill="white")
     
-    # กล่องไอคอน 2
-    ib2_y = cards_y2 + (card_h - icon_box_size)//2
-    # ใช้พื้นหลังสีแดงอ่อนๆ สำหรับกลุ่มเสี่ยงเสมอ เพื่อเตือนใจ
-    draw.rounded_rectangle([ib1_x, ib2_y, ib1_x+icon_box_size, ib2_y+icon_box_size], radius=25, fill="#FFE4E6") # Light Rose
-    
-    # ไอคอน 2 (หัวใจ/การแพทย์) - สีแดงเสมอ
-    icon2 = get_image_from_url(ICON_URLS['risk_group'], size=(80, 80), colorize="#E11D48") # Rose 600
-    if icon2: img.paste(icon2, (ib1_x+20, ib2_y+20), icon2)
-    
-    # ข้อความ 2
-    draw.text((tx1, ib2_y+15), "กลุ่มเสี่ยง", font=f_card_title, fill=theme['text_main'])
-    
-    desc2 = advice_details['risk_group']
-    words2 = desc2.split()
-    line2 = []
-    for w in words2:
-        line2.append(w)
-        if draw.textlength(" ".join(line2), font=f_card_desc) > (card_w - icon_box_size - 100):
-            line2.pop()
-            break
-    draw.text((tx1, ib2_y+65), " ".join(line2), font=f_card_desc, fill=theme['text_sub'])
-    if len(line2) < len(words2):
-        draw.text((tx1, ib2_y+100), "อ่านเพิ่มเติม...", font=create_font(font_med, 20), fill=theme['primary'])
+    # Unit (µg/m³) - วางข้างๆ ตัวเลข
+    # คำนวณความกว้างตัวเลขเพื่อวางหน่วย
+    num_w = draw.textlength(f"{latest_pm25:.0f}", font=f_pm_val)
+    draw.text((margin + num_w + 20, num_y + 110), "µg/m³", font=f_unit, fill="#BDC3C7")
 
-    # --- ส่วนที่ 4: Footer (ท้ายกระดาษ) ---
-    footer_y = height - 70
-    # เส้นแบ่งบางๆ
-    draw.line([(margin, footer_y-20), (width-margin, footer_y-20)], fill=theme['light'], width=2)
+    # --- 4. Footer ---
+    # Source Credit
+    draw.text((margin, height - 60), "ข้อมูลจาก: โรงพยาบาลสันทราย (DustBoy)", font=f_footer, fill="#95A5A6")
     
-    draw.text((margin, footer_y), "Powered by DustBoy & CMU", font=f_footer, fill=theme['text_sub'])
-    draw.text((width-margin, footer_y), "Occupational Medicine Dept.", font=f_footer, anchor="rt", fill=theme['text_sub'])
+    # Decor: Star/Sparkle at bottom right (เหมือนในรูปตัวอย่าง)
+    star_x = width - 60
+    star_y = height - 60
+    star_size = 30
+    # Draw simple 4-point star
+    draw.polygon([
+        (star_x, star_y - star_size), 
+        (star_x + star_size/4, star_y - star_size/4),
+        (star_x + star_size, star_y),
+        (star_x + star_size/4, star_y + star_size/4),
+        (star_x, star_y + star_size),
+        (star_x - star_size/4, star_y + star_size/4),
+        (star_x - star_size, star_y),
+        (star_x - star_size/4, star_y - star_size/4)
+    ], fill="white")
 
     # Output
     buf = BytesIO()
