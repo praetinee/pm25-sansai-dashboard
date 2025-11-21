@@ -84,8 +84,8 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     f_value_big = create_font(font_bold, 140)
     f_unit = create_font(font_med, 32)
     f_status_big = create_font(font_bold, 48)
-    f_card_title = create_font(font_bold, 26)
-    f_card_desc = create_font(font_reg, 22)
+    f_card_title = create_font(font_bold, 24)
+    f_card_desc = create_font(font_med, 20)
     f_footer = create_font(font_med, 18)
 
     # Layout Grid
@@ -142,15 +142,15 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     draw.text((margin_x, gauge_y + 35), "0", font=create_font(font_med, 16), fill="#CBD5E1")
     draw.text((width - margin_x, gauge_y + 35), "200+", font=create_font(font_med, 16), anchor="rt", fill="#CBD5E1")
 
-    # --- 3. Advice Grid (Medical Cards) ---
+    # --- 3. Advice Grid (Medical Cards - Improved) ---
     grid_title_y = gauge_y + 100
     draw.text((margin_x, grid_title_y), "คำแนะนำสุขภาพ (Health Advice)", font=f_label, fill="#1E293B")
     
     grid_y = grid_title_y + 50
-    col_gap = 30
-    row_gap = 30
+    col_gap = 20
+    row_gap = 20
     card_w = (content_w - col_gap) / 2
-    card_h = 280
+    card_h = 140 # Compact height for horizontal layout
     
     cards_data = [
         {'title': t[lang]['advice_cat_mask'], 'desc': advice_details['mask'], 'icon_key': 'mask'},
@@ -165,49 +165,61 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         x = margin_x + col * (card_w + col_gap)
         y = grid_y + row * (card_h + row_gap)
         
-        # Card Container (Bordered, no shadow for clean look)
-        draw_rounded_rect(draw, [x, y, x + card_w, y + card_h], 20, fill="#F8FAFC", outline="#E2E8F0", width=2)
+        # Card Background (Clean White with Border)
+        draw_rounded_rect(draw, [x, y, x + card_w, y + card_h], 24, fill="#FFFFFF", outline="#E2E8F0", width=2)
         
-        # Icon
-        icon_img = get_image_from_url(ICON_URLS.get(item['icon_key']), size=(100, 100))
+        # --- NEW: Icon Box (Left Side) ---
+        icon_box_size = 90
+        box_padding = 25 # Padding inside the card
+        ib_x = x + box_padding
+        ib_y = y + (card_h - icon_box_size) // 2
+        
+        # Draw Icon Box Background (Soft Gray)
+        draw_rounded_rect(draw, [ib_x, ib_y, ib_x + icon_box_size, ib_y + icon_box_size], 20, fill="#F8FAFC")
+        
+        # Icon Image
+        icon_img = get_image_from_url(ICON_URLS.get(item['icon_key']), size=(70, 70))
         if icon_img:
-            # Place top-left with padding
-            img.paste(icon_img, (int(x) + 20, int(y) + 20), icon_img)
+            # Center icon in the box
+            icon_paste_x = int(ib_x + (icon_box_size - 70) // 2)
+            icon_paste_y = int(ib_y + (icon_box_size - 70) // 2)
+            img.paste(icon_img, (icon_paste_x, icon_paste_y), icon_img)
             
+        # --- Text Content (Right Side) ---
+        text_x = ib_x + icon_box_size + 20
+        text_center_y = y + card_h // 2
+        
         # Title
-        # Positioned to the right of icon? No, let's put below to save horizontal space or specific layout
-        # Layout: Icon Top-Left. Title Top-Right aligned or Next to Icon.
-        # Let's put Title next to icon
-        title_x = x + 130
-        title_y = y + 40
-        draw.text((title_x, title_y), item['title'], font=f_card_title, fill="#334155") # Slate-700
+        title_y = text_center_y - 25
+        draw.text((text_x, title_y), item['title'], font=f_card_title, anchor="ls", fill="#1E293B") # Slate-800
         
-        # Description
-        desc_y = y + 130
-        desc_x = x + 25
+        # Description (Wrap Logic)
+        desc_y = text_center_y - 15
         
-        # Text Wrap
+        # Simple wrap
         words = item['desc'].split()
         lines = []
         curr = []
+        max_text_w = (x + card_w) - text_x - 20 # Limit width
+        
         for w in words:
             curr.append(w)
-            if draw.textlength(" ".join(curr), font=f_card_desc) > (card_w - 50):
+            if draw.textlength(" ".join(curr), font=f_card_desc) > max_text_w:
                 curr.pop()
                 lines.append(" ".join(curr))
                 curr = [w]
         lines.append(" ".join(curr))
         
+        # Draw max 2 lines
         ly = desc_y
-        for line in lines[:3]: # Max 3 lines
-            draw.text((desc_x, ly), line, font=f_card_desc, fill="#64748B") # Slate-500
-            ly += 30
+        for line in lines[:2]:
+            draw.text((text_x, ly), line, font=f_card_desc, anchor="lt", fill="#64748B") # Slate-500
+            ly += 26
 
     # --- 4. Footer ---
     footer_y = height - 80
     
     # Background Strip for Footer (Optional, keep white for clean look)
-    # Just a separator line
     draw.line([(margin_x, footer_y), (width - margin_x, footer_y)], fill="#E2E8F0", width=2)
     
     # Footer Content
