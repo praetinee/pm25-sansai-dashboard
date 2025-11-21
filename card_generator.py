@@ -1,10 +1,10 @@
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import requests
 from io import BytesIO
 import streamlit as st
 import math
 
-# --- Asset URLs (User provided 3D Icons - Latest) ---
+# --- Asset URLs (Latest 3D Icons) ---
 ICON_URLS = {
     'mask': "https://i.postimg.cc/wB0w9rd9/Gemini-Generated-Image-rkwajtrkwajtrkwa.png",
     'activity': "https://i.postimg.cc/FFdXnyj1/Gemini-Generated-Image-16wol216wol216wo.png",
@@ -14,7 +14,6 @@ ICON_URLS = {
 
 @st.cache_data
 def get_font(url):
-    """Downloads a font file and caches it."""
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -25,7 +24,6 @@ def get_font(url):
 
 @st.cache_data
 def get_image_from_url(url, size=(150, 150)):
-    """Downloads an image, resizes it, and caches it."""
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -37,45 +35,70 @@ def get_image_from_url(url, size=(150, 150)):
         print(f"Image download failed for {url}: {e}")
         return None
 
-def draw_gauge_modern(draw, center_x, center_y, radius, percent, color_hex):
-    """Draws a modern, slim circular gauge."""
+def create_drop_shadow(width, height, radius, offset=(0, 4), blur=15, opacity=50):
+    """Creates a high-quality drop shadow image."""
+    shadow = Image.new('RGBA', (width + abs(offset[0]) + blur*2, height + abs(offset[1]) + blur*2), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(shadow)
+    
+    # Draw black rounded rect
+    shadow_x = blur + max(0, offset[0])
+    shadow_y = blur + max(0, offset[1])
+    draw.rounded_rectangle(
+        [shadow_x, shadow_y, shadow_x + width, shadow_y + height], 
+        radius=radius, 
+        fill=(0, 0, 0, opacity)
+    )
+    
+    # Apply Gaussian blur
+    return shadow.filter(ImageFilter.GaussianBlur(blur))
+
+def draw_gauge_premium(draw, center_x, center_y, radius, percent, color_hex):
+    """Draws a premium-looking gauge with round caps."""
     start_angle = 135
     end_angle = 405
-    total_angle = end_angle - start_angle
-    thickness = 20  # Slimmer gauge
+    thickness = 22
     
-    # Background Arc (Light Gray)
+    # 1. Draw Background Arc (Very faint, subtle)
     bbox = [center_x - radius, center_y - radius, center_x + radius, center_y + radius]
-    draw.arc(bbox, start=start_angle, end=end_angle, fill="#F0F0F0", width=thickness)
+    draw.arc(bbox, start=start_angle, end=end_angle, fill="#F3F4F6", width=thickness)
     
-    # Active Arc (Colored)
-    active_end_angle = start_angle + (total_angle * percent)
-    # Draw slightly rounded ends by drawing lines with round caps (simulated via arc for now)
-    draw.arc(bbox, start=start_angle, end=active_end_angle, fill=color_hex, width=thickness)
+    # 2. Draw Active Arc
+    # Determine end angle
+    span = end_angle - start_angle
+    active_end = start_angle + (span * percent)
     
-    # Decor: Small dot at the end of the arc
-    # Calculate position of the end of the active arc
-    end_rad = math.radians(active_end_angle)
-    dot_x = center_x + radius * math.cos(end_rad)
-    dot_y = center_y + radius * math.sin(end_rad)
-    dot_size = 14
-    draw.ellipse([dot_x - dot_size, dot_y - dot_size, dot_x + dot_size, dot_y + dot_size], fill=color_hex)
+    if percent > 0:
+        draw.arc(bbox, start=start_angle, end=active_end, fill=color_hex, width=thickness)
+        
+        # 3. Draw Round Caps manually for smoother look
+        # Start Cap
+        sx = center_x + radius * math.cos(math.radians(start_angle))
+        sy = center_y + radius * math.sin(math.radians(start_angle))
+        cap_r = thickness / 2 - 0.5
+        draw.ellipse([sx - cap_r, sy - cap_r, sx + cap_r, sy + cap_r], fill=color_hex)
+        
+        # End Cap
+        ex = center_x + radius * math.cos(math.radians(active_end))
+        ey = center_y + radius * math.sin(math.radians(active_end))
+        draw.ellipse([ex - cap_r, ey - cap_r, ex + cap_r, ey + cap_r], fill=color_hex)
+        
+        # 4. Optional: Add a small "glow" dot at the end
+        draw.ellipse([ex - 6, ey - 6, ex + 6, ey + 6], fill="#FFFFFF") # White center in the end dot
 
 def get_contrast_text_color(hex_color):
-    """Returns white or black depending on background brightness."""
     r, g, b = tuple(int(hex_color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
     brightness = (r * 299 + g * 587 + b * 114) / 1000
-    return "#000000" if brightness > 180 else "#FFFFFF"
+    return "#000000" if brightness > 200 else "#FFFFFF"
 
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
-    """Generates a modern 'App Style' report card."""
+    """Generates a Premium App-Style Report Card."""
     
-    # --- 1. Setup Canvas ---
-    width, height = 900, 1250 
-    img = Image.new('RGB', (width, height), color="#FFFFFF")
+    # Canvas Setup
+    width, height = 900, 1300
+    img = Image.new('RGB', (width, height), color="#F5F7FA") # Very light blue-grey background (not stark white)
     draw = ImageDraw.Draw(img)
 
-    # --- Fonts ---
+    # --- Load Fonts ---
     font_url_reg = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
     font_url_bold = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
     font_url_med = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Medium.ttf"
@@ -91,76 +114,106 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         font_bytes.seek(0)
         return ImageFont.truetype(font_bytes, size)
 
-    f_header_title = create_font(font_bold_bytes, 36)
+    f_header_title = create_font(font_bold_bytes, 38)
     f_header_date = create_font(font_med_bytes, 24)
     f_pm_val = create_font(font_bold_bytes, 150)
     f_pm_unit = create_font(font_med_bytes, 32)
     f_level = create_font(font_bold_bytes, 48)
-    f_card_title = create_font(font_bold_bytes, 26)
+    f_card_title = create_font(font_bold_bytes, 28)
     f_card_desc = create_font(font_reg_bytes, 22)
-    f_footer = create_font(font_reg_bytes, 18)
+    f_footer = create_font(font_reg_bytes, 20)
 
-    # --- 2. Design: "Split View" (Top Color, Bottom White) ---
-    header_height = 350
+    # --- 1. Header Background (Top Half) ---
+    header_height = 450
+    draw.rectangle([(0, 0), (width, header_height)], fill=color_hex)
     
-    # Draw Top Color Block
-    draw.rectangle([(0, 0), (width, header_height + 50)], fill=color_hex)
+    # Add a subtle gradient overlay to the header for depth
+    gradient = Image.new('L', (width, header_height), color=0)
+    g_draw = ImageDraw.Draw(gradient)
+    for y in range(header_height):
+        alpha = int(50 * (y / header_height)) # Darkens slightly towards bottom
+        g_draw.line([(0, y), (width, y)], fill=alpha)
     
-    # Text Color for Header (Contrast check)
-    header_txt_color = get_contrast_text_color(color_hex)
+    # Composite gradient
+    header_overlay = Image.new('RGB', (width, header_height), (0,0,0))
+    img.paste(header_overlay, (0,0), mask=gradient)
 
     # Header Text
-    draw.text((width/2, 60), t[lang]['header'], font=f_header_title, anchor="ms", fill=header_txt_color)
-    draw.text((width/2, 100), date_str, font=f_header_date, anchor="ms", fill=header_txt_color)
-
-    # --- 3. Main Content Card (White Sheet) ---
-    sheet_y = 220
-    draw.rounded_rectangle([(20, sheet_y), (width - 20, height - 20)], radius=40, fill="#FFFFFF")
+    txt_color = get_contrast_text_color(color_hex)
+    draw.text((width/2, 70), t[lang]['header'], font=f_header_title, anchor="ms", fill=txt_color)
     
-    # --- 4. Hero Section (Gauge) ---
-    # Centered relative to the top part of the white sheet
-    gauge_center_y = sheet_y + 180
+    # Date capsule (Semi-transparent background)
+    date_w = draw.textlength(date_str, font=f_header_date) + 40
+    date_bg_x = (width - date_w) / 2
+    draw.rounded_rectangle(
+        [date_bg_x, 100, date_bg_x + date_w, 145], 
+        radius=20, 
+        fill=(255, 255, 255, 40) # 40 is transparency
+    )
+    draw.text((width/2, 132), date_str, font=f_header_date, anchor="ms", fill=txt_color)
+
+    # --- 2. Main White Sheet (With Shadow) ---
+    sheet_y = 200
+    sheet_margin = 30
+    sheet_w = width - (sheet_margin * 2)
+    sheet_h = height - sheet_y - sheet_margin
+    sheet_radius = 45
+
+    # Generate Shadow
+    shadow = create_drop_shadow(sheet_w, sheet_h, sheet_radius, blur=30, opacity=40)
+    img.paste(shadow, (sheet_margin - 30, sheet_y - 30 + 10), shadow) # Adjust offset
+
+    # Draw White Sheet
+    draw.rounded_rectangle(
+        [(sheet_margin, sheet_y), (width - sheet_margin, height - sheet_margin)], 
+        radius=sheet_radius, 
+        fill="#FFFFFF"
+    )
+
+    # --- 3. Hero Gauge Section ---
+    gauge_center_y = sheet_y + 160
+    gauge_radius = 135
     max_pm = 200
     gauge_percent = min(latest_pm25 / max_pm, 1.0)
-    gauge_radius = 140
-    
+
     # Draw Gauge
-    draw_gauge_modern(draw, width/2, gauge_center_y, gauge_radius, gauge_percent, color_hex)
-    
-    # Values
-    draw.text((width/2, gauge_center_y + 20), f"{latest_pm25:.0f}", font=f_pm_val, anchor="ms", fill="#2C3E50")
-    draw.text((width/2, gauge_center_y + 75), "μg/m³", font=f_pm_unit, anchor="ms", fill="#95A5A6")
-    
-    # Level Badge
+    draw_gauge_premium(draw, width/2, gauge_center_y, gauge_radius, gauge_percent, color_hex)
+
+    # Text inside Gauge
+    draw.text((width/2, gauge_center_y + 15), f"{latest_pm25:.0f}", font=f_pm_val, anchor="ms", fill="#2D3748")
+    draw.text((width/2, gauge_center_y + 70), "μg/m³", font=f_pm_unit, anchor="ms", fill="#A0AEC0")
+
+    # Level Badge (Floating)
     level_text = level
     bbox = draw.textbbox((0, 0), level_text, font=f_level)
-    text_w = bbox[2] - bbox[0]
-    badge_w = text_w + 100
+    badge_w = (bbox[2] - bbox[0]) + 80
     badge_h = 70
     badge_x = (width - badge_w) / 2
-    badge_y = gauge_center_y + 130
-    
-    # Use a very light tint of the main color for the badge background
-    # (Mixing color_hex with white)
-    r, g, b = tuple(int(color_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
-    tint_r = int(r + (255 - r) * 0.85)
-    tint_g = int(g + (255 - g) * 0.85)
-    tint_b = int(b + (255 - b) * 0.85)
-    badge_bg = (tint_r, tint_g, tint_b)
-    
-    draw.rounded_rectangle([badge_x, badge_y, badge_x + badge_w, badge_y + badge_h], radius=35, fill=badge_bg)
-    # Text in badge uses the main color for elegance
-    draw.text((width/2, badge_y + 35), level_text, font=f_level, anchor="mm", fill=color_hex)
+    badge_y = gauge_center_y + 110
 
-    # --- 5. Advice Grid (Clean Style) ---
-    grid_start_y = gauge_center_y + 220
+    # Badge Shadow
+    badge_shadow = create_drop_shadow(badge_w, badge_h, 35, blur=15, opacity=30)
+    img.paste(badge_shadow, (int(badge_x) - 15, int(badge_y) - 15 + 5), badge_shadow)
+
+    # Badge Body
+    # Create a tint color for badge background
+    r, g, b = tuple(int(color_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+    tint = (int(r + (255-r)*0.9), int(g + (255-g)*0.9), int(b + (255-b)*0.9))
     
-    col_gap = 25
-    row_gap = 25
-    margin_side = 50
-    card_w = (width - (margin_side * 2) - col_gap) / 2
+    draw.rounded_rectangle([badge_x, badge_y, badge_x + badge_w, badge_y + badge_h], radius=35, fill=tint)
+    draw.text((width/2, badge_y + 32), level_text, font=f_level, anchor="mm", fill=color_hex)
+
+    # --- 4. Advice Cards Grid ---
+    grid_y = badge_y + 120
+    
+    col_gap = 30
+    row_gap = 30
+    grid_margin = 60 # Margin inside the white sheet
+    
+    avail_width = width - (grid_margin * 2)
+    card_w = (avail_width - col_gap) / 2
     card_h = 290
-    
+
     cards_data = [
         {'title': t[lang]['advice_cat_mask'], 'desc': advice_details['mask'], 'icon_key': 'mask'},
         {'title': t[lang]['advice_cat_activity'], 'desc': advice_details['activity'], 'icon_key': 'activity'},
@@ -171,50 +224,52 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     for i, item in enumerate(cards_data):
         col = i % 2
         row = i // 2
-        x = margin_side + col * (card_w + col_gap)
-        y = grid_start_y + row * (card_h + row_gap)
+        x = grid_margin + col * (card_w + col_gap)
+        y = grid_y + row * (card_h + row_gap)
         
-        # Minimalist Card Background (Very light grey, no border)
-        draw.rounded_rectangle([x, y, x + card_w, y + card_h], radius=30, fill="#F8F9FA")
+        # Card Shadow (Subtle)
+        c_shadow = create_drop_shadow(card_w, card_h, 30, blur=20, opacity=15)
+        img.paste(c_shadow, (int(x) - 20, int(y) - 20 + 5), c_shadow)
 
-        # Load & Paste 3D Icon
+        # Card Body (Very Light Gray Gradient-ish or Solid)
+        draw.rounded_rectangle([x, y, x + card_w, y + card_h], radius=30, fill="#F8FAFC")
+
+        # Icon
         icon_img = get_image_from_url(ICON_URLS.get(item['icon_key']), size=(130, 130))
         if icon_img:
-            # Center icon horizontally
-            icon_x = int(x + (card_w - 130) / 2)
-            icon_y = int(y + 20)
-            img.paste(icon_img, (icon_x, icon_y), icon_img)
-        
+            # Center icon
+            ix = int(x + (card_w - 130) / 2)
+            iy = int(y + 25)
+            img.paste(icon_img, (ix, iy), icon_img)
+
         # Text
-        text_center_x = x + card_w / 2
-        
+        tx = x + card_w / 2
         # Title
-        draw.text((text_center_x, y + 170), item['title'], font=f_card_title, anchor="ms", fill="#34495E")
+        draw.text((tx, y + 170), item['title'], font=f_card_title, anchor="ms", fill="#1A202C")
         
-        # Description (Wrapping)
-        desc_text = item['desc']
-        words = desc_text.split()
+        # Desc (Wrap)
+        desc = item['desc']
+        words = desc.split()
         lines = []
-        current_line = []
-        for word in words:
-            current_line.append(word)
-            line_str = " ".join(current_line)
-            line_bbox = draw.textbbox((0, 0), line_str, font=f_card_desc)
-            if (line_bbox[2] - line_bbox[0]) > (card_w - 30):
-                current_line.pop()
-                lines.append(" ".join(current_line))
-                current_line = [word]
-        lines.append(" ".join(current_line))
+        curr = []
+        for w in words:
+            curr.append(w)
+            bbox = draw.textbbox((0,0), " ".join(curr), font=f_card_desc)
+            if (bbox[2]-bbox[0]) > (card_w - 40):
+                curr.pop()
+                lines.append(" ".join(curr))
+                curr = [w]
+        lines.append(" ".join(curr))
         
-        line_y = y + 200
+        ly = y + 205
         for line in lines:
-            draw.text((text_center_x, line_y), line, font=f_card_desc, anchor="ms", fill="#7F8C8D")
-            line_y += 28
+            draw.text((tx, ly), line, font=f_card_desc, anchor="ms", fill="#718096")
+            ly += 28
 
-    # --- 6. Footer ---
-    draw.text((width/2, height - 40), t[lang]['report_card_footer'], font=f_footer, anchor="ms", fill="#BDC3C7")
+    # --- 5. Footer ---
+    draw.text((width/2, height - 50), t[lang]['report_card_footer'], font=f_footer, anchor="ms", fill="#CBD5E0")
 
-    # --- 7. Output ---
+    # --- Output ---
     buf = BytesIO()
     img.save(buf, format='PNG')
     return buf.getvalue()
