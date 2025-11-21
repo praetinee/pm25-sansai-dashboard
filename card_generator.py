@@ -1,10 +1,9 @@
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps
 import requests
 from io import BytesIO
 import streamlit as st
 
-# --- Assets ---
-# ใช้ไอคอน 3D เดิมที่มีอยู่ แต่จะเอามาใส่ในกรอบสี่เหลี่ยมมนๆ แบบใหม่
+# --- Assets (3D Icons) ---
 ICON_URLS = {
     'mask': "https://i.postimg.cc/wB0w9rd9/Gemini-Generated-Image-rkwajtrkwajtrkwa.png",
     'activity': "https://i.postimg.cc/FFdXnyj1/Gemini-Generated-Image-16wol216wol216wo.png",
@@ -36,328 +35,186 @@ def get_image_from_url(url, size=None):
         print(f"Image download failed for {url}: {e}")
         return None
 
-# --- Helper Graphics ---
+# --- Graphics Helpers ---
 
-def create_gradient_fill(width, height, start_color, end_color):
-    """Creates a vertical gradient image."""
-    base = Image.new('RGBA', (width, height), start_color)
-    top = Image.new('RGBA', (width, height), start_color)
-    bottom = Image.new('RGBA', (width, height), end_color)
+def draw_rounded_rect(draw, bbox, radius, fill, outline=None, width=1):
+    """Helper to draw rounded rectangle."""
+    draw.rounded_rectangle(bbox, radius=radius, fill=fill, outline=outline, width=width)
+
+def draw_linear_gauge(draw, x, y, width, height, percent, color_hex):
+    """Draws a modern linear progress bar."""
+    # Background Track
+    draw_rounded_rect(draw, [x, y, x + width, y + height], height/2, fill="#F1F5F9")
     
-    mask = Image.new('L', (width, height))
-    mask_data = []
-    for y in range(height):
-        mask_data.extend([int(255 * (y / height))] * width)
-    mask.putdata(mask_data)
-    
-    base.paste(bottom, (0, 0), mask)
-    return base
+    # Active Progress
+    bar_w = max(height, width * percent) # Ensure at least a circle
+    draw_rounded_rect(draw, [x, y, x + bar_w, y + height], height/2, fill=color_hex)
 
-def draw_shadow(draw, x, y, w, h, radius, color=(0,0,0,20), blur=10):
-    """Simulates a CSS box-shadow."""
-    # In PIL, drawing real blur shadows is expensive. 
-    # We simulate it with a simple offset translucent rounded rect for performance.
-    draw.rounded_rectangle([x+2, y+4, x+w+2, y+h+4], radius=radius, fill=color)
-
-# --- Logic Mapping ---
-
-def get_theme_colors(pm_value):
-    """Maps PM2.5 value to the specific Tailwind colors from the React code."""
-    # Values based on user provided logic in React code
-    # <= 25: Teal
-    # <= 37: Yellow
-    # <= 50: Orange
-    # > 50: Red
-    
-    if pm_value <= 25:
-        return {
-            'name': 'teal',
-            'gradient_start': '#14b8a6', # teal-500
-            'gradient_end': '#10b981',   # emerald-500
-            'text': '#0d9488',           # teal-600
-            'bg': '#f0fdfa',             # teal-50
-            'border': '#ccfbf1',         # teal-100
-            'ring': '#14b8a6',           # teal-500
-            'icon_bg': '#eff6ff',        # blue-50 (for user icon)
-            'icon_text': '#2563eb',      # blue-600
-        }
-    elif pm_value <= 37.5:
-        return {
-            'name': 'yellow',
-            'gradient_start': '#facc15', # yellow-400
-            'gradient_end': '#f59e0b',   # amber-500
-            'text': '#ca8a04',           # yellow-600
-            'bg': '#fefce8',             # yellow-50
-            'border': '#fef9c3',         # yellow-100
-            'ring': '#facc15',           # yellow-400
-            'icon_bg': '#eff6ff',
-            'icon_text': '#2563eb',
-        }
-    elif pm_value <= 50: # Note: React code said <= 50 for Orange
-        return {
-            'name': 'orange',
-            'gradient_start': '#fb923c', # orange-400
-            'gradient_end': '#f87171',   # red-400
-            'text': '#ea580c',           # orange-600
-            'bg': '#fff7ed',             # orange-50
-            'border': '#ffedd5',         # orange-100
-            'ring': '#fb923c',           # orange-400
-            'icon_bg': '#eff6ff',
-            'icon_text': '#2563eb',
-        }
-    else:
-        return {
-            'name': 'red',
-            'gradient_start': '#f43f5e', # rose-500
-            'gradient_end': '#dc2626',   # red-600
-            'text': '#e11d48',           # rose-600
-            'bg': '#fff1f2',             # rose-50
-            'border': '#ffe4e6',         # rose-100
-            'ring': '#f43f5e',           # rose-500
-            'icon_bg': '#fff1f2',        # rose-50 (for heart icon)
-            'icon_text': '#e11d48',      # rose-600
-        }
+# --- Design Logic ---
 
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
-    """Generates a card replicating the React component style."""
+    """Generates a 'Clinical Dashboard' style report card."""
     
-    # --- Setup ---
-    width, height = 800, 1200 # Scaled up slightly for high res
-    img = Image.new('RGB', (width, height), "#F1F5F9") # bg-neutral-100
+    # Canvas Settings
+    width, height = 800, 1200
+    bg_color = "#FFFFFF" # Pure White for Clinical look
+    
+    img = Image.new('RGB', (width, height), bg_color)
     draw = ImageDraw.Draw(img, 'RGBA')
 
     # Fonts
     font_url_bold = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
     font_url_reg = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
     font_url_med = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Medium.ttf"
-    font_url_light = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Light.ttf"
 
     font_bold = get_font(font_url_bold)
     font_reg = get_font(font_url_reg)
     font_med = get_font(font_url_med)
-    font_light = get_font(font_url_light)
 
-    if not all([font_bold, font_reg, font_med, font_light]): return None
+    if not all([font_bold, font_reg, font_med]): return None
     
     def create_font(font_bytes, size):
         font_bytes.seek(0)
         return ImageFont.truetype(font_bytes, size)
 
-    f_h1 = create_font(font_bold, 36)       # Hospital Name
-    f_sub = create_font(font_med, 20)       # Subtitles
-    f_time = create_font(font_bold, 48)     # Time
-    f_pm = create_font(font_bold, 160)      # PM Value
-    f_label = create_font(font_bold, 32)    # Status Label
-    f_card_title = create_font(font_bold, 28)
-    f_card_desc = create_font(font_reg, 24)
-    f_footer_bold = create_font(font_bold, 22)
-    f_footer_small = create_font(font_reg, 18)
+    # Typography Hierarchy
+    f_brand = create_font(font_bold, 32)
+    f_date = create_font(font_med, 20)
+    f_label = create_font(font_bold, 24)
+    f_value_big = create_font(font_bold, 140)
+    f_unit = create_font(font_med, 32)
+    f_status_big = create_font(font_bold, 48)
+    f_card_title = create_font(font_bold, 26)
+    f_card_desc = create_font(font_reg, 22)
+    f_footer = create_font(font_med, 18)
 
-    # Get Theme Colors
-    theme = get_theme_colors(latest_pm25)
+    # Layout Grid
+    margin_x = 50
+    content_w = width - (margin_x * 2)
 
-    # --- 1. Main Card Container ---
-    margin = 40
-    card_w = width - (margin * 2)
-    card_h = height - (margin * 2)
-    card_x, card_y = margin, margin
+    # --- 1. Header Section (Top Bar) ---
+    header_y = 50
     
-    # Draw Main Card Shadow
-    draw_shadow(draw, card_x, card_y, card_w, card_h, 60, color=(0,0,0,40))
+    # Hospital Name (Left)
+    draw.text((margin_x, header_y), "รพ.สันทราย", font=f_brand, fill="#1E293B") # Slate-800
+    draw.text((margin_x, header_y + 40), "Sansai Hospital", font=create_font(font_med, 18), fill="#94A3B8") # Slate-400
     
-    # Draw Main Card Body (White, Rounded)
-    draw.rounded_rectangle([card_x, card_y, card_x + card_w, card_y + card_h], radius=60, fill="#FFFFFF")
+    # Date (Right)
+    draw.text((width - margin_x, header_y + 10), date_str, font=f_date, anchor="rt", fill="#64748B") # Slate-500
 
-    # --- 2. Header ---
-    header_h = 160
-    
-    # Hospital Icon (Black Circle with Heart)
-    icon_bg_size = 80
-    icon_x = card_x + 50
-    icon_y = card_y + 50
-    draw.ellipse([icon_x, icon_y, icon_x+icon_bg_size, icon_y+icon_bg_size], fill="#0f172a") # Slate-900
-    # Draw simple heart shape
-    draw.text((icon_x + 22, icon_y + 18), "♥", font=create_font(font_bold, 40), fill="white")
-    
-    # Hospital Text
-    text_x = icon_x + icon_bg_size + 20
-    draw.text((text_x, icon_y + 10), "โรงพยาบาลสันทราย", font=f_h1, fill="#1e293b") # Slate-800
-    draw.text((text_x, icon_y + 50), "SANSAI HOSPITAL", font=create_font(font_bold, 20), fill="#94a3b8") # Slate-400
+    # Divider
+    draw.line([(margin_x, header_y + 80), (width - margin_x, header_y + 80)], fill="#E2E8F0", width=2)
 
-    # Time & Date (Right aligned)
-    # Parse date_str carefully or just split it
-    # date_str format example: "21 November 2568, 10:00:00"
-    try:
-        date_part, time_part = date_str.split(', ')
-        time_short = time_part[:5] # "10:00"
-    except:
-        time_short = "00:00"
-        date_part = date_str
+    # --- 2. Hero Data Section (The 'Vitals') ---
+    hero_y = header_y + 120
+    
+    # PM2.5 Label
+    draw.text((margin_x, hero_y), "ปริมาณฝุ่น PM2.5", font=f_label, fill="#64748B")
+    
+    # Big Value & Unit
+    val_y = hero_y + 20
+    draw.text((margin_x, val_y), f"{latest_pm25:.0f}", font=f_value_big, fill=color_hex) # Use Alert Color
+    
+    # Unit placement (Next to value)
+    val_w = draw.textlength(f"{latest_pm25:.0f}", font=f_value_big)
+    draw.text((margin_x + val_w + 20, val_y + 95), "μg/m³", font=f_unit, fill="#94A3B8")
+    
+    # Status Badge (Right Side aligned with value)
+    status_bg_color = color_hex
+    status_text = level
+    status_w = draw.textlength(status_text, font=f_status_big) + 60
+    status_h = 80
+    status_x = width - margin_x - status_w
+    status_y_pos = val_y + 40
+    
+    # Draw Pill
+    draw_rounded_rect(draw, [status_x, status_y_pos, status_x + status_w, status_y_pos + status_h], 40, fill=status_bg_color)
+    draw.text((status_x + status_w/2, status_y_pos + 40), status_text, font=f_status_big, anchor="mm", fill="white")
+    
+    # Linear Gauge (Progress Bar)
+    gauge_y = val_y + 160
+    gauge_h = 24
+    max_pm = 200
+    percent = min(latest_pm25 / max_pm, 1.0)
+    draw_linear_gauge(draw, margin_x, gauge_y, content_w, gauge_h, percent, color_hex)
+    
+    # Gauge Scale Labels
+    draw.text((margin_x, gauge_y + 35), "0", font=create_font(font_med, 16), fill="#CBD5E1")
+    draw.text((width - margin_x, gauge_y + 35), "200+", font=create_font(font_med, 16), anchor="rt", fill="#CBD5E1")
 
-    time_w = draw.textlength(time_short, font=f_time)
-    draw.text((card_x + card_w - 50, icon_y), time_short, font=f_time, anchor="rt", fill="#1e293b")
-    draw.text((card_x + card_w - 50, icon_y + 55), date_part, font=f_sub, anchor="rt", fill="#64748b")
+    # --- 3. Advice Grid (Medical Cards) ---
+    grid_title_y = gauge_y + 100
+    draw.text((margin_x, grid_title_y), "คำแนะนำสุขภาพ (Health Advice)", font=f_label, fill="#1E293B")
+    
+    grid_y = grid_title_y + 50
+    col_gap = 30
+    row_gap = 30
+    card_w = (content_w - col_gap) / 2
+    card_h = 280
+    
+    cards_data = [
+        {'title': t[lang]['advice_cat_mask'], 'desc': advice_details['mask'], 'icon_key': 'mask'},
+        {'title': t[lang]['advice_cat_activity'], 'desc': advice_details['activity'], 'icon_key': 'activity'},
+        {'title': t[lang]['advice_cat_indoors'], 'desc': advice_details['indoors'], 'icon_key': 'indoors'},
+        {'title': t[lang]['advice_cat_risk_group'] if 'advice_cat_risk_group' in t[lang] else t[lang]['risk_group'], 'desc': advice_details['risk_group'], 'icon_key': 'risk_group'},
+    ]
 
-    # --- 3. Hero Section (Gradient + Ring) ---
-    hero_h = 500
-    hero_y = card_y + header_h
-    
-    # Background Gradient Fade (Top to Bottom)
-    # Since PIL gradients are tricky, we draw a colored rect and mask it with a gradient alpha
-    grad_bg = create_gradient_fill(card_w, hero_h, theme['gradient_start'], theme['gradient_end'])
-    # Create opacity mask (Fade out)
-    mask = Image.new('L', (card_w, hero_h))
-    mask_data = []
-    for y in range(hero_h):
-        # Opacity goes from ~20 to 0
-        opacity = int(30 * (1 - y/hero_h))
-        mask_data.extend([opacity] * card_w)
-    mask.putdata(mask_data)
-    grad_bg.putalpha(mask)
-    img.paste(grad_bg, (card_x, hero_y), grad_bg)
+    for i, item in enumerate(cards_data):
+        col = i % 2
+        row = i // 2
+        x = margin_x + col * (card_w + col_gap)
+        y = grid_y + row * (card_h + row_gap)
+        
+        # Card Container (Bordered, no shadow for clean look)
+        draw_rounded_rect(draw, [x, y, x + card_w, y + card_h], 20, fill="#F8FAFC", outline="#E2E8F0", width=2)
+        
+        # Icon
+        icon_img = get_image_from_url(ICON_URLS.get(item['icon_key']), size=(100, 100))
+        if icon_img:
+            # Place top-left with padding
+            img.paste(icon_img, (int(x) + 20, int(y) + 20), icon_img)
+            
+        # Title
+        # Positioned to the right of icon? No, let's put below to save horizontal space or specific layout
+        # Layout: Icon Top-Left. Title Top-Right aligned or Next to Icon.
+        # Let's put Title next to icon
+        title_x = x + 130
+        title_y = y + 40
+        draw.text((title_x, title_y), item['title'], font=f_card_title, fill="#334155") # Slate-700
+        
+        # Description
+        desc_y = y + 130
+        desc_x = x + 25
+        
+        # Text Wrap
+        words = item['desc'].split()
+        lines = []
+        curr = []
+        for w in words:
+            curr.append(w)
+            if draw.textlength(" ".join(curr), font=f_card_desc) > (card_w - 50):
+                curr.pop()
+                lines.append(" ".join(curr))
+                curr = [w]
+        lines.append(" ".join(curr))
+        
+        ly = desc_y
+        for line in lines[:3]: # Max 3 lines
+            draw.text((desc_x, ly), line, font=f_card_desc, fill="#64748B") # Slate-500
+            ly += 30
 
-    # The Ring
-    ring_cx = card_x + card_w // 2
-    ring_cy = hero_y + 200
-    ring_r = 180
-    thickness = 8
+    # --- 4. Footer ---
+    footer_y = height - 80
     
-    # Outer Glow
-    draw.ellipse([ring_cx - ring_r - 20, ring_cy - ring_r - 20, ring_cx + ring_r + 20, ring_cy + ring_r + 20], fill=theme['bg']) # Simple colored bg glow simulation
-
-    # Main Circle (White filled)
-    draw.ellipse([ring_cx - ring_r, ring_cy - ring_r, ring_cx + ring_r, ring_cy + ring_r], fill="white", outline=theme['border'], width=8)
+    # Background Strip for Footer (Optional, keep white for clean look)
+    # Just a separator line
+    draw.line([(margin_x, footer_y), (width - margin_x, footer_y)], fill="#E2E8F0", width=2)
     
-    # Inner Text
-    draw.text((ring_cx, ring_cy - 90), "PM 2.5", font=create_font(font_bold, 24), anchor="ms", fill="#94a3b8") # Slate-400
-    draw.text((ring_cx, ring_cy + 20), f"{latest_pm25:.0f}", font=f_pm, anchor="ms", fill=theme['text'])
-    draw.text((ring_cx, ring_cy + 90), "µg/m³", font=f_sub, anchor="ms", fill="#94a3b8")
-
-    # Status Pill (Floating at bottom of ring)
-    pill_w = 300
-    pill_h = 60
-    pill_x = ring_cx - pill_w // 2
-    pill_y = ring_cy + ring_r - 30
+    # Footer Content
+    draw.text((margin_x, footer_y + 25), "ด้วยความปรารถนาดีจาก กลุ่มงานอาชีวเวชกรรม", font=f_footer, fill="#94A3B8")
     
-    # Gradient Pill
-    pill_img = create_gradient_fill(pill_w, pill_h, theme['gradient_start'], theme['gradient_end'])
-    
-    # Mask for rounded pill
-    pill_mask = Image.new('L', (pill_w, pill_h), 0)
-    ImageDraw.Draw(pill_mask).rounded_rectangle([(0,0), (pill_w, pill_h)], radius=30, fill=255)
-    pill_img.putalpha(pill_mask)
-    
-    img.paste(pill_img, (pill_x, pill_y), pill_img)
-    draw.text((ring_cx, pill_y + 30), level, font=f_label, anchor="mm", fill="white")
-
-    # Location Pin
-    pin_y = pill_y + 80
-    draw.rounded_rectangle([ring_cx - 150, pin_y, ring_cx + 150, pin_y + 40], radius=20, fill="#f8fafc", outline="#f1f5f9")
-    draw.text((ring_cx, pin_y + 20), "จุดตรวจวัด: รพ.สันทราย", font=f_sub, anchor="mm", fill="#64748b")
-
-
-    # --- 4. Advisory Cards ---
-    cards_start_y = hero_y + 450
-    # Logic for card content mapping
-    # React code has: 
-    # 1. General Public (User Icon)
-    # 2. Risk Group (Heart Icon)
-    
-    # We map existing advice_details to these two
-    public_advice = advice_details['activity']
-    risk_advice = advice_details['risk_group']
-
-    # Card Config
-    card_gap = 30
-    sub_card_h = 140
-    sub_card_w = card_w - 100 # Padding inside
-    sub_card_x = card_x + 50
-    
-    # --- Card 1: General Public ---
-    c1_y = cards_start_y
-    draw.rounded_rectangle([sub_card_x, c1_y, sub_card_x + sub_card_w, c1_y + sub_card_h], radius=30, fill="white", outline="#f1f5f9", width=2)
-    
-    # Icon Box (Blue-50)
-    icon_box_size = 80
-    ib_x = sub_card_x + 30
-    ib_y = c1_y + 30
-    draw.rounded_rectangle([ib_x, ib_y, ib_x + icon_box_size, ib_y + icon_box_size], radius=20, fill="#eff6ff")
-    # Icon Image (Activity 3D)
-    icon_act = get_image_from_url(ICON_URLS['activity'], size=(60, 60))
-    if icon_act: img.paste(icon_act, (ib_x+10, ib_y+10), icon_act)
-    
-    # Text
-    draw.text((ib_x + 100, ib_y + 10), "ประชาชนทั่วไป", font=f_card_title, fill="#1e293b")
-    # Wrap desc logic
-    words = public_advice.split()
-    line1 = " ".join(words[:8]) + "..." if len(words) > 8 else public_advice # Simple truncate for design fidelity
-    draw.text((ib_x + 100, ib_y + 45), line1, font=f_card_desc, fill="#64748b")
-
-    # --- Card 2: Risk Group ---
-    c2_y = c1_y + sub_card_h + 20
-    draw.rounded_rectangle([sub_card_x, c2_y, sub_card_x + sub_card_w, c2_y + sub_card_h], radius=30, fill="white", outline="#f1f5f9", width=2)
-    
-    # Icon Box (Rose-50)
-    ib_y2 = c2_y + 30
-    draw.rounded_rectangle([ib_x, ib_y2, ib_x + icon_box_size, ib_y2 + icon_box_size], radius=20, fill="#fff1f2")
-    # Icon Image (Risk 3D)
-    icon_risk = get_image_from_url(ICON_URLS['risk_group'], size=(60, 60))
-    if icon_risk: img.paste(icon_risk, (ib_x+10, ib_y2+10), icon_risk)
-    
-    # Text
-    draw.text((ib_x + 100, ib_y2 + 10), "กลุ่มเสี่ยง", font=f_card_title, fill="#1e293b")
-    words_r = risk_advice.split()
-    line1_r = " ".join(words_r[:8]) + "..." if len(words_r) > 8 else risk_advice
-    draw.text((ib_x + 100, ib_y2 + 45), line1_r, font=f_card_desc, fill="#64748b")
-
-    # --- 5. Footer (Dark) ---
-    footer_h = 140
-    footer_y = card_y + card_h - footer_h
-    
-    # Draw bottom rounded corners by drawing full rect then masking? 
-    # Or just draw a rect that overlaps the bottom part.
-    # Easier: Draw rounded rect for whole card again but fill bottom part.
-    
-    # Let's draw a simple rect at bottom and clip it to rounded corners
-    # Create a footer image
-    footer_img = Image.new('RGBA', (card_w, footer_h), "#0f172a")
-    
-    # Add Footer Content
-    d = ImageDraw.Draw(footer_img)
-    # Left text
-    d.text((40, 40), "ห่วงใยสุขภาพปอดของคุณ", font=f_footer_small, fill="#94a3b8")
-    
-    # Right: DustBoy Badge
-    # Vertical line
-    d.line([(card_w - 180, 20), (card_w - 180, 80)], fill="#334155", width=1)
-    
-    # Texts
-    d.text((card_w - 190, 30), "MEASURED BY", font=create_font(font_bold, 12), anchor="rs", fill="#94a3b8")
-    d.text((card_w - 190, 50), "DustBoy", font=create_font(font_bold, 18), anchor="rs", fill="#60a5fa") # blue-400
-    
-    # DB Icon Box
-    d.rounded_rectangle([card_w - 170, 30, card_w - 130, 70], radius=10, fill="#3b82f6") # Blue-500
-    d.text((card_w - 150, 50), "DB", font=create_font(font_bold, 16), anchor="mm", fill="white")
-    
-    # Bottom Credit
-    d.line([(0, 90), (card_w, 90)], fill="#1e293b", width=1)
-    d.text((card_w//2, 110), "Technology supported by Faculty of Engineering, CMU", font=create_font(font_reg, 14), anchor="mm", fill="#64748b")
-
-    # Paste Footer onto main image (masking for rounded corners at bottom)
-    # We need a mask that is white at bottom rounded corners.
-    # Easier: Create a mask for the whole card (rounded rect) and paste footer using composite
-    
-    main_mask = Image.new('L', (card_w, card_h), 0)
-    ImageDraw.Draw(main_mask).rounded_rectangle([(0,0), (card_w, card_h)], radius=60, fill=255)
-    
-    # Crop footer to only show where main mask allows (essentially cropping corners)
-    # But footer is at bottom.
-    
-    # Place footer on a temporary full-card layer
-    footer_layer = Image.new('RGBA', (card_w, card_h), (0,0,0,0))
-    footer_layer.paste(footer_img, (0, card_h - footer_h))
-    
-    img.paste(footer_layer, (card_x, card_y), mask=main_mask)
+    # Tech Credits (Right)
+    draw.text((width - margin_x, footer_y + 25), "Powered by DustBoy & CMU", font=create_font(font_bold, 18), anchor="rt", fill="#CBD5E1")
 
     # --- Output ---
     buf = BytesIO()
