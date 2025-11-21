@@ -1,12 +1,11 @@
-from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageOps, ImageChops
 import requests
 from io import BytesIO
 import streamlit as st
 import math
 
 # --- Assets ---
-# เรายังใช้ 3D Icons เพราะมันช่วยเบรกความแข็งของข้อมูลได้ดี
-# แต่จะปรับขนาดให้เล็กลงและจัดวางให้ดูแพงขึ้น
+# ไอคอน 3D จะถูกนำมาใช้ แต่จะปรับแสงและเงาให้เข้ากับธีมใหม่
 ICON_URLS = {
     'mask': "https://i.postimg.cc/wB0w9rd9/Gemini-Generated-Image-rkwajtrkwajtrkwa.png",
     'activity': "https://i.postimg.cc/FFdXnyj1/Gemini-Generated-Image-16wol216wol216wo.png",
@@ -38,141 +37,191 @@ def get_image_from_url(url, size=None):
         print(f"Image download failed for {url}: {e}")
         return None
 
-# --- Graphics Engine ---
+# --- Advanced Graphics Engine ---
 
-def get_medical_theme(pm):
-    """Returns color theme based on medical standards."""
-    if pm <= 25:
-        return {'main': '#10b981', 'bg': '#ecfdf5', 'label': 'ยอดเยี่ยม (Very Good)', 'gradient': ['#34d399', '#059669']}
-    elif pm <= 37.5:
-        return {'main': '#f59e0b', 'bg': '#fffbeb', 'label': 'ดี (Good)', 'gradient': ['#fbbf24', '#d97706']}
-    elif pm <= 75:
-        return {'main': '#f97316', 'bg': '#fff7ed', 'label': 'เริ่มมีผล (Unhealthy)', 'gradient': ['#fb923c', '#c2410c']}
-    else:
-        return {'main': '#ef4444', 'bg': '#fef2f2', 'label': 'อันตราย (Hazardous)', 'gradient': ['#f87171', '#b91c1c']}
+def create_mesh_gradient(width, height, color_hex):
+    """Creates a high-end mesh gradient background."""
+    try:
+        r, g, b = tuple(int(color_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+    except:
+        r, g, b = 200, 200, 200
 
-def draw_rounded_rect(draw, bbox, radius, fill, outline=None, width=1):
-    draw.rounded_rectangle(bbox, radius=radius, fill=fill, outline=outline, width=width)
-
-def draw_gradient_ring(draw, cx, cy, radius, thickness, percent, colors):
-    """Draws a premium gradient ring."""
-    # 1. Background Track (Light Grey)
-    bbox = [cx - radius, cy - radius, cx + radius, cy + radius]
-    draw.arc(bbox, start=135, end=405, fill="#F3F4F6", width=thickness)
+    # Base: Slightly desaturated version of main color
+    base_color = (int(r*0.95), int(g*0.95), int(b*0.95))
+    base = Image.new('RGB', (width, height), base_color)
     
-    # 2. Active Arc (Solid Color for reliability in PIL)
-    # Gradient simulation in PIL arc is hard, using solid main color looks cleaner and sharper
-    active_end = 135 + (270 * percent)
+    # Overlay Layer for Orbs
+    overlay = Image.new('RGBA', (width, height), (0,0,0,0))
+    draw = ImageDraw.Draw(overlay)
     
-    if percent > 0:
-        # Main Arc
-        draw.arc(bbox, start=135, end=active_end, fill=colors[1], width=thickness)
-        
-        # Caps (Rounded Ends)
-        start_rad = math.radians(135)
-        end_rad = math.radians(active_end)
-        
-        # Start Cap
-        sx = cx + radius * math.cos(start_rad)
-        sy = cy + radius * math.sin(start_rad)
-        cap_r = thickness / 2 - 0.5
-        draw.ellipse([sx-cap_r, sy-cap_r, sx+cap_r, sy+cap_r], fill=colors[1])
-        
-        # End Cap
-        ex = cx + radius * math.cos(end_rad)
-        ey = cy + radius * math.sin(end_rad)
-        draw.ellipse([ex-cap_r, ey-cap_r, ex+cap_r, ey+cap_r], fill=colors[1])
+    # Orb 1: Top Left - Lighter/White Tint (Sunlight effect)
+    draw.ellipse([-400, -400, 800, 800], fill=(255, 255, 255, 60))
+    
+    # Orb 2: Bottom Right - Main Color Saturated
+    draw.ellipse([width-800, height-800, width+200, height+200], fill=(r, g, b, 80))
+    
+    # Orb 3: Center - Subtle glow
+    draw.ellipse([width//2-400, height//2-400, width//2+400, height//2+400], fill=(255, 255, 255, 20))
 
-# --- Main Generator ---
+    # Heavy Blur to blend everything into a mesh
+    overlay = overlay.filter(ImageFilter.GaussianBlur(180))
+    
+    return Image.alpha_composite(base.convert('RGBA'), overlay).convert('RGB')
+
+def draw_frosted_glass(img, x, y, w, h, radius=40, blur_strength=30, opacity=180):
+    """
+    Draws a realistic frosted glass panel.
+    1. Blurs the background behind the panel.
+    2. Adds a white tint with noise for texture.
+    3. Adds a subtle border and shadow.
+    """
+    # Crop & Blur Background
+    crop = img.crop((x, y, x+w, y+h))
+    crop = crop.filter(ImageFilter.GaussianBlur(blur_strength))
+    
+    # Brighten slightly
+    enhancer = ImageEnhance.Brightness(crop)
+    crop = enhancer.enhance(1.1)
+    
+    # Paste blurred background back
+    img.paste(crop, (x, y))
+    
+    # Create Glass Overlay
+    glass = Image.new('RGBA', (w, h), (255, 255, 255, 0))
+    draw = ImageDraw.Draw(glass)
+    
+    # Fill with white tint
+    draw.rounded_rectangle([(0,0), (w, h)], radius=radius, fill=(255, 255, 255, opacity))
+    
+    # Add subtle noise/texture (Optional, skipping for performance, using gradient stroke instead)
+    
+    # Border (Inner Glow)
+    draw.rounded_rectangle([(0,0), (w, h)], radius=radius, outline=(255, 255, 255, 200), width=2)
+    
+    # Composite
+    img.paste(glass, (x, y), glass)
+    
+    # Add Drop Shadow (External)
+    # We need to draw shadow on the main image before pasting glass, technically.
+    # But since we already pasted, we can't put shadow under.
+    # Correct approach: Draw shadow first, then glass.
+    # For this function, we assume shadow is handled outside or we draw a rim shadow inside.
+
+def draw_soft_shadow(draw, x, y, w, h, radius, opacity=40):
+    """Draws a soft shadow for a card."""
+    # Simulate by drawing a black rect with blur
+    # Since we can't blur on `draw` context directly, we skip true blur here.
+    # Instead, we draw multiple offset rects with low opacity to simulate a shadow gradient.
+    for i in range(10, 0, -1):
+        alpha = int(opacity / 10)
+        offset = i * 2
+        draw.rounded_rectangle([x-2, y-2+offset/2, x+w+2, y+h+offset], radius=radius, fill=(0,0,0, alpha))
+
+# --- Main Logic ---
 
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
-    """Generates a 'Medical Grade' Report Card."""
+    """Generates the 'Neo-Glassmorphism' Report Card."""
     
-    width, height = 900, 1300
-    theme = get_medical_theme(latest_pm25)
+    width, height = 1000, 1600
     
-    # Canvas
-    img = Image.new('RGB', (width, height), "#FFFFFF")
+    # 1. Background: Dynamic Mesh
+    img = create_mesh_gradient(width, height, color_hex)
     draw = ImageDraw.Draw(img, 'RGBA')
 
     # Fonts
     font_url_bold = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
     font_url_reg = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
     font_url_med = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Medium.ttf"
+    font_url_light = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Light.ttf"
 
     font_bold = get_font(font_url_bold)
     font_reg = get_font(font_url_reg)
     font_med = get_font(font_url_med)
+    font_light = get_font(font_url_light)
 
-    if not all([font_bold, font_reg, font_med]): return None
+    if not all([font_bold, font_reg, font_med, font_light]): return None
     
     def create_font(font_bytes, size):
         font_bytes.seek(0)
         return ImageFont.truetype(font_bytes, size)
 
-    f_header = create_font(font_bold, 32)
-    f_sub = create_font(font_med, 20)
-    f_pm_val = create_font(font_bold, 150)
-    f_unit = create_font(font_med, 32)
-    f_status = create_font(font_bold, 40)
-    f_card_title = create_font(font_bold, 26)
-    f_card_desc = create_font(font_med, 22)
-    f_footer = create_font(font_med, 18)
+    # Typography
+    f_hero = create_font(font_bold, 220)
+    f_unit = create_font(font_med, 40)
+    f_status = create_font(font_bold, 60)
+    f_header = create_font(font_bold, 36)
+    f_date = create_font(font_med, 24)
+    f_card_title = create_font(font_bold, 28)
+    f_card_desc = create_font(font_reg, 24)
+    f_footer = create_font(font_light, 22)
 
-    # --- 1. Header Section ---
-    margin = 50
+    # --- Layout ---
     
-    # Hospital Logo Placeholder (Text based)
-    # Draw a pill shape container for logo
-    draw_rounded_rect(draw, [margin, 50, margin + 80, 130], 25, fill="#1E293B")
-    draw.text((margin + 23, 75), "+", font=create_font(font_bold, 40), fill="white")
+    # 1. Header (Floating Glass Pill)
+    header_w = 800
+    header_h = 120
+    header_x = (width - header_w) // 2
+    header_y = 60
     
-    # Text
-    draw.text((margin + 100, 60), "รพ.สันทราย", font=f_header, fill="#1E293B")
-    draw.text((margin + 100, 100), "Sansai Hospital", font=f_sub, fill="#94A3B8")
+    # Shadow
+    draw_soft_shadow(draw, header_x, header_y, header_w, header_h, 60, opacity=30)
+    # Glass
+    draw.rounded_rectangle([header_x, header_y, header_x+header_w, header_y+header_h], radius=60, fill=(255,255,255, 240))
     
-    # Date (Right aligned)
-    draw.text((width - margin, 65), date_str, font=f_sub, anchor="rt", fill="#64748B")
+    # Content
+    draw.text((width/2, header_y + 35), "San Sai Hospital", font=f_header, anchor="ms", fill="#1E293B")
+    draw.text((width/2, header_y + 80), date_str, font=f_date, anchor="ms", fill="#64748B")
 
-    # Divider
-    draw.line([(margin, 160), (width - margin, 160)], fill="#F1F5F9", width=2)
-
-    # --- 2. Hero Section (Ring Chart) ---
-    hero_cy = 420
-    hero_cx = width / 2
-    ring_radius = 160
+    # 2. Hero Section (Center Stage)
+    hero_cy = 450
     
-    # Draw Ring
+    # Circular Gauge Background (Frosted)
+    gauge_size = 500
+    gx = (width - gauge_size) // 2
+    gy = hero_cy - gauge_size // 2
+    
+    # Shadow for Gauge
+    draw.ellipse([gx+20, gy+40, gx+gauge_size-20, gy+gauge_size+20], fill=(0,0,0, 20))
+    # Gauge Disc (White)
+    draw.ellipse([gx, gy, gx+gauge_size, gy+gauge_size], fill=(255,255,255, 255))
+    
+    # Ring
+    track_r = 210
+    thickness = 30
+    draw.arc([width/2-track_r, hero_cy-track_r, width/2+track_r, hero_cy+track_r], start=135, end=405, fill="#F1F5F9", width=thickness)
+    
+    # Progress Ring
     percent = min(latest_pm25 / 200, 1.0)
-    draw_gradient_ring(draw, hero_cx, hero_cy, ring_radius, 25, percent, theme['gradient'])
-    
-    # Value inside Ring
-    draw.text((hero_cx, hero_cy + 10), f"{latest_pm25:.0f}", font=f_pm_val, anchor="ms", fill="#1E293B")
-    draw.text((hero_cx, hero_cy + 90), "µg/m³", font=f_unit, anchor="ms", fill="#94A3B8")
-    draw.text((hero_cx, hero_cy - 100), "PM 2.5", font=create_font(font_bold, 24), anchor="ms", fill="#CBD5E1")
+    active_end = 135 + (270 * percent)
+    if percent > 0:
+        draw.arc([width/2-track_r, hero_cy-track_r, width/2+track_r, hero_cy+track_r], start=135, end=active_end, fill=color_hex, width=thickness)
+        # Rounded Cap
+        er = math.radians(active_end)
+        ex = width/2 + track_r * math.cos(er)
+        ey = hero_cy + track_r * math.sin(er)
+        draw.ellipse([ex-thickness/2, ey-thickness/2, ex+thickness/2, ey+thickness/2], fill=color_hex)
 
-    # Status Pill (Floating below ring)
-    status_y = hero_cy + 190
-    status_text = level
+    # Text
+    draw.text((width/2, hero_cy + 20), f"{latest_pm25:.0f}", font=f_hero, anchor="ms", fill="#1E293B")
+    draw.text((width/2, hero_cy + 120), "μg/m³", font=f_unit, anchor="ms", fill="#94A3B8")
     
-    # Dynamic Pill Width
-    pill_w = draw.textlength(status_text, font=f_status) + 80
-    pill_rect = [(width - pill_w)/2, status_y, (width + pill_w)/2, status_y + 80]
+    # Status Pill
+    status_y = hero_cy + 280
+    pill_w = 400
+    pill_h = 90
+    pill_x = (width - pill_w) // 2
     
-    # Draw Pill with theme color
-    draw_rounded_rect(draw, pill_rect, 40, fill=theme['bg'])
-    draw.text((width/2, status_y + 40), status_text, font=f_status, anchor="mm", fill=theme['main'])
+    draw.rounded_rectangle([pill_x, status_y, pill_x+pill_w, status_y+pill_h], radius=45, fill=color_hex)
+    draw.text((width/2, status_y + 45), level, font=f_status, anchor="mm", fill="white")
 
-    # --- 3. Advice Grid (Block Design) ---
-    grid_y = status_y + 140
+    # 3. Advice Grid (Modern Cards)
+    grid_y = status_y + 160
+    col_gap = 40
+    row_gap = 40
+    margin_x = 60
     
-    draw.text((margin, grid_y), "คำแนะนำสุขภาพ (Health Advice)", font=create_font(font_bold, 24), fill="#1E293B")
-    
-    cards_start_y = grid_y + 50
-    col_gap = 25
-    row_gap = 25
-    card_w = (width - (margin * 2) - col_gap) / 2
-    card_h = 240 # Squarish look
+    card_w = (width - (margin_x * 2) - col_gap) / 2
+    card_h = 320
     
     cards_data = [
         {'title': t[lang]['advice_cat_mask'], 'desc': advice_details['mask'], 'icon_key': 'mask'},
@@ -184,49 +233,50 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     for i, item in enumerate(cards_data):
         col = i % 2
         row = i // 2
-        x = margin + col * (card_w + col_gap)
-        y = cards_start_y + row * (card_h + row_gap)
+        x = margin_x + col * (card_w + col_gap)
+        y = grid_y + row * (card_h + row_gap)
         
-        # Card Background (Very subtle grey fill)
-        draw_rounded_rect(draw, [x, y, x + card_w, y + card_h], 30, fill="#F8FAFC")
+        # Card Shadow
+        draw_soft_shadow(draw, x, y, card_w, card_h, 40, opacity=25)
+        # Card Body (White)
+        draw.rounded_rectangle([x, y, x+card_w, y+card_h], radius=40, fill="white")
         
-        # Icon (Top Left)
-        icon_img = get_image_from_url(ICON_URLS.get(item['icon_key']), size=(90, 90))
+        # Icon Circle (Top Left)
+        circle_r = 50
+        cx = x + 70
+        cy = y + 70
+        draw.ellipse([cx-circle_r, cy-circle_r, cx+circle_r, cy+circle_r], fill="#F8FAFC")
+        
+        icon_img = get_image_from_url(ICON_URLS.get(item['icon_key']), size=(80, 80))
         if icon_img:
-            # Add a white circle behind icon to make it pop
-            icon_bg_r = 55
-            center_icon_x = x + 70
-            center_icon_y = y + 70
-            draw.ellipse([center_icon_x - icon_bg_r, center_icon_y - icon_bg_r, center_icon_x + icon_bg_r, center_icon_y + icon_bg_r], fill="white")
-            img.paste(icon_img, (int(center_icon_x - 45), int(center_icon_y - 45)), icon_img)
+            img.paste(icon_img, (int(cx-40), int(cy-40)), icon_img)
             
-        # Text (Bottom Left aligned)
-        text_start_y = y + 140
-        draw.text((x + 30, text_start_y), item['title'], font=f_card_title, fill="#1E293B")
+        # Text
+        title_x = x + 40
+        title_y = y + 150
+        draw.text((title_x, title_y), item['title'], font=f_card_title, fill="#334155")
         
-        # Desc (Wrap)
+        # Desc wrap
         desc = item['desc']
         words = desc.split()
-        line1 = []
+        lines = []
         curr = []
         for w in words:
             curr.append(w)
-            if draw.textlength(" ".join(curr), font=f_card_desc) > (card_w - 50):
+            if draw.textlength(" ".join(curr), font=f_card_desc) > (card_w - 60):
                 curr.pop()
-                line1 = curr
-                break
-        if not line1: line1 = curr
+                lines.append(" ".join(curr))
+                curr = [w]
+        lines.append(" ".join(curr))
         
-        # Show max 1 line for clean look, or 2 if space permits.
-        # Let's show 1 line and '...' if too long to keep grid uniform
-        final_desc = " ".join(line1)
-        if len(line1) < len(words): final_desc += "..."
-        
-        draw.text((x + 30, text_start_y + 40), final_desc, font=f_card_desc, fill="#64748B")
+        ly = title_y + 45
+        for line in lines[:2]: # Max 2 lines
+            draw.text((title_x, ly), line, font=f_card_desc, fill="#64748B")
+            ly += 30
 
-    # --- 4. Footer ---
+    # 4. Footer
     footer_y = height - 60
-    draw.text((width/2, footer_y), "Powered by DustBoy & CMU | Occupational Medicine Dept.", font=f_footer, anchor="ms", fill="#CBD5E1")
+    draw.text((width/2, footer_y), t[lang]['report_card_footer'], font=f_footer, anchor="ms", fill=(255,255,255, 200)) # Light text on gradient bg
 
     # Output
     buf = BytesIO()
