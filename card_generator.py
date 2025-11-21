@@ -6,7 +6,6 @@ import math
 import random
 
 # --- 1. Assets (Modern 3D Icons Only) ---
-# ใช้ไอคอน 3D ที่มีอยู่ (เพราะมันเข้ากับสไตล์ Bento มากที่สุด)
 ICON_URLS = {
     'mask': "https://i.postimg.cc/wB0w9rd9/Gemini-Generated-Image-rkwajtrkwajtrkwa.png",
     'activity': "https://i.postimg.cc/FFdXnyj1/Gemini-Generated-Image-16wol216wol216wo.png",
@@ -122,14 +121,6 @@ def draw_bento_card(draw, x, y, w, h, radius=35, fill=(255,255,255,180)):
     # Subtle border
     draw.rounded_rectangle([x, y, x+w, y+h], radius=radius, outline=(255,255,255,200), width=2)
 
-def draw_squircle_icon_bg(img, x, y, size, color, radius=30):
-    """Draws a squircle background for icons."""
-    draw = ImageDraw.Draw(img, 'RGBA')
-    # Convert hex to rgba with opacity
-    r, g, b = tuple(int(color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
-    fill = (r, g, b, 30) # Very light tint
-    draw.rounded_rectangle([x, y, x+size, y+size], radius=radius, fill=fill)
-
 # --- 4. Main Generator ---
 
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
@@ -139,8 +130,12 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     theme = get_theme_config(latest_pm25)
     
     # 1. Background
+    # Create Mesh Gradient (RGB)
     img = create_mesh_gradient_bg(width, height, theme)
-    draw = ImageDraw.Draw(img, 'RGBA')
+    
+    # Convert to RGBA to allow alpha pasting of icons
+    img = img.convert("RGBA")
+    draw = ImageDraw.Draw(img)
 
     # Fonts
     font_url_bold = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
@@ -204,11 +199,6 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     col_gap = 30
     row_gap = 30
     
-    # Grid Layout:
-    # Row 1: Mask (Large Left) | Activity (Small Right Top)
-    # Row 2: Risk Group (Small Right Bottom)
-    # Let's make a uniform 2x2 grid for consistency and cleanliness
-    
     card_w = (width - (margin * 2) - col_gap) / 2
     card_h = 360 # Tall cards
     
@@ -230,8 +220,8 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         
         # Icon Area
         icon_size = 140
-        icon_x = x + (card_w - icon_size) // 2
-        icon_y = y + 40
+        icon_x = int(x + (card_w - icon_size) // 2)
+        icon_y = int(y + 40)
         
         # Soft Glow behind icon
         glow_r = 60
@@ -240,6 +230,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         
         icon_img = get_image_from_url(ICON_URLS.get(item['icon_key']), size=(icon_size, icon_size))
         if icon_img:
+            # FIX: Use the alpha channel of icon_img as mask
             img.paste(icon_img, (icon_x, icon_y), icon_img)
             
         # Text Content
@@ -272,5 +263,6 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
 
     # Output
     buf = BytesIO()
+    # Save as PNG (Convert back to RGB for saving if transparency not needed, but PNG handles RGBA fine)
     img.save(buf, format='PNG', quality=95)
     return buf.getvalue()
