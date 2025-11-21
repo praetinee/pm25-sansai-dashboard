@@ -1,22 +1,10 @@
-from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageOps, ImageChops, ImageSequence
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import requests
 from io import BytesIO
 import streamlit as st
-import math
 
 # --- Assets ---
-# ใช้รูปท้องฟ้าจริงที่มีแสงอาทิตย์สวยๆ เป็นฐาน
-BG_SKY_URL = "https://images.unsplash.com/photo-1601297183305-6df142704ea2?q=80&w=1000&auto=format&fit=crop"
-
-# [NEW] MASCOT URLs: ใส่ Link ไฟล์ GIF หรือ PNG ที่ต้องการแสดงผลตามค่าฝุ่นตรงนี้ได้เลย
-# ระบบจะดึงภาพมาแสดงที่กึ่งกลางบน
-MASCOT_URLS = {
-    'good': "https://cdn-icons-png.flaticon.com/512/869/869869.png", 
-    'moderate': "https://cdn-icons-png.flaticon.com/512/1163/1163661.png", 
-    'unhealthy': "https://cdn-icons-png.flaticon.com/512/2892/2892769.png", 
-    'hazardous': "https://cdn-icons-png.flaticon.com/512/9406/9406162.png", 
-}
-
+# ใช้ไอคอน 3D เดิมที่มีอยู่ แต่จะเอามาใส่ในกรอบสี่เหลี่ยมมนๆ แบบใหม่
 ICON_URLS = {
     'mask': "https://i.postimg.cc/wB0w9rd9/Gemini-Generated-Image-rkwajtrkwajtrkwa.png",
     'activity': "https://i.postimg.cc/FFdXnyj1/Gemini-Generated-Image-16wol216wol216wo.png",
@@ -36,7 +24,6 @@ def get_font(url):
 
 @st.cache_data
 def get_image_from_url(url, size=None):
-    """Fetches an image. Returns PIL Image object (RGBA). Handles static resizing."""
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -49,260 +36,330 @@ def get_image_from_url(url, size=None):
         print(f"Image download failed for {url}: {e}")
         return None
 
-def get_raw_mascot_image(url):
-    """Fetches the raw mascot image (GIF or PNG) without converting/resizing yet."""
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        img = Image.open(BytesIO(response.content))
-        return img
-    except Exception as e:
-        print(f"Mascot download failed for {url}: {e}")
-        return None
+# --- Helper Graphics ---
 
-# --- Realistic Atmosphere Engine ---
-
-def process_sky_background(base_img, width, height, pm25_val):
-    # 1. Crop and Resize Base Image to fit canvas
-    img_ratio = base_img.width / base_img.height
-    canvas_ratio = width / height
+def create_gradient_fill(width, height, start_color, end_color):
+    """Creates a vertical gradient image."""
+    base = Image.new('RGBA', (width, height), start_color)
+    top = Image.new('RGBA', (width, height), start_color)
+    bottom = Image.new('RGBA', (width, height), end_color)
     
-    if img_ratio > canvas_ratio:
-        new_width = int(base_img.height * canvas_ratio)
-        offset = (base_img.width - new_width) // 2
-        base_img = base_img.crop((offset, 0, offset + new_width, base_img.height))
+    mask = Image.new('L', (width, height))
+    mask_data = []
+    for y in range(height):
+        mask_data.extend([int(255 * (y / height))] * width)
+    mask.putdata(mask_data)
+    
+    base.paste(bottom, (0, 0), mask)
+    return base
+
+def draw_shadow(draw, x, y, w, h, radius, color=(0,0,0,20), blur=10):
+    """Simulates a CSS box-shadow."""
+    # In PIL, drawing real blur shadows is expensive. 
+    # We simulate it with a simple offset translucent rounded rect for performance.
+    draw.rounded_rectangle([x+2, y+4, x+w+2, y+h+4], radius=radius, fill=color)
+
+# --- Logic Mapping ---
+
+def get_theme_colors(pm_value):
+    """Maps PM2.5 value to the specific Tailwind colors from the React code."""
+    # Values based on user provided logic in React code
+    # <= 25: Teal
+    # <= 37: Yellow
+    # <= 50: Orange
+    # > 50: Red
+    
+    if pm_value <= 25:
+        return {
+            'name': 'teal',
+            'gradient_start': '#14b8a6', # teal-500
+            'gradient_end': '#10b981',   # emerald-500
+            'text': '#0d9488',           # teal-600
+            'bg': '#f0fdfa',             # teal-50
+            'border': '#ccfbf1',         # teal-100
+            'ring': '#14b8a6',           # teal-500
+            'icon_bg': '#eff6ff',        # blue-50 (for user icon)
+            'icon_text': '#2563eb',      # blue-600
+        }
+    elif pm_value <= 37.5:
+        return {
+            'name': 'yellow',
+            'gradient_start': '#facc15', # yellow-400
+            'gradient_end': '#f59e0b',   # amber-500
+            'text': '#ca8a04',           # yellow-600
+            'bg': '#fefce8',             # yellow-50
+            'border': '#fef9c3',         # yellow-100
+            'ring': '#facc15',           # yellow-400
+            'icon_bg': '#eff6ff',
+            'icon_text': '#2563eb',
+        }
+    elif pm_value <= 50: # Note: React code said <= 50 for Orange
+        return {
+            'name': 'orange',
+            'gradient_start': '#fb923c', # orange-400
+            'gradient_end': '#f87171',   # red-400
+            'text': '#ea580c',           # orange-600
+            'bg': '#fff7ed',             # orange-50
+            'border': '#ffedd5',         # orange-100
+            'ring': '#fb923c',           # orange-400
+            'icon_bg': '#eff6ff',
+            'icon_text': '#2563eb',
+        }
     else:
-        new_height = int(base_img.width / canvas_ratio)
-        offset = (base_img.height - new_height) // 2
-        base_img = base_img.crop((0, offset, base_img.width, offset + new_height))
-        
-    base_img = base_img.resize((width, height), Image.Resampling.LANCZOS).convert('RGB')
-
-    # 2. Apply Atmosphere Effects
-    overlay_color = None
-    blur_radius = 0
-    saturation = 1.0
-    brightness = 1.0
-
-    if pm25_val <= 25: 
-        saturation = 1.2
-        overlay_color = None 
-    elif pm25_val <= 37.5: 
-        overlay_color = (255, 240, 200) 
-        opacity = 0.3
-        blur_radius = 2
-        saturation = 0.9
-    elif pm25_val <= 75:
-        overlay_color = (255, 160, 120) 
-        opacity = 0.6
-        blur_radius = 5
-        saturation = 0.8
-    else: 
-        overlay_color = (100, 50, 50) 
-        opacity = 0.7
-        blur_radius = 10
-        saturation = 0.6
-        brightness = 0.8
-
-    if blur_radius > 0:
-        base_img = base_img.filter(ImageFilter.GaussianBlur(blur_radius))
-        
-    enhancer = ImageEnhance.Color(base_img)
-    base_img = enhancer.enhance(saturation)
-    
-    if brightness != 1.0:
-        enhancer = ImageEnhance.Brightness(base_img)
-        base_img = enhancer.enhance(brightness)
-
-    if overlay_color:
-        overlay = Image.new('RGB', base_img.size, overlay_color)
-        base_img = Image.blend(base_img, overlay, opacity)
-
-    return base_img
-
-def draw_ios_glass_panel(img, x, y, w, h, radius=40):
-    crop = img.crop((x, y, x+w, y+h))
-    crop = crop.filter(ImageFilter.GaussianBlur(30))
-    enhancer = ImageEnhance.Brightness(crop)
-    crop = enhancer.enhance(1.1)
-    img.paste(crop, (x, y))
-    
-    overlay = Image.new('RGBA', (w, h), (255, 255, 255, 40))
-    draw = ImageDraw.Draw(overlay)
-    draw.rounded_rectangle([(0,0), (w, h)], radius=radius, outline=(255, 255, 255, 100), width=2)
-    
-    mask = Image.new('L', (w, h), 0)
-    draw_mask = ImageDraw.Draw(mask)
-    draw_mask.rounded_rectangle([(0,0), (w, h)], radius=radius, fill=255)
-    
-    img.paste(overlay, (x, y), mask=mask)
+        return {
+            'name': 'red',
+            'gradient_start': '#f43f5e', # rose-500
+            'gradient_end': '#dc2626',   # red-600
+            'text': '#e11d48',           # rose-600
+            'bg': '#fff1f2',             # rose-50
+            'border': '#ffe4e6',         # rose-100
+            'ring': '#f43f5e',           # rose-500
+            'icon_bg': '#fff1f2',        # rose-50 (for heart icon)
+            'icon_text': '#e11d48',      # rose-600
+        }
 
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
-    """Generates a 'Real Sky Weather App' style card. Supports GIF output."""
+    """Generates a card replicating the React component style."""
     
-    width, height = 1000, 1700 
-    
-    # --- 1. Prepare Static Base Layer (Everything EXCEPT Mascot) ---
-    # Load Background
-    base_sky = get_image_from_url(BG_SKY_URL)
-    if not base_sky:
-        base_img = Image.new('RGB', (width, height), "#4FACFE")
-    else:
-        base_img = process_sky_background(base_sky, width, height, latest_pm25)
-        
-    draw = ImageDraw.Draw(base_img, 'RGBA')
+    # --- Setup ---
+    width, height = 800, 1200 # Scaled up slightly for high res
+    img = Image.new('RGB', (width, height), "#F1F5F9") # bg-neutral-100
+    draw = ImageDraw.Draw(img, 'RGBA')
 
     # Fonts
-    font_url_light = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Light.ttf"
-    font_url_reg = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
     font_url_bold = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
+    font_url_reg = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
+    font_url_med = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Medium.ttf"
+    font_url_light = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Light.ttf"
 
-    font_light_bytes = get_font(font_url_light)
-    font_reg_bytes = get_font(font_url_reg)
-    font_bold_bytes = get_font(font_url_bold)
+    font_bold = get_font(font_url_bold)
+    font_reg = get_font(font_url_reg)
+    font_med = get_font(font_url_med)
+    font_light = get_font(font_url_light)
 
-    if not all([font_light_bytes, font_reg_bytes, font_bold_bytes]):
-        return None
+    if not all([font_bold, font_reg, font_med, font_light]): return None
     
     def create_font(font_bytes, size):
         font_bytes.seek(0)
         return ImageFont.truetype(font_bytes, size)
 
-    f_temp = create_font(font_light_bytes, 250)
-    f_unit = create_font(font_reg_bytes, 36)
-    f_status = create_font(font_reg_bytes, 55)
-    f_loc = create_font(font_bold_bytes, 36)
-    f_date = create_font(font_reg_bytes, 24)
-    f_list_title = create_font(font_bold_bytes, 30)
-    f_list_desc = create_font(font_reg_bytes, 26)
-    f_footer = create_font(font_reg_bytes, 22)
+    f_h1 = create_font(font_bold, 36)       # Hospital Name
+    f_sub = create_font(font_med, 20)       # Subtitles
+    f_time = create_font(font_bold, 48)     # Time
+    f_pm = create_font(font_bold, 160)      # PM Value
+    f_label = create_font(font_bold, 32)    # Status Label
+    f_card_title = create_font(font_bold, 28)
+    f_card_desc = create_font(font_reg, 24)
+    f_footer_bold = create_font(font_bold, 22)
+    f_footer_small = create_font(font_reg, 18)
 
-    # Layout Config
-    mascot_size = 250
-    top_margin = 150
-    mascot_y_start = 140
-    num_y = mascot_y_start + mascot_size + 120 # Where number sits
+    # Get Theme Colors
+    theme = get_theme_colors(latest_pm25)
 
-    # --- Draw Static Content ---
+    # --- 1. Main Card Container ---
+    margin = 40
+    card_w = width - (margin * 2)
+    card_h = height - (margin * 2)
+    card_x, card_y = margin, margin
     
-    # Top Info
-    draw.text((width/2, 60), "San Sai Hospital", font=f_loc, anchor="ms", fill="white")
-    draw.text((width/2, 100), date_str, font=f_date, anchor="ms", fill=(255,255,255, 220))
+    # Draw Main Card Shadow
+    draw_shadow(draw, card_x, card_y, card_w, card_h, 60, color=(0,0,0,40))
+    
+    # Draw Main Card Body (White, Rounded)
+    draw.rounded_rectangle([card_x, card_y, card_x + card_w, card_y + card_h], radius=60, fill="#FFFFFF")
 
-    # Big Number (PM2.5)
-    draw.text((width/2 + 2, num_y + 2), f"{latest_pm25:.0f}", font=f_temp, anchor="ms", fill=(0,0,0, 30))
-    draw.text((width/2, num_y), f"{latest_pm25:.0f}", font=f_temp, anchor="ms", fill="white")
-    draw.text((width/2, num_y + 100), "μg/m³", font=f_unit, anchor="ms", fill=(255,255,255, 220))
+    # --- 2. Header ---
+    header_h = 160
+    
+    # Hospital Icon (Black Circle with Heart)
+    icon_bg_size = 80
+    icon_x = card_x + 50
+    icon_y = card_y + 50
+    draw.ellipse([icon_x, icon_y, icon_x+icon_bg_size, icon_y+icon_bg_size], fill="#0f172a") # Slate-900
+    # Draw simple heart shape
+    draw.text((icon_x + 22, icon_y + 18), "♥", font=create_font(font_bold, 40), fill="white")
+    
+    # Hospital Text
+    text_x = icon_x + icon_bg_size + 20
+    draw.text((text_x, icon_y + 10), "โรงพยาบาลสันทราย", font=f_h1, fill="#1e293b") # Slate-800
+    draw.text((text_x, icon_y + 50), "SANSAI HOSPITAL", font=create_font(font_bold, 20), fill="#94a3b8") # Slate-400
 
-    # Status Pill
-    status_y = num_y + 160
-    pill_text = f"AQI {level}"
-    l_w = draw.textlength(pill_text, font=f_status) + 80
-    draw.rounded_rectangle([(width-l_w)/2, status_y, (width+l_w)/2, status_y+80], radius=40, fill=(255,255,255, 60))
-    draw.text((width/2, status_y + 40), pill_text, font=f_status, anchor="mm", fill="white")
+    # Time & Date (Right aligned)
+    # Parse date_str carefully or just split it
+    # date_str format example: "21 November 2568, 10:00:00"
+    try:
+        date_part, time_part = date_str.split(', ')
+        time_short = time_part[:5] # "10:00"
+    except:
+        time_short = "00:00"
+        date_part = date_str
 
-    # Bottom Glass Panel
-    panel_h = 800
-    panel_y = height - panel_h - 50
-    panel_w = width - 60
-    panel_x = 30
-    
-    draw_ios_glass_panel(base_img, panel_x, panel_y, panel_w, panel_h, radius=50)
-    
-    # Panel Content
-    content_y = panel_y + 50
-    content_x = panel_x + 40
-    title_text = "คำแนะนำสุขภาพ" if lang == 'th' else "Health Advice"
-    draw.text((content_x, content_y), title_text, font=f_loc, anchor="ls", fill="white")
-    draw.line([(content_x, content_y + 15), (panel_x + panel_w - 40, content_y + 15)], fill=(255,255,255, 100), width=1)
-    
-    items = [
-        (t[lang]['advice_cat_mask'], advice_details['mask'], 'mask'),
-        (t[lang]['advice_cat_activity'], advice_details['activity'], 'activity'),
-        (t[lang]['advice_cat_indoors'], advice_details['indoors'], 'indoors'),
-        (t[lang]['advice_cat_risk_group'] if 'advice_cat_risk_group' in t[lang] else t[lang]['risk_group'], advice_details['risk_group'], 'risk_group')
-    ]
-    
-    item_h = 150
-    start_y = content_y + 50
-    
-    for i, (title, desc, icon_key) in enumerate(items):
-        y = start_y + (i * item_h)
-        icon = get_image_from_url(ICON_URLS.get(icon_key), size=(100, 100))
-        if icon:
-            base_img.paste(icon, (content_x, int(y) + 10), icon)
-        tx = content_x + 130
-        draw.text((tx, y + 30), title, font=f_list_title, anchor="lt", fill="white")
-        
-        max_w = panel_w - 200
-        words = desc.split()
-        line1, line2, curr = [], [], []
-        curr = line1
-        for w in words:
-            curr.append(w)
-            if draw.textlength(" ".join(curr), font=f_list_desc) > max_w:
-                curr.pop()
-                if curr == line1:
-                    line1.append(w)
-                    curr = line2
-                    curr.append(w)
-                else:
-                    break
-        draw.text((tx, y + 70), " ".join(line1), font=f_list_desc, anchor="lt", fill=(255,255,255, 210))
-        if line2:
-            draw.text((tx, y + 100), " ".join(line2) + "...", font=f_list_desc, anchor="lt", fill=(255,255,255, 210))
-        if i < len(items) - 1:
-            draw.line([(tx, y + item_h - 10), (panel_x + panel_w - 40, y + item_h - 10)], fill=(255,255,255, 40), width=1)
+    time_w = draw.textlength(time_short, font=f_time)
+    draw.text((card_x + card_w - 50, icon_y), time_short, font=f_time, anchor="rt", fill="#1e293b")
+    draw.text((card_x + card_w - 50, icon_y + 55), date_part, font=f_sub, anchor="rt", fill="#64748b")
 
-    draw.text((width/2, height - 25), t[lang]['report_card_footer'], font=f_footer, anchor="ms", fill=(255,255,255, 180))
+    # --- 3. Hero Section (Gradient + Ring) ---
+    hero_h = 500
+    hero_y = card_y + header_h
+    
+    # Background Gradient Fade (Top to Bottom)
+    # Since PIL gradients are tricky, we draw a colored rect and mask it with a gradient alpha
+    grad_bg = create_gradient_fill(card_w, hero_h, theme['gradient_start'], theme['gradient_end'])
+    # Create opacity mask (Fade out)
+    mask = Image.new('L', (card_w, hero_h))
+    mask_data = []
+    for y in range(hero_h):
+        # Opacity goes from ~20 to 0
+        opacity = int(30 * (1 - y/hero_h))
+        mask_data.extend([opacity] * card_w)
+    mask.putdata(mask_data)
+    grad_bg.putalpha(mask)
+    img.paste(grad_bg, (card_x, hero_y), grad_bg)
 
-    # --- 2. Add Mascot (Handle GIF/Static) ---
+    # The Ring
+    ring_cx = card_x + card_w // 2
+    ring_cy = hero_y + 200
+    ring_r = 180
+    thickness = 8
     
-    if latest_pm25 <= 25: m_key = 'good'
-    elif latest_pm25 <= 37.5: m_key = 'moderate'
-    elif latest_pm25 <= 75: m_key = 'unhealthy'
-    else: m_key = 'hazardous'
-    
-    # Fetch Raw Mascot (Don't resize yet to preserve frames)
-    mascot_raw = get_raw_mascot_image(MASCOT_URLS.get(m_key))
-    
-    mx = (width - mascot_size) // 2
+    # Outer Glow
+    draw.ellipse([ring_cx - ring_r - 20, ring_cy - ring_r - 20, ring_cx + ring_r + 20, ring_cy + ring_r + 20], fill=theme['bg']) # Simple colored bg glow simulation
 
-    if mascot_raw and getattr(mascot_raw, "is_animated", False):
-        # --- Animated GIF Processing ---
-        frames = []
-        for frame in ImageSequence.Iterator(mascot_raw):
-            # Resize frame
-            frame = frame.convert("RGBA").resize((mascot_size, mascot_size), Image.Resampling.LANCZOS)
-            
-            # Create new composite for this frame
-            new_frame = base_img.copy()
-            new_frame.paste(frame, (mx, mascot_y_start), frame)
-            
-            # Optional: Convert to P mode for GIF compatibility (dithering)
-            # This keeps file size reasonable but might add noise to gradient
-            new_frame = new_frame.convert("RGB").convert("P", palette=Image.ADAPTIVE, colors=255)
-            frames.append(new_frame)
-            
-        # Save as GIF
-        buf = BytesIO()
-        frames[0].save(
-            buf, 
-            format='GIF', 
-            save_all=True, 
-            append_images=frames[1:], 
-            duration=mascot_raw.info.get('duration', 100), 
-            loop=0
-        )
-        return buf.getvalue()
-        
-    else:
-        # --- Static PNG/JPG Processing ---
-        if mascot_raw:
-            mascot_img = mascot_raw.convert("RGBA").resize((mascot_size, mascot_size), Image.Resampling.LANCZOS)
-            base_img.paste(mascot_img, (mx, mascot_y_start), mascot_img)
-            
-        # Save as PNG (High Quality)
-        buf = BytesIO()
-        base_img.save(buf, format='PNG', quality=95)
-        return buf.getvalue()
+    # Main Circle (White filled)
+    draw.ellipse([ring_cx - ring_r, ring_cy - ring_r, ring_cx + ring_r, ring_cy + ring_r], fill="white", outline=theme['border'], width=8)
+    
+    # Inner Text
+    draw.text((ring_cx, ring_cy - 90), "PM 2.5", font=create_font(font_bold, 24), anchor="ms", fill="#94a3b8") # Slate-400
+    draw.text((ring_cx, ring_cy + 20), f"{latest_pm25:.0f}", font=f_pm, anchor="ms", fill=theme['text'])
+    draw.text((ring_cx, ring_cy + 90), "µg/m³", font=f_sub, anchor="ms", fill="#94a3b8")
+
+    # Status Pill (Floating at bottom of ring)
+    pill_w = 300
+    pill_h = 60
+    pill_x = ring_cx - pill_w // 2
+    pill_y = ring_cy + ring_r - 30
+    
+    # Gradient Pill
+    pill_img = create_gradient_fill(pill_w, pill_h, theme['gradient_start'], theme['gradient_end'])
+    
+    # Mask for rounded pill
+    pill_mask = Image.new('L', (pill_w, pill_h), 0)
+    ImageDraw.Draw(pill_mask).rounded_rectangle([(0,0), (pill_w, pill_h)], radius=30, fill=255)
+    pill_img.putalpha(pill_mask)
+    
+    img.paste(pill_img, (pill_x, pill_y), pill_img)
+    draw.text((ring_cx, pill_y + 30), level, font=f_label, anchor="mm", fill="white")
+
+    # Location Pin
+    pin_y = pill_y + 80
+    draw.rounded_rectangle([ring_cx - 150, pin_y, ring_cx + 150, pin_y + 40], radius=20, fill="#f8fafc", outline="#f1f5f9")
+    draw.text((ring_cx, pin_y + 20), "จุดตรวจวัด: รพ.สันทราย", font=f_sub, anchor="mm", fill="#64748b")
+
+
+    # --- 4. Advisory Cards ---
+    cards_start_y = hero_y + 450
+    # Logic for card content mapping
+    # React code has: 
+    # 1. General Public (User Icon)
+    # 2. Risk Group (Heart Icon)
+    
+    # We map existing advice_details to these two
+    public_advice = advice_details['activity']
+    risk_advice = advice_details['risk_group']
+
+    # Card Config
+    card_gap = 30
+    sub_card_h = 140
+    sub_card_w = card_w - 100 # Padding inside
+    sub_card_x = card_x + 50
+    
+    # --- Card 1: General Public ---
+    c1_y = cards_start_y
+    draw.rounded_rectangle([sub_card_x, c1_y, sub_card_x + sub_card_w, c1_y + sub_card_h], radius=30, fill="white", outline="#f1f5f9", width=2)
+    
+    # Icon Box (Blue-50)
+    icon_box_size = 80
+    ib_x = sub_card_x + 30
+    ib_y = c1_y + 30
+    draw.rounded_rectangle([ib_x, ib_y, ib_x + icon_box_size, ib_y + icon_box_size], radius=20, fill="#eff6ff")
+    # Icon Image (Activity 3D)
+    icon_act = get_image_from_url(ICON_URLS['activity'], size=(60, 60))
+    if icon_act: img.paste(icon_act, (ib_x+10, ib_y+10), icon_act)
+    
+    # Text
+    draw.text((ib_x + 100, ib_y + 10), "ประชาชนทั่วไป", font=f_card_title, fill="#1e293b")
+    # Wrap desc logic
+    words = public_advice.split()
+    line1 = " ".join(words[:8]) + "..." if len(words) > 8 else public_advice # Simple truncate for design fidelity
+    draw.text((ib_x + 100, ib_y + 45), line1, font=f_card_desc, fill="#64748b")
+
+    # --- Card 2: Risk Group ---
+    c2_y = c1_y + sub_card_h + 20
+    draw.rounded_rectangle([sub_card_x, c2_y, sub_card_x + sub_card_w, c2_y + sub_card_h], radius=30, fill="white", outline="#f1f5f9", width=2)
+    
+    # Icon Box (Rose-50)
+    ib_y2 = c2_y + 30
+    draw.rounded_rectangle([ib_x, ib_y2, ib_x + icon_box_size, ib_y2 + icon_box_size], radius=20, fill="#fff1f2")
+    # Icon Image (Risk 3D)
+    icon_risk = get_image_from_url(ICON_URLS['risk_group'], size=(60, 60))
+    if icon_risk: img.paste(icon_risk, (ib_x+10, ib_y2+10), icon_risk)
+    
+    # Text
+    draw.text((ib_x + 100, ib_y2 + 10), "กลุ่มเสี่ยง", font=f_card_title, fill="#1e293b")
+    words_r = risk_advice.split()
+    line1_r = " ".join(words_r[:8]) + "..." if len(words_r) > 8 else risk_advice
+    draw.text((ib_x + 100, ib_y2 + 45), line1_r, font=f_card_desc, fill="#64748b")
+
+    # --- 5. Footer (Dark) ---
+    footer_h = 140
+    footer_y = card_y + card_h - footer_h
+    
+    # Draw bottom rounded corners by drawing full rect then masking? 
+    # Or just draw a rect that overlaps the bottom part.
+    # Easier: Draw rounded rect for whole card again but fill bottom part.
+    
+    # Let's draw a simple rect at bottom and clip it to rounded corners
+    # Create a footer image
+    footer_img = Image.new('RGBA', (card_w, footer_h), "#0f172a")
+    
+    # Add Footer Content
+    d = ImageDraw.Draw(footer_img)
+    # Left text
+    d.text((40, 40), "ห่วงใยสุขภาพปอดของคุณ", font=f_footer_small, fill="#94a3b8")
+    
+    # Right: DustBoy Badge
+    # Vertical line
+    d.line([(card_w - 180, 20), (card_w - 180, 80)], fill="#334155", width=1)
+    
+    # Texts
+    d.text((card_w - 190, 30), "MEASURED BY", font=create_font(font_bold, 12), anchor="rs", fill="#94a3b8")
+    d.text((card_w - 190, 50), "DustBoy", font=create_font(font_bold, 18), anchor="rs", fill="#60a5fa") # blue-400
+    
+    # DB Icon Box
+    d.rounded_rectangle([card_w - 170, 30, card_w - 130, 70], radius=10, fill="#3b82f6") # Blue-500
+    d.text((card_w - 150, 50), "DB", font=create_font(font_bold, 16), anchor="mm", fill="white")
+    
+    # Bottom Credit
+    d.line([(0, 90), (card_w, 90)], fill="#1e293b", width=1)
+    d.text((card_w//2, 110), "Technology supported by Faculty of Engineering, CMU", font=create_font(font_reg, 14), anchor="mm", fill="#64748b")
+
+    # Paste Footer onto main image (masking for rounded corners at bottom)
+    # We need a mask that is white at bottom rounded corners.
+    # Easier: Create a mask for the whole card (rounded rect) and paste footer using composite
+    
+    main_mask = Image.new('L', (card_w, card_h), 0)
+    ImageDraw.Draw(main_mask).rounded_rectangle([(0,0), (card_w, card_h)], radius=60, fill=255)
+    
+    # Crop footer to only show where main mask allows (essentially cropping corners)
+    # But footer is at bottom.
+    
+    # Place footer on a temporary full-card layer
+    footer_layer = Image.new('RGBA', (card_w, card_h), (0,0,0,0))
+    footer_layer.paste(footer_img, (0, card_h - footer_h))
+    
+    img.paste(footer_layer, (card_x, card_y), mask=main_mask)
+
+    # --- Output ---
+    buf = BytesIO()
+    img.save(buf, format='PNG', quality=95)
+    return buf.getvalue()
