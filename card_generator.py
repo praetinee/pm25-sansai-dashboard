@@ -37,14 +37,19 @@ def get_image_from_url(url, size=(150, 150)):
 
 def create_drop_shadow(width, height, radius, offset=(0, 4), blur=15, opacity=50):
     """Creates a high-quality drop shadow image."""
-    shadow = Image.new('RGBA', (width + abs(offset[0]) + blur*2, height + abs(offset[1]) + blur*2), (0, 0, 0, 0))
+    # FIX: Force dimensions to be integers for PIL.Image.new
+    w_int = int(width)
+    h_int = int(height)
+    
+    shadow = Image.new('RGBA', (w_int + abs(offset[0]) + blur*2, h_int + abs(offset[1]) + blur*2), (0, 0, 0, 0))
     draw = ImageDraw.Draw(shadow)
     
     # Draw black rounded rect
     shadow_x = blur + max(0, offset[0])
     shadow_y = blur + max(0, offset[1])
+    
     draw.rounded_rectangle(
-        [shadow_x, shadow_y, shadow_x + width, shadow_y + height], 
+        [shadow_x, shadow_y, shadow_x + w_int, shadow_y + h_int], 
         radius=radius, 
         fill=(0, 0, 0, opacity)
     )
@@ -160,7 +165,8 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     sheet_radius = 45
 
     # Generate Shadow
-    shadow = create_drop_shadow(sheet_w, sheet_h, sheet_radius, blur=30, opacity=40)
+    # FIX: Ensure dimensions passed are integers
+    shadow = create_drop_shadow(int(sheet_w), int(sheet_h), sheet_radius, blur=30, opacity=40)
     img.paste(shadow, (sheet_margin - 30, sheet_y - 30 + 10), shadow) # Adjust offset
 
     # Draw White Sheet
@@ -192,7 +198,8 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     badge_y = gauge_center_y + 110
 
     # Badge Shadow
-    badge_shadow = create_drop_shadow(badge_w, badge_h, 35, blur=15, opacity=30)
+    # FIX: Ensure dimensions passed are integers
+    badge_shadow = create_drop_shadow(int(badge_w), int(badge_h), 35, blur=15, opacity=30)
     img.paste(badge_shadow, (int(badge_x) - 15, int(badge_y) - 15 + 5), badge_shadow)
 
     # Badge Body
@@ -228,7 +235,8 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         y = grid_y + row * (card_h + row_gap)
         
         # Card Shadow (Subtle)
-        c_shadow = create_drop_shadow(card_w, card_h, 30, blur=20, opacity=15)
+        # FIX: Ensure dimensions passed are integers
+        c_shadow = create_drop_shadow(int(card_w), int(card_h), 30, blur=20, opacity=15)
         img.paste(c_shadow, (int(x) - 20, int(y) - 20 + 5), c_shadow)
 
         # Card Body (Very Light Gray Gradient-ish or Solid)
