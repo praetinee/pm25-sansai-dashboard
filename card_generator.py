@@ -4,15 +4,18 @@ from io import BytesIO
 import streamlit as st
 import math
 
-# --- 1. Scene Assets (ภาพฉากตามระดับฝุ่น) ---
+# --- 1. Scene Assets (ปรับรูปให้สื่อถึงคำแนะนำการปฏิบัติตัว) ---
 SCENE_URLS = {
-    # อากาศดี: สวนสาธารณะ/เมืองสดใส (Green/Blue Tone)
+    # อากาศดี (0-25): แนะนำให้ทำกิจกรรมกลางแจ้งได้เต็มที่ -> รูปคนวิ่งเล่นในสวน สดใส
     'good': "https://img.freepik.com/free-vector/isometric-park-composition-with-view-public-garden-with-infrastructure-elements-walking-people_1284-59279.jpg?w=826", 
-    # ปานกลาง: เมืองเริ่มเหลือง/มีเมฆ (Yellow Tone)
+    
+    # ปานกลาง (26-37.5): เริ่มระวัง -> รูปเมืองที่มีคนใช้ชีวิตปกติแต่ท้องฟ้าเริ่มไม่ใสมาก
     'moderate': "https://img.freepik.com/free-vector/isometric-city-street-composition-with-view-modern-city-block-with-buildings-transport-people_1284-63092.jpg?w=826",
-    # แย่: เมืองมัวๆ/โรงงาน/คนใส่หน้ากาก (Orange/Grey Tone)
+    
+    # เริ่มมีผล (37.6-75): ลดกิจกรรม/ใส่หน้ากาก -> รูปเมืองที่มีมลพิษ คนใส่หน้ากาก (ถ้าหาได้) หรือกิจกรรมในร่ม
     'unhealthy': "https://img.freepik.com/free-vector/polluted-city-isometric-composition_1284-25634.jpg?w=826",
-    # อันตราย: มลพิษหนัก/ไฟป่า/หมอกควัน (Red/Dark Tone)
+    
+    # อันตราย (>75): งดกิจกรรม/อยู่แต่ในบ้าน -> รูปเมืองที่ดูอันตราย หมอกควันหนา หรือเน้นตึกปิดทึบ
     'hazardous': "https://img.freepik.com/free-vector/air-pollution-isometric-composition_1284-25634.jpg?w=826" 
 }
 
@@ -43,28 +46,28 @@ def get_image_from_url(url, size=None):
 # --- 2. Dynamic Background & Colors ---
 
 def get_theme_settings(pm):
-    """คืนค่าสีพื้นหลังและสี Pill ตามระดับฝุ่น"""
+    """คืนค่าสีพื้นหลังและสี Pill ตามระดับฝุ่น (สอดคล้องกับคำแนะนำ)"""
     if pm <= 25: 
         return {
-            'bg': '#1E3A2F', # Dark Green Slate (บรรยากาศร่มรื่น)
+            'bg': '#1E3A2F', # Dark Green Slate (บรรยากาศร่มรื่น เหมาะแก่การออกกำลังกาย)
             'pill': '#2ECC71',
             'scene': 'good'
         }
     elif pm <= 37.5: 
         return {
-            'bg': '#3E382C', # Dark Yellow/Brown Slate (เริ่มมีฝุ่น)
+            'bg': '#3E382C', # Dark Yellow/Brown Slate (เริ่มระวัง)
             'pill': '#F1C40F',
             'scene': 'moderate'
         }
     elif pm <= 75: 
         return {
-            'bg': '#3E2E2C', # Dark Orange/Rust Slate (ฝุ่นเยอะ)
+            'bg': '#3E2E2C', # Dark Orange/Rust Slate (ลดกิจกรรม)
             'pill': '#E67E22',
             'scene': 'unhealthy'
         }
     else: 
         return {
-            'bg': '#2C1E1E', # Dark Red/Purple Slate (อันตราย)
+            'bg': '#2C1E1E', # Dark Red/Purple Slate (งดกิจกรรม/อันตราย)
             'pill': '#E74C3C',
             'scene': 'hazardous'
         }
@@ -77,7 +80,7 @@ def draw_rounded_rect(draw, bbox, radius, fill, outline=None, width=1):
 # --- 4. Main Generator ---
 
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
-    """Generates an 'Isometric Scene' report card with dynamic atmosphere."""
+    """Generates an 'Isometric Scene' report card with dynamic atmosphere reflecting advice."""
     
     # Settings
     width, height = 900, 900 
@@ -119,7 +122,8 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     # สี subtitle จางๆ
     draw.text((margin, 120), time_text, font=f_subtitle, fill=(255,255,255, 180))
 
-    # --- 2. Dynamic Scene Image ---
+    # --- 2. Dynamic Scene Image (สะท้อนคำแนะนำ) ---
+    # เลือกรูปจาก theme['scene'] ซึ่งผูกกับค่า PM2.5
     scene_img = get_image_from_url(SCENE_URLS.get(theme['scene']))
     
     if scene_img:
