@@ -137,31 +137,29 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     # 1. HEADER SECTION (Logo & Date)
     # ==========================================
     
-    # --- LOGO (Top Left, Large, No Background) ---
+    # --- LOGO (Top Left, EXTRA LARGE, No Background) ---
     logo_img = get_image_from_url(ICON_URLS['logo'])
     if logo_img:
-        logo_h = 150 # Enlarged Size
+        logo_h = 220 # Increased from 150 -> 220 for better visibility
         aspect = logo_img.width / logo_img.height
         logo_w = int(logo_h * aspect)
         logo_img = logo_img.resize((logo_w, logo_h), Image.Resampling.LANCZOS)
         
         # Position: Top Left with padding
-        logo_x = 60
-        logo_y = 50
+        logo_x = 50
+        logo_y = 40 # Adjusted Y slightly
         
         # Paste directly (No pill background)
         img.paste(logo_img, (logo_x, logo_y), logo_img)
-        
-        # Removed "Supported by" text for cleaner look as requested
 
     # --- DATE PILL (Moved to Top Right for Balance) ---
     date_bbox = draw.textbbox((0, 0), date_str, font=f_pill)
     date_w = date_bbox[2] - date_bbox[0] + 80
     date_h = date_bbox[3] - date_bbox[1] + 30
     
-    # Align Top Right
+    # Align Top Right (Aligned with center of new big logo)
     date_x = width - date_w - 60 
-    date_y = 80 # Vertically aligned roughly with logo center
+    date_y = 110 # Lowered to match the visual center of the bigger logo
     
     date_bg = Image.new('RGBA', (int(date_w), int(date_h)), (0,0,0,0))
     date_draw = ImageDraw.Draw(date_bg)
@@ -236,7 +234,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     grid_y = current_y + 60
     grid_gap = 30
     
-    # Calculate column width here! (Correctly placed)
+    # Calculate column width here!
     col_w = (width - (margin_x * 2) - (grid_gap * 2)) / 3
     col_h = 450
     
