@@ -167,7 +167,7 @@ def inject_custom_css():
                 color: var(--text-color);
             }
 
-            /* --- Right Side: Action Grid (UPDATED SIZES) --- */
+            /* --- Right Side: Action Grid (UPDATED PADDING) --- */
             .action-grid-header {
                 font-size: 0.9rem;
                 font-weight: 700;
@@ -185,32 +185,33 @@ def inject_custom_css():
             .action-item {
                 background: transparent;
                 border: 2px solid; /* Color set inline */
-                border-radius: 1.5rem; /* Slightly more rounded */
-                padding: 1.5rem 0.5rem; /* More padding */
+                border-radius: 1.5rem;
+                /* Reduced padding here - Less space between content and border */
+                padding: 0.5rem 0.25rem; 
                 text-align: center;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                min-height: 140px; /* Taller card */
+                min-height: 120px; /* Adjusted min-height */
                 transition: transform 0.2s;
             }
             .action-item:hover {
                 transform: translateY(-3px);
             }
             .action-icon-svg {
-                margin-bottom: 12px;
-                width: 42px !important;  /* Increased Size */
-                height: 42px !important; /* Increased Size */
+                margin-bottom: 6px; /* Reduced bottom margin */
+                width: 42px !important;
+                height: 42px !important;
             }
             .action-label {
-                font-size: 0.85rem; /* Larger Label */
+                font-size: 0.85rem;
                 font-weight: 600;
                 opacity: 0.9;
-                margin-bottom: 6px;
+                margin-bottom: 2px; /* Reduced margin */
             }
             .action-val {
-                font-size: 1.1rem; /* Larger Value */
+                font-size: 1.1rem;
                 font-weight: 700;
                 line-height: 1.2;
             }
@@ -308,7 +309,7 @@ def display_realtime_pm(df, lang, t, date_str):
         act_activity = advice_details['activity']
         act_home = advice_details['indoors']
 
-        # Icons - Adjusted viewBox and sizes in CSS, but SVG logic remains same
+        # Icons - Adjusted viewBox and sizes in CSS
         icon_mask = """<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>"""
         icon_activity_s = """<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>"""
         icon_home_s = """<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>"""
