@@ -240,32 +240,29 @@ def display_realtime_pm(df, lang, t, date_str):
 
     # --- LEFT COLUMN: Status Card with Supporter Logo ---
     with col_left:
-        # Using flush-left string to prevent code block rendering
-        st.markdown(f"""
+        # IMPORTANT: HTML strings must be strictly flush left to prevent code block rendering
+        html_left = f"""
 <div class="status-card" style="background-color: {bg_color};">
-    <div class="date-pill">{date_str}</div>
-    
-    <div class="gauge-container">
-        <svg class="gauge-svg" viewBox="0 0 200 200">
-            <circle cx="100" cy="100" r="{radius}" class="gauge-track"></circle>
-            <circle cx="100" cy="100" r="{radius}" class="gauge-fill" 
-                style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset};"></circle>
-        </svg>
-        <div class="gauge-content">
-            <div class="gauge-number">{latest_pm25:.0f}</div>
-            <div class="gauge-unit">μg/m³</div>
-        </div>
-    </div>
-
-    <!-- Supporter Logo Section -->
-    <div style="margin-top: 2rem; width: 100%;">
-        <div style="font-size: 0.75rem; opacity: 0.9; margin-bottom: 0.5rem; color: rgba(255,255,255,0.95);">สนับสนุนเครื่องตรวจวัดโดย</div>
-        <div style="background: white; padding: 10px 20px; border-radius: 16px; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-            <img src="https://www.cmuccdc.org/template/image/logo_ccdc.png" style="height: 40px; width: auto; display: block;">
-        </div>
-    </div>
+<div class="date-pill">{date_str}</div>
+<div class="gauge-container">
+<svg class="gauge-svg" viewBox="0 0 200 200">
+<circle cx="100" cy="100" r="{radius}" class="gauge-track"></circle>
+<circle cx="100" cy="100" r="{radius}" class="gauge-fill" style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset};"></circle>
+</svg>
+<div class="gauge-content">
+<div class="gauge-number">{latest_pm25:.0f}</div>
+<div class="gauge-unit">μg/m³</div>
 </div>
-""", unsafe_allow_html=True)
+</div>
+<div style="margin-top: 2rem; width: 100%;">
+<div style="font-size: 0.75rem; opacity: 0.9; margin-bottom: 0.5rem; color: rgba(255,255,255,0.95);">สนับสนุนเครื่องตรวจวัดโดย</div>
+<div style="background: white; padding: 10px 20px; border-radius: 16px; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+<img src="https://www.cmuccdc.org/template/image/logo_ccdc.png" style="height: 40px; width: auto; display: block;">
+</div>
+</div>
+</div>
+"""
+        st.markdown(html_left, unsafe_allow_html=True)
 
     # --- RIGHT COLUMN: Advice Stack ---
     with col_right:
@@ -286,9 +283,9 @@ def display_realtime_pm(df, lang, t, date_str):
         icon_activity_s = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>"""
         icon_home_s = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>"""
 
-        st.markdown(f"""
+        # HTML for Right Column
+        html_right = f"""
 <div class="advice-wrapper">
-<!-- General Public Card -->
 <div class="advice-section-card" style="border-left-color: {accent_color};">
 <div class="advice-icon-wrapper" style="background-color: {accent_color};">
 {icon_gen}
@@ -299,7 +296,6 @@ def display_realtime_pm(df, lang, t, date_str):
 </div>
 </div>
 
-<!-- Risk Group Card -->
 <div class="advice-section-card" style="border-left-color: {accent_color};">
 <div class="advice-icon-wrapper" style="background-color: {accent_color};">
 {icon_risk}
@@ -330,7 +326,8 @@ def display_realtime_pm(df, lang, t, date_str):
 </div>
 </div>
 </div>
-""", unsafe_allow_html=True)
+"""
+        st.markdown(html_right, unsafe_allow_html=True)
 
     st.write("") # Spacer
 
