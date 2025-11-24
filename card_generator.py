@@ -15,26 +15,40 @@ ICON_URLS = {
     'logo': "https://www.cmuccdc.org/template/image/logo_ccdc.png"
 }
 
+# --- Fix: Cache Bytes instead of Objects ---
 @st.cache_data
-def get_font(url, size):
+def download_asset_bytes(url):
+    """Downloads bytes from a URL. Cached to prevent re-downloading."""
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         response.raise_for_status()
-        return ImageFont.truetype(BytesIO(response.content), size)
+        return response.content
     except Exception as e:
-        print(f"Font download failed: {e}")
-        return ImageFont.load_default()
-
-@st.cache_data
-def get_image_from_url(url):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        img = Image.open(BytesIO(response.content))
-        return img.convert("RGBA")
-    except Exception as e:
-        print(f"Image download failed for {url}: {e}")
+        print(f"Download failed for {url}: {e}")
         return None
+
+def get_font(url, size):
+    """Creates a font object from cached bytes."""
+    font_bytes = download_asset_bytes(url)
+    if font_bytes:
+        try:
+            return ImageFont.truetype(BytesIO(font_bytes), size)
+        except Exception as e:
+            print(f"Font creation failed: {e}")
+            return ImageFont.load_default()
+    return ImageFont.load_default()
+
+def get_image_from_url(url):
+    """Creates an image object from cached bytes."""
+    img_bytes = download_asset_bytes(url)
+    if img_bytes:
+        try:
+            img = Image.open(BytesIO(img_bytes))
+            return img.convert("RGBA")
+        except Exception as e:
+            print(f"Image creation failed: {e}")
+            return None
+    return None
 
 # --- 2. Color Themes ---
 def get_theme_color(pm):
