@@ -61,10 +61,17 @@ def inject_custom_css():
             
             .supporter-logo-box {
                 background: rgba(255, 255, 255, 0.95);
-                padding: 4px 8px; /* Reduced padding here */
+                padding: 4px 6px; /* Reduced padding even more (Top/Bottom 4px, Left/Right 6px) */
                 border-radius: 12px;
                 display: inline-block;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                line-height: 0; /* Ensure no extra line height space */
+            }
+            
+            /* Fix image display inside the box */
+            .supporter-logo-box img {
+                display: block; /* Remove inline gap */
+                margin: 0;
             }
 
             .date-pill {
@@ -167,7 +174,7 @@ def inject_custom_css():
                 color: var(--text-color);
             }
 
-            /* --- Right Side: Action Grid (UPDATED PADDING) --- */
+            /* --- Right Side: Action Grid (UPDATED SIZES & PADDING) --- */
             .action-grid-header {
                 font-size: 0.9rem;
                 font-weight: 700;
@@ -186,20 +193,21 @@ def inject_custom_css():
                 background: transparent;
                 border: 2px solid; /* Color set inline */
                 border-radius: 1.5rem;
-                padding: 0.5rem 0.25rem; 
+                /* Reduced padding here */
+                padding: 0.75rem 0.25rem; 
                 text-align: center;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                min-height: 120px; /* Adjusted min-height */
+                min-height: 130px; /* Adjusted height */
                 transition: transform 0.2s;
             }
             .action-item:hover {
                 transform: translateY(-3px);
             }
             .action-icon-svg {
-                margin-bottom: 6px; /* Reduced bottom margin */
+                margin-bottom: 8px;
                 width: 42px !important;
                 height: 42px !important;
             }
@@ -207,7 +215,7 @@ def inject_custom_css():
                 font-size: 0.85rem;
                 font-weight: 600;
                 opacity: 0.9;
-                margin-bottom: 2px; /* Reduced margin */
+                margin-bottom: 4px;
             }
             .action-val {
                 font-size: 1.1rem;
