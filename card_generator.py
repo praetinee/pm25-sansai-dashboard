@@ -120,8 +120,8 @@ def round_corners(im, radius):
 
 # --- 3. Main Generator ---
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
-    # Canvas - INCREASED HEIGHT from 1600 to 1900 to fix overlapping footer
-    width, height = 1200, 1900 
+    # Canvas - INCREASED HEIGHT to 2000px for maximum breathing room
+    width, height = 1200, 2000
     bg_color_hex = get_theme_color(latest_pm25)
     bg_rgb = hex_to_rgb(bg_color_hex)
     
@@ -206,8 +206,8 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     sheet_y = 820
     
     # Draw Sheet (Rounded Top)
-    # We draw much taller to cover bottom area
-    draw.rounded_rectangle([0, sheet_y, width, height+200], radius=60, fill="white", corners=(True, True, False, False))
+    # Taller white sheet
+    draw.rounded_rectangle([0, sheet_y, width, height+100], radius=60, fill="white", corners=(True, True, False, False))
     
     # Content Start
     content_y = sheet_y + 60
@@ -262,16 +262,16 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     # 3. ACTION GRID (Modern Tinted Boxes)
     # ==========================================
     
-    # Header
-    action_y = curr_y + 35
+    # Header - More padding from above cards
+    action_y = curr_y + 60 
     draw.text((margin + 10, action_y), t[lang]['advice_header'], font=f_subtitle, fill="#94a3b8", anchor="ls")
     
-    grid_y = action_y + 25
+    grid_y = action_y + 40
     grid_gap = 30
     col_w = (width - (margin*2) - (grid_gap*2)) / 3
     
-    # Increased Height to prevent overlap: 350
-    col_h = 350
+    # Increased Height: 380px to accommodate text comfortably
+    col_h = 380
     
     actions = [
         {'label': t[lang]['advice_cat_mask'], 'val': advice_details['mask'], 'icon': 'mask'},
@@ -308,14 +308,14 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         draw.text((cx, ic_y + 110), act['label'], font=f_pill, fill="#64748b", anchor="ms")
         
         # Value Text (Action)
-        # Increased gap significantly: +175
+        # Maintained generous gap +175
         v_lines = wrap_text(act['val'], f_action_val, col_w-20, draw)
         vy = ic_y + 175 
         for k, vl in enumerate(v_lines[:3]): # Allow up to 3 lines
              draw.text((cx, vy + (k*42)), vl, font=f_action_val, fill=bg_rgb, anchor="ms")
 
-    # Footer - Adjusted Y position to be at the very bottom
-    draw.text((width//2, height - 60), t[lang]['report_card_footer'], font=f_small, fill="#cbd5e1", anchor="mm")
+    # Footer - Pushed to absolute bottom area
+    draw.text((width//2, height - 80), t[lang]['report_card_footer'], font=f_small, fill="#cbd5e1", anchor="mm")
 
     # Final Rounding of the Whole Card
     final_img = round_corners(img, 40)
