@@ -117,14 +117,16 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     font_med_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Medium.ttf"
     font_reg_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
     
-    f_huge = get_font(font_bold_url, 260)
+    # Adjusted font sizes for better ratios
+    f_huge = get_font(font_bold_url, 220) # Reduced from 260 to 220 for better breathing room
     f_header = get_font(font_bold_url, 90)
     f_title = get_font(font_bold_url, 42)
+    f_unit_label = get_font(font_med_url, 36) # New font for unit label
     f_subtitle = get_font(font_med_url, 36)
     f_body = get_font(font_reg_url, 30)
     f_small = get_font(font_reg_url, 26)
     f_pill = get_font(font_med_url, 28)
-    f_action_val = get_font(font_bold_url, 36) # New font size for action values (smaller than 42)
+    f_action_val = get_font(font_bold_url, 36)
 
     # ==========================================
     # 1. TOP SECTION (Status)
@@ -161,25 +163,31 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     img.paste(pill_img, (date_x, date_y), pill_img)
     draw.text((width//2, date_y + date_h//2 - 3), date_str, font=f_pill, fill=(255,255,255,255), anchor="mm")
 
-    # --- C. Gauge ---
+    # --- C. Modern Gauge (Glassmorphism) ---
     gauge_cy = 480
-    gauge_r = 200
+    gauge_r = 220 # Slightly larger radius
     g_box = [width//2 - gauge_r, gauge_cy - gauge_r, width//2 + gauge_r, gauge_cy + gauge_r]
     
-    # Track
-    draw.arc(g_box, start=0, end=360, fill=(255,255,255, 60), width=25)
+    # 1. Glassy Background Disc
+    # Draws a semi-transparent filled circle to give weight
+    draw.ellipse(g_box, fill=(255, 255, 255, 40))
     
-    # Progress
+    # 2. Track Ring (Outer rim)
+    draw.arc(g_box, start=0, end=360, fill=(255,255,255, 80), width=15)
+    
+    # 3. Progress Arc
     percent = min((latest_pm25 / 120) * 360, 360)
-    draw.arc(g_box, start=-90, end=-90+percent, fill=(255,255,255, 255), width=25)
+    draw.arc(g_box, start=-90, end=-90+percent, fill=(255,255,255, 255), width=20)
     
-    # Value & Unit
-    draw.text((width//2, gauge_cy - 20), f"{latest_pm25:.0f}", font=f_huge, fill="white", anchor="mm")
-    draw.text((width//2, gauge_cy + 100), "µg/m³", font=f_title, fill=(255,255,255,220), anchor="mm")
+    # 4. Value & Unit (Balanced Layout)
+    # Move number slightly up to center it visually with the unit below
+    draw.text((width//2, gauge_cy - 30), f"{latest_pm25:.0f}", font=f_huge, fill="white", anchor="mm")
     
-    # Status Text (REMOVED EMOJI to fix rectangle issue)
-    # Using f"{level}" instead of f"{emoji} {level}"
-    draw.text((width//2, gauge_cy + 230), f"{level}", font=f_header, fill="white", anchor="mm")
+    # Unit below number, lighter font
+    draw.text((width//2, gauge_cy + 90), "µg/m³", font=f_unit_label, fill=(255,255,255,230), anchor="mm")
+    
+    # Status Text (Below the gauge circle)
+    draw.text((width//2, gauge_cy + 270), f"{level}", font=f_header, fill="white", anchor="mm")
 
     # ==========================================
     # 2. BOTTOM SHEET (White Card Layout)
@@ -250,7 +258,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     grid_gap = 30
     col_w = (width - (margin*2) - (grid_gap*2)) / 3
     
-    # INCREASED HEIGHT: 260 -> 320 to prevent overlap and floating text
+    # Fixed height for balance
     col_h = 320
     
     actions = [
@@ -284,13 +292,10 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
             act_icon = act_icon.resize((45, 45), Image.Resampling.LANCZOS)
             img.paste(act_icon, (int(cx-22), int(ic_y+17)), act_icon)
         
-        # Label Text (Topic) - Adjusted position
-        # Moved down slightly to center better with new height
+        # Label Text (Topic)
         draw.text((cx, ic_y + 110), act['label'], font=f_pill, fill="#64748b", anchor="ms")
         
         # Value Text (Action)
-        # INCREASED GAP: moved from +140 to +165 to clear the label text
-        # Using f_action_val (size 36) instead of f_title (size 42) to save space
         v_lines = wrap_text(act['val'], f_action_val, col_w-20, draw)
         vy = ic_y + 165 
         for k, vl in enumerate(v_lines[:2]):
