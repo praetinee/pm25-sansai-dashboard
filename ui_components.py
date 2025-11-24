@@ -61,7 +61,7 @@ def inject_custom_css():
             
             .supporter-logo-box {
                 background: rgba(255, 255, 255, 0.95);
-                padding: 6px 14px;
+                padding: 4px 8px; /* Reduced padding here */
                 border-radius: 12px;
                 display: inline-block;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -186,7 +186,6 @@ def inject_custom_css():
                 background: transparent;
                 border: 2px solid; /* Color set inline */
                 border-radius: 1.5rem;
-                /* Reduced padding here - Less space between content and border */
                 padding: 0.5rem 0.25rem; 
                 text-align: center;
                 display: flex;
