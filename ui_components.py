@@ -271,31 +271,31 @@ def display_realtime_pm(df, lang, t, date_str):
     with col_center:
         st.markdown(f"""
 <div class="modern-card-container">
-    <div class="modern-header-section" style="background: {theme_gradient};">
-        <!-- Background decoration -->
-        <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: white; opacity: 0.1; border-radius: 50%; filter: blur(40px);"></div>
-        <div style="position: absolute; bottom: 0; left: 0; width: 100px; height: 100px; background: black; opacity: 0.05; border-radius: 50%; filter: blur(30px);"></div>
-        
-        <!-- Date Pill -->
-        <div style="background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); padding: 4px 12px; border-radius: 20px; display: inline-block; margin-bottom: 20px;">
-            <span style="font-size: 0.8rem; font-weight: 500; opacity: 0.95;">{date_str}</span>
-        </div>
+<div class="modern-header-section" style="background: {theme_gradient};">
+<!-- Background decoration -->
+<div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: white; opacity: 0.1; border-radius: 50%; filter: blur(40px);"></div>
+<div style="position: absolute; bottom: 0; left: 0; width: 100px; height: 100px; background: black; opacity: 0.05; border-radius: 50%; filter: blur(30px);"></div>
 
-        <!-- Gauge -->
-        <div class="gauge-wrapper">
-            <svg viewBox="0 0 100 100" class="gauge-svg" style="transform: rotate(0deg);">
-                <circle cx="50" cy="50" r="{radius}" class="gauge-bg"></circle>
-                <circle cx="50" cy="50" r="{radius}" class="gauge-progress" 
-                        style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset};"></circle>
-            </svg>
-            <div class="gauge-text">
-                <div class="gauge-value">{latest_pm25:.0f}</div>
-                <div class="gauge-unit">μg/m³</div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="modern-content-section">
+<!-- Date Pill -->
+<div style="background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); padding: 4px 12px; border-radius: 20px; display: inline-block; margin-bottom: 20px;">
+<span style="font-size: 0.8rem; font-weight: 500; opacity: 0.95;">{date_str}</span>
+</div>
+
+<!-- Gauge -->
+<div class="gauge-wrapper">
+<svg viewBox="0 0 100 100" class="gauge-svg" style="transform: rotate(0deg);">
+<circle cx="50" cy="50" r="{radius}" class="gauge-bg"></circle>
+<circle cx="50" cy="50" r="{radius}" class="gauge-progress" 
+style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset};"></circle>
+</svg>
+<div class="gauge-text">
+<div class="gauge-value">{latest_pm25:.0f}</div>
+<div class="gauge-unit">μg/m³</div>
+</div>
+</div>
+</div>
+
+<div class="modern-content-section">
 """, unsafe_allow_html=True)
 
         # --- 4. Tabs Selection (Interactive) ---
@@ -329,42 +329,42 @@ def display_realtime_pm(df, lang, t, date_str):
 
         # --- 6. Render Bottom Content ---
         st.markdown(f"""
-        <div style="max-width: 450px; margin: 0 auto;">
-            <!-- Main Advice Card -->
-            <div class="main-advice-card" style="border-left: 4px solid {act_color};">
-                <div class="advice-icon-box" style="background: {theme_gradient};">
-                    {main_icon_svg}
-                </div>
-                <div class="advice-content">
-                    <h4>{main_title}</h4>
-                    <p>{main_desc}</p>
-                </div>
-            </div>
+<div style="max-width: 450px; margin: 0 auto;">
+<!-- Main Advice Card -->
+<div class="main-advice-card" style="border-left: 4px solid {act_color};">
+<div class="advice-icon-box" style="background: {theme_gradient};">
+{main_icon_svg}
+</div>
+<div class="advice-content">
+<h4>{main_title}</h4>
+<p>{main_desc}</p>
+</div>
+</div>
 
-            <!-- Action Grid -->
-            <div class="action-grid-title">{t[lang]['advice_header']}</div>
-            <div class="action-grid">
-                <!-- Mask -->
-                <div class="action-card" style="background: {act_bg}; border-color: {act_border}; color: {act_color};">
-                    <div class="action-icon">{icon_mask}</div>
-                    <div class="action-label">{t[lang]['advice_cat_mask']}</div>
-                    <div class="action-value">{act_mask}</div>
-                </div>
-                <!-- Activity -->
-                <div class="action-card" style="background: {act_bg}; border-color: {act_border}; color: {act_color};">
-                    <div class="action-icon">{icon_activity}</div>
-                    <div class="action-label">{t[lang]['advice_cat_activity']}</div>
-                    <div class="action-value">{act_activity}</div>
-                </div>
-                <!-- Indoors -->
-                <div class="action-card" style="background: {act_bg}; border-color: {act_border}; color: {act_color};">
-                    <div class="action-icon">{icon_home}</div>
-                    <div class="action-label">{t[lang]['advice_cat_indoors']}</div>
-                    <div class="action-value">{act_home}</div>
-                </div>
-            </div>
-        </div>
-    </div> <!-- Closing modern-content-section -->
+<!-- Action Grid -->
+<div class="action-grid-title">{t[lang]['advice_header']}</div>
+<div class="action-grid">
+<!-- Mask -->
+<div class="action-card" style="background: {act_bg}; border-color: {act_border}; color: {act_color};">
+<div class="action-icon">{icon_mask}</div>
+<div class="action-label">{t[lang]['advice_cat_mask']}</div>
+<div class="action-value">{act_mask}</div>
+</div>
+<!-- Activity -->
+<div class="action-card" style="background: {act_bg}; border-color: {act_border}; color: {act_color};">
+<div class="action-icon">{icon_activity}</div>
+<div class="action-label">{t[lang]['advice_cat_activity']}</div>
+<div class="action-value">{act_activity}</div>
+</div>
+<!-- Indoors -->
+<div class="action-card" style="background: {act_bg}; border-color: {act_border}; color: {act_color};">
+<div class="action-icon">{icon_home}</div>
+<div class="action-label">{t[lang]['advice_cat_indoors']}</div>
+<div class="action-value">{act_home}</div>
+</div>
+</div>
+</div>
+</div> <!-- Closing modern-content-section -->
 </div> <!-- Closing modern-card-container -->
 """, unsafe_allow_html=True)
         
