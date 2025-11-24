@@ -3,6 +3,7 @@ import plotly.graph_objects as go
 from datetime import datetime
 import calendar
 import pandas as pd
+import math
 from utils import get_aqi_level
 
 def inject_custom_css():
@@ -11,18 +12,211 @@ def inject_custom_css():
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
             
-            /* Apply Sarabun font to all elements within the Streamlit app */
+            /* Global Font */
             html, body, [class*="st-"], .stApp, .stApp * {
                 font-family: 'Sarabun', sans-serif !important;
             }
 
-            .card {
-                padding: 20px;
-                border-radius: 15px;
-                background-color: var(--secondary-background-color);
-                border: 1px solid var(--border-color, #dfe6e9);
+            /* --- Modern Dashboard Container --- */
+            .modern-card-container {
+                background: white;
+                border-radius: 2.5rem;
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+                overflow: hidden;
+                border: 1px solid #f1f5f9;
+                margin-bottom: 20px;
+                max-width: 450px; /* Limit width for mobile look on desktop */
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .modern-header-section {
+                padding: 2.5rem 1.5rem 2rem 1.5rem;
+                text-align: center;
+                position: relative;
+                color: white;
+            }
+            
+            .modern-content-section {
+                padding: 1.5rem;
+                background: #fff;
+            }
+
+            /* --- Circular Gauge --- */
+            .gauge-wrapper {
+                position: relative;
+                width: 180px;
+                height: 180px;
+                margin: 0 auto;
+            }
+            .gauge-bg {
+                fill: none;
+                stroke: rgba(255,255,255,0.25);
+                stroke-width: 12;
+            }
+            .gauge-progress {
+                fill: none;
+                stroke: white;
+                stroke-width: 12;
+                stroke-linecap: round;
+                transform: rotate(-90deg);
+                transform-origin: 50% 50%;
+                transition: stroke-dashoffset 1s ease-out;
+            }
+            .gauge-text {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                color: white;
+                line-height: 1;
+            }
+            .gauge-value {
+                font-size: 3.5rem;
+                font-weight: 700;
+                letter-spacing: -2px;
+            }
+            .gauge-unit {
+                font-size: 0.8rem;
+                opacity: 0.9;
+                margin-top: 4px;
+                font-weight: 500;
+            }
+
+            /* --- Status Text --- */
+            .status-label {
+                font-size: 2rem;
+                font-weight: 700;
+                margin-top: 1rem;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .status-sublabel {
+                font-size: 0.9rem;
+                opacity: 0.95;
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+                margin-top: 0.25rem;
+            }
+
+            /* --- Tab Styling (Custom Radio) --- */
+            /* Container for the radio group */
+            div[role="radiogroup"] {
+                display: flex;
+                flex-direction: row;
+                background: #f1f5f9;
+                padding: 6px;
+                border-radius: 1rem;
+                gap: 0;
+                margin-bottom: 1.5rem;
+                border-bottom: none !important;
+                width: 100%;
+            }
+            /* Each option label */
+            div[role="radiogroup"] label {
+                flex: 1;
+                margin: 0;
+                padding: 0;
+                background: transparent;
+                border: none;
+                cursor: pointer;
+            }
+            /* The inner div text of the label */
+            div[role="radiogroup"] label > div {
+                width: 100%;
+                text-align: center;
+                padding: 10px 0;
+                border-radius: 0.8rem;
+                font-weight: 600;
+                font-size: 0.9rem;
+                border: none !important;
+                color: #64748b;
+                transition: all 0.2s ease;
+            }
+            /* Active State - The selected tab */
+            div[role="radiogroup"] label input[type="radio"]:checked + div {
+                background: white;
+                color: #0f172a;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                opacity: 1 !important;
+            }
+            /* Hide default radio circle */
+            div[data-testid="stRadio"] label > div:first-child { display: none; }
+
+            /* --- Advice Main Card --- */
+            .main-advice-card {
+                background: white;
+                border: 1px solid #e2e8f0;
+                border-radius: 1.25rem;
+                padding: 1.25rem;
+                display: flex;
+                align-items: flex-start;
+                gap: 1rem;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+                margin-bottom: 1.5rem;
+                transition: transform 0.2s;
+            }
+            .main-advice-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            }
+            .advice-icon-box {
+                width: 48px;
+                height: 48px;
+                border-radius: 14px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                flex-shrink: 0;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            }
+            .advice-content h4 {
+                margin: 0;
+                font-size: 1rem;
+                font-weight: 700;
+                color: #1e293b;
+            }
+            .advice-content p {
+                margin: 4px 0 0 0;
+                font-size: 0.9rem;
+                color: #64748b;
+                line-height: 1.5;
+            }
+
+            /* --- Action Grid --- */
+            .action-grid-title {
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: #94a3b8;
+                margin-bottom: 0.75rem;
+                padding-left: 4px;
+            }
+            .action-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.75rem;
+            }
+            .action-card {
+                padding: 1rem 0.5rem;
+                border-radius: 1rem;
+                border: 1px solid;
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                background: #f8fafc;
                 height: 100%;
             }
+            .action-icon { opacity: 0.8; }
+            .action-label { font-size: 0.65rem; opacity: 0.7; text-transform: uppercase; font-weight: 600; }
+            .action-value { font-size: 0.8rem; font-weight: 700; white-space: nowrap; line-height: 1.2; }
+
+            /* --- Previous CSS for other components --- */
             .calendar-day {
                 background-color: var(--secondary-background-color);
                 border-radius: 10px;
@@ -33,61 +227,12 @@ def inject_custom_css():
                 flex-direction: column;
                 justify-content: space-between;
                 box-shadow: 0 4px 6px rgba(0,0,0,0.07);
-                transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
                 border-bottom: 5px solid transparent;
-            }
-            .calendar-day:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 8px 12px rgba(0,0,0,0.1);
             }
             .calendar-day-header { align-self: flex-start; font-size: 0.9rem; font-weight: 500; opacity: 0.8; }
             .calendar-day-value { font-size: 1.5rem; font-weight: 700; line-height: 1; }
             .calendar-day-na { background-color: var(--secondary-background-color); color: var(--text-color); opacity: 0.5; box-shadow: none; }
-            .aqi-legend-bar { display: flex; height: 50px; width: 100%; border-radius: 10px; overflow: hidden; margin-top: 10px; }
-            .aqi-legend-segment {
-                flex-grow: 1;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-weight: 500;
-                text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
-                font-size: 0.9rem;
-                line-height: 1.2;
-                text-align: center;
-            }
-            .advice-container {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 20px;
-                text-align: center;
-            }
-            .advice-item {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }
-            .advice-icon svg {
-                width: 48px;
-                height: 48px;
-                margin-bottom: 8px;
-            }
-            .advice-title {
-                font-weight: 600;
-                margin-bottom: 4px;
-            }
-            .advice-text {
-                font-size: 0.9rem;
-            }
-            .risk-group-advice {
-                margin-top: 20px;
-                padding-top: 20px;
-                border-top: 1px solid #e0e0e0;
-                text-align: center;
-            }
-
-            /* Styles for Infographic Cards in Quiz */
+            
             .infographic-card {
                 background-color: var(--secondary-background-color);
                 border-left: 5px solid #1e40af;
@@ -95,175 +240,240 @@ def inject_custom_css():
                 border-radius: 8px;
                 margin-top: 1rem;
             }
-            .infographic-card h4 {
-                 color: #1e40af;
-                 margin-bottom: 0.5rem;
-            }
-            .infographic-card ul {
-                list-style-type: none;
-                padding-left: 0;
-                margin-bottom: 0;
-            }
-            .infographic-card li {
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-                margin-bottom: 0.5rem;
-            }
-            .infographic-card .icon {
-                font-size: 1.2rem;
-            }
-            
-            /* --- NEW: Clean Underline Tab Style (FIXED) --- */
-            div[role="radiogroup"] {
-                display: flex;
-                flex-direction: row;
-                border-bottom: 1px solid var(--border-color, #dfe6e9);
-                margin-bottom: 1.5rem;
-                gap: 16px; /* Increased space between tabs */
-                width: 100%;
-            }
-            div[role="radiogroup"] label input[type="radio"] {
-                display: none; /* Hide the actual radio button */
-            }
-            div[role="radiogroup"] label {
-                cursor: pointer;
-            }
-            
-            /* HIDE the Streamlit radio button's visual indicator (the dot) */
-            div[data-testid="stRadio"] label > div:first-child {
-                display: none;
-            }
-
-            /* The visible part of the tab (the text) */
-            div[role="radiogroup"] label > div {
-                padding: 12px 4px;
-                transition: color 0.2s, opacity 0.2s;
-                color: var(--text-color);
-                opacity: 0.6; /* Make inactive tabs faded */
-                font-weight: 500;
-                border-bottom: 2px solid transparent;
-                margin-bottom: -1px; /* Align with the main border */
-            }
-
-            /* Hover style for inactive tabs */
-            div[role="radiogroup"] label:hover > div {
-                opacity: 1.0;
-            }
-
-            /* Active tab style */
-            div[role="radiogroup"] label input[type="radio"]:checked + div {
-                color: var(--text-color);
-                border-bottom: 2px solid #D92D20; /* Red underline for active tab */
-                opacity: 1.0;
-                font-weight: 600;
-            }
+            .infographic-card h4 { color: #1e40af; margin-bottom: 0.5rem; }
+            .infographic-card ul { list-style-type: none; padding-left: 0; margin-bottom: 0; }
+            .infographic-card li { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+            .infographic-card .icon { font-size: 1.2rem; }
         </style>
     """, unsafe_allow_html=True)
 
 def display_realtime_pm(df, lang, t, date_str):
-    # inject_custom_css() is now called globally in app.py
     latest_pm25 = df['PM2.5'][0]
-    level, color, emoji, advice = get_aqi_level(latest_pm25, lang, t)
-    advice_details = advice['details'] # Get structured advice
+    
+    # Get AQI data
+    level_text, color, emoji, advice = get_aqi_level(latest_pm25, lang, t)
+    advice_details = advice['details']
+    
+    # --- 1. Determine Color Theme & Status ---
+    # Color logic based on PM2.5 ranges (matching the Modern UI design)
+    if latest_pm25 <= 15:
+        # Excellent (Teal/Sky)
+        theme_gradient = "linear-gradient(135deg, #2dd4bf 0%, #0ea5e9 100%)" # Teal to Sky
+        theme_shadow = "rgba(14, 165, 233, 0.3)"
+        text_color_class = "text-sky-700"
+        bg_light_class = "#f0f9ff" # sky-50
+        border_class = "#e0f2fe" # sky-100
+        status_key = "safe"
+    elif latest_pm25 <= 25:
+        # Good (Green)
+        theme_gradient = "linear-gradient(135deg, #34d399 0%, #10b981 100%)" # Emerald
+        theme_shadow = "rgba(16, 185, 129, 0.3)"
+        text_color_class = "text-emerald-700"
+        bg_light_class = "#ecfdf5" # emerald-50
+        border_class = "#d1fae5" # emerald-100
+        status_key = "safe"
+    elif latest_pm25 <= 37.5:
+        # Moderate (Yellow)
+        theme_gradient = "linear-gradient(135deg, #facc15 0%, #eab308 100%)" # Yellow
+        theme_shadow = "rgba(234, 179, 8, 0.3)"
+        text_color_class = "text-yellow-700"
+        bg_light_class = "#fefce8" # yellow-50
+        border_class = "#fef9c3" # yellow-100
+        status_key = "warning"
+    elif latest_pm25 <= 75:
+        # Unhealthy (Orange)
+        theme_gradient = "linear-gradient(135deg, #fb923c 0%, #ea580c 100%)" # Orange
+        theme_shadow = "rgba(234, 88, 12, 0.3)"
+        text_color_class = "text-orange-700"
+        bg_light_class = "#fff7ed" # orange-50
+        border_class = "#ffedd5" # orange-100
+        status_key = "danger"
+    else:
+        # Hazardous (Red)
+        theme_gradient = "linear-gradient(135deg, #f87171 0%, #dc2626 100%)" # Red
+        theme_shadow = "rgba(220, 38, 38, 0.3)"
+        text_color_class = "text-rose-700"
+        bg_light_class = "#fff1f2" # rose-50
+        border_class = "#ffe4e6" # rose-100
+        status_key = "critical"
 
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        st.subheader(t[lang]['current_pm25'])
+    # --- 2. Calculate Gauge ---
+    # Max value for gauge visual is 120 (for scale)
+    percent = min((latest_pm25 / 120) * 100, 100)
+    radius = 40
+    circumference = 2 * math.pi * radius
+    stroke_dashoffset = circumference - (percent / 100) * circumference
+
+    # --- 3. Render Top Section (HTML) ---
+    # Note: We split this into top and bottom to inject the Streamlit radio button in between
+    
+    col_center, = st.columns([1]) # Use full width but contained by CSS max-width
+    
+    with col_center:
         st.markdown(f"""
-            <div style="background-color: {color}; padding: 25px; border-radius: 15px; text-align: center; color: white; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2); height: 100%;">
-                <h1 style="font-family: 'Sarabun', sans-serif; font-size: 4.5rem; margin: 0; text-shadow: 2px 2px 4px #000000;">{latest_pm25:.1f}</h1>
-                <p style="font-family: 'Sarabun', sans-serif; font-size: 1.5rem; margin: 0;">μg/m³</p>
-                <h2 style="font-family: 'Sarabun', sans-serif; margin-top: 15px;">{level}</h2>
+        <div class="modern-card-container">
+            <div class="modern-header-section" style="background: {theme_gradient};">
+                <!-- Background decoration -->
+                <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: white; opacity: 0.1; border-radius: 50%; filter: blur(40px);"></div>
+                <div style="position: absolute; bottom: 0; left: 0; width: 100px; height: 100px; background: black; opacity: 0.05; border-radius: 50%; filter: blur(30px);"></div>
+                
+                <!-- Date Pill -->
+                <div style="background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); padding: 4px 12px; border-radius: 20px; display: inline-block; margin-bottom: 20px;">
+                    <span style="font-size: 0.8rem; font-weight: 500; opacity: 0.95;">{date_str}</span>
+                </div>
+
+                <!-- Gauge -->
+                <div class="gauge-wrapper">
+                    <svg viewBox="0 0 100 100" class="gauge-svg" style="transform: rotate(0deg);">
+                        <circle cx="50" cy="50" r="{radius}" class="gauge-bg"></circle>
+                        <circle cx="50" cy="50" r="{radius}" class="gauge-progress" 
+                                style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset};"></circle>
+                    </svg>
+                    <div class="gauge-text">
+                        <div class="gauge-value">{latest_pm25:.0f}</div>
+                        <div class="gauge-unit">μg/m³</div>
+                    </div>
+                </div>
+
+                <!-- Status -->
+                <div class="status-label">{level_text}</div>
+                <!-- Optional: Sublabel could be added here if available in translations -->
             </div>
-            """, unsafe_allow_html=True)
-    with col2:
-        st.subheader(t[lang]['aqi_guideline_header'])
-        st.markdown(f"""
-            <div class="aqi-legend-bar">
-                <div class="aqi-legend-segment" style="background-color: #0099FF; color: white;">{t[lang]['aqi_level_1']}<br>0-15</div>
-                <div class="aqi-legend-segment" style="background-color: #2ECC71; color: white;">{t[lang]['aqi_level_2']}<br>15-25</div>
-                <div class="aqi-legend-segment" style="background-color: #F1C40F; color: black;">{t[lang]['aqi_level_3']}<br>25-37.5</div>
-                <div class="aqi-legend-segment" style="background-color: #E67E22; color: white;">{t[lang]['aqi_level_4_short']}<br>37.5-75</div>
-                <div class="aqi-legend-segment" style="background-color: #E74C3C; color: white;">{t[lang]['aqi_level_5_short']}<br>>75</div>
-            </div>
+            
+            <div class="modern-content-section">
         """, unsafe_allow_html=True)
+
+        # --- 4. Interactive Tabs (Streamlit Widget) ---
+        # This sits "inside" the visual card because we closed the header div but kept the container open logically
+        # (Actually, we can't keep HTML tags open across st.markdown calls effectively in all cases, 
+        # so we close the container in the previous block? No, that breaks the visual.
+        # FIX: We will rely on the fact that Streamlit renders widgets in order.
+        # To make it look like one card, we simply won't close the main div in the top block? 
+        # Streamlit doesn't support unclosed tags well.
+        # BETTER APPROACH: Render Top Card. Render Tabs. Render Bottom Card. 
+        # And use CSS to make them LOOK connected or just separate nice blocks.
+        # Let's go with "Separate nice blocks" which is safer for Streamlit.
+        # Update: The CSS class .modern-card-container is applied to the wrapper.
+        # We will split the design into two: A Header Card and a Body Card, or just put the tabs outside.
+        # Let's put the tabs *inside* visually by hacking the container end.
         
-        st.subheader(t[lang]['advice_header'])
+        # Actually, let's close the container div in the first markdown, 
+        # but style the bottom of it to be flat, and the next container to be flat on top?
+        # Too complex. Let's just put the Tabs *below* the header image inside the content section.
+        # Since we can't inject `st.radio` inside the HTML string, we must break the HTML.
         
-        # --- Standardized SVG Icons ---
-        mask_svg = """
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 9 Q12 4 20 9 Q21 14 20 18 Q12 22 4 18 Q3 14 4 9 Z" />
-            <path d="M4 11 Q0 13 4 16" />
-            <path d="M20 11 Q24 13 20 16" />
-            <path d="M6 11 Q12 9.5 18 11" />
-            <path d="M6 14 Q12 12.5 18 14" />
-            <path d="M6 17 Q12 15.5 18 17" />
-        </svg>
-        """
+        # Revised Plan:
+        # 1. HTML: Header Section (Ends with closing div)
+        # 2. Streamlit: Radio Buttons
+        # 3. HTML: Content Section (Advice + Grid)
         
-        activity_svg = """
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="6.75" cy="16.5" r="3" />
-            <circle cx="17.25" cy="16.5" r="3" />
-            <path d="M6.75 16.5 L11.25 12 L15 16.5 Z" />
-            <path d="M11.25 12 L11.25 9" />
-            <path d="M10.5 9 L12.75 9" />
-            <path d="M15 16.5 L16.5 11.25 L19.5 10.5" />
-        </svg>
-        """
-        indoors_svg = """
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-        </svg>
-        """
+        # We will wrap 1, 2, 3 in a container if possible, but st.container() doesn't allow custom CSS class easily on wrapper.
+        # Let's just make the Header a nice rounded card, and the Content another nice rounded card.
         
+        # Closing the header section from above:
+        st.markdown("</div></div>", unsafe_allow_html=True) 
+
+        # --- 5. Tabs Selection ---
+        tab_options = [t[lang]['general_public'], t[lang]['risk_group']]
+        selected_tab = st.radio("Target Group", tab_options, label_visibility="collapsed")
+        
+        is_general = (selected_tab == t[lang]['general_public'])
+        
+        # Prepare Advice Content based on tab
+        if is_general:
+            main_title = t[lang]['general_public']
+            main_desc = advice['summary']
+            main_icon = "User" # Placeholder logic
+            # Action logic for General (Simulated mapping based on PM level)
+            act_mask = advice_details['mask']
+            act_activity = advice_details['activity']
+            act_home = advice_details['indoors']
+        else:
+            main_title = t[lang]['risk_group']
+            main_desc = advice_details['risk_group']
+            main_icon = "Heart"
+            # Action logic for Risk (Usually stricter, but sticking to logic provided in utils)
+            act_mask = advice_details['mask']
+            act_activity = advice_details['activity']
+            act_home = advice_details['indoors']
+
+        # Determine colors for Action Cards based on status_key
+        if status_key == 'safe':
+            act_bg, act_color, act_border = "#ecfdf5", "#047857", "#d1fae5" # Green-ish
+        elif status_key == 'warning':
+            act_bg, act_color, act_border = "#fefce8", "#a16207", "#fef9c3" # Yellow-ish
+        elif status_key == 'danger':
+            act_bg, act_color, act_border = "#fff7ed", "#c2410c", "#ffedd5" # Orange-ish
+        else:
+            act_bg, act_color, act_border = "#fff1f2", "#be123c", "#ffe4e6" # Red-ish
+
+        # Icons (SVG Strings)
+        icon_mask = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>"""
+        icon_activity = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>"""
+        icon_home = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>"""
+        icon_user = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>"""
+        icon_heart = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 1 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 1 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>"""
+
+        main_icon_svg = icon_user if is_general else icon_heart
+
+        # --- 6. Render Bottom Content ---
         st.markdown(f"""
-        <div class="card">
-            <div class="advice-container">
-                <div class="advice-item">
-                    <div class="advice-icon">{mask_svg}</div>
-                    <div class="advice-title">{t[lang]['advice_cat_mask']}</div>
-                    <div class="advice-text">{advice_details['mask']}</div>
+        <div style="max-width: 450px; margin: 0 auto;">
+            <!-- Main Advice Card -->
+            <div class="main-advice-card" style="border-left: 4px solid {act_color};">
+                <div class="advice-icon-box" style="background: {theme_gradient};">
+                    {main_icon_svg}
                 </div>
-                <div class="advice-item">
-                    <div class="advice-icon">{activity_svg}</div>
-                    <div class="advice-title">{t[lang]['advice_cat_activity']}</div>
-                    <div class="advice-text">{advice_details['activity']}</div>
-                </div>
-                <div class="advice-item">
-                    <div class="advice-icon">{indoors_svg}</div>
-                    <div class="advice-title">{t[lang]['advice_cat_indoors']}</div>
-                    <div class="advice-text">{advice_details['indoors']}</div>
+                <div class="advice-content">
+                    <h4>{main_title}</h4>
+                    <p>{main_desc}</p>
                 </div>
             </div>
-            <div classs="risk-group-advice">
-                <strong>{t[lang]['risk_group']}:</strong> {advice_details['risk_group']}
+
+            <!-- Action Grid -->
+            <div class="action-grid-title">{t[lang]['advice_header']}</div>
+            <div class="action-grid">
+                <!-- Mask -->
+                <div class="action-card" style="background: {act_bg}; border-color: {act_border}; color: {act_color};">
+                    <div class="action-icon">{icon_mask}</div>
+                    <div class="action-label">{t[lang]['advice_cat_mask']}</div>
+                    <div class="action-value">{act_mask}</div>
+                </div>
+                <!-- Activity -->
+                <div class="action-card" style="background: {act_bg}; border-color: {act_border}; color: {act_color};">
+                    <div class="action-icon">{icon_activity}</div>
+                    <div class="action-label">{t[lang]['advice_cat_activity']}</div>
+                    <div class="action-value">{act_activity}</div>
+                </div>
+                <!-- Indoors -->
+                <div class="action-card" style="background: {act_bg}; border-color: {act_border}; color: {act_color};">
+                    <div class="action-icon">{icon_home}</div>
+                    <div class="action-label">{t[lang]['advice_cat_indoors']}</div>
+                    <div class="action-value">{act_home}</div>
+                </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
+        
+        st.write("") # Spacer
 
-
-    st.write("") # Add a small space
-
-    # --- Action Buttons ---
-    b_col1, b_col2, b_col3 = st.columns([2,2,8]) # Adjust column ratios
-    with b_col1:
-        if st.button(f"🔄 {t[lang]['refresh_button']}", use_container_width=True):
-            st.cache_data.clear()
-            st.rerun()
-    with b_col2:
-        from card_generator import generate_report_card
-        report_card_bytes = generate_report_card(latest_pm25, level, color, "", advice_details, date_str, lang, t)
-        if report_card_bytes:
-            st.download_button(
-                label=f"🖼️ {t[lang]['download_button']}",
-                data=report_card_bytes,
-                file_name=f"pm25_report_{datetime.now().strftime('%Y%m%d_%H%M')}.png",
-                mime="image/png",
-                use_container_width=True)
+        # --- 7. Footer Actions ---
+        b_col1, b_col2 = st.columns([1, 1])
+        with b_col1:
+            if st.button(f"🔄 {t[lang]['refresh_button']}", use_container_width=True):
+                st.cache_data.clear()
+                st.rerun()
+        with b_col2:
+            from card_generator import generate_report_card
+            # Note: generate_report_card logic stays the same, generating the image for download
+            report_card_bytes = generate_report_card(latest_pm25, level_text, color, emoji, advice_details, date_str, lang, t)
+            if report_card_bytes:
+                st.download_button(
+                    label=f"🖼️ {t[lang]['download_button']}",
+                    data=report_card_bytes,
+                    file_name=f"pm25_report_{datetime.now().strftime('%Y%m%d_%H%M')}.png",
+                    mime="image/png",
+                    use_container_width=True)
 
 def display_external_assessment(lang, t):
     st.subheader(t[lang]['external_assessment_title'])
@@ -362,50 +572,24 @@ def display_24hr_chart(df, lang, t):
 def display_monthly_calendar(df, lang, t):
     st.subheader(t[lang]['monthly_calendar_header'])
     
-    # --- START: New Year/Month Selection Logic ---
     st.caption(t[lang]['date_picker_label'])
     
     all_years = sorted(df['Datetime'].dt.year.unique(), reverse=True)
     
-    # Format function for year display
     def format_year(y):
-        # FIX: format_func MUST return a string
         return str(y + 543) if lang == 'th' else str(y)
     
     col1, col2 = st.columns(2)
+    selected_year = col1.selectbox("ปี" if lang == 'th' else "Year", options=all_years, format_func=format_year, index=0)
     
-    # Column 1: Year Selection
-    selected_year = col1.selectbox(
-        "ปี" if lang == 'th' else "Year", # Simple label
-        options=all_years,
-        format_func=format_year,
-        index=0 # Default to the latest year
-    )
-    
-    # Get available months for the selected year
     df_year = df[df['Datetime'].dt.year == selected_year]
     available_months_num = sorted(df_year['Datetime'].dt.month.unique())
-    
-    # Create a map of month_number -> month_name
     month_map = {m: t[lang]['month_names'][m-1] for m in available_months_num}
-    
-    # Find default month index (latest available month for that year)
     default_month_index = len(available_months_num) - 1
+    selected_month_num = col2.selectbox("เดือน" if lang == 'th' else "Month", options=available_months_num, format_func=lambda m: month_map[m], index=default_month_index)
     
-    # Column 2: Month Selection
-    selected_month_num = col2.selectbox(
-        "เดือน" if lang == 'th' else "Month", # Simple label
-        options=available_months_num,
-        format_func=lambda m: month_map[m], # Use map to show name
-        index=default_month_index # Default to the latest month
-    )
-    
-    # Set year and month for the rest of the function
     year, month = selected_year, selected_month_num
-    # --- END: New Year/Month Selection Logic ---
 
-    
-    # (The rest of the function remains the same)
     df_calendar = df.copy()
     df_calendar['date'] = df_calendar['Datetime'].dt.date
     daily_avg_pm25 = df_calendar.groupby('date')['PM2.5'].mean().reset_index()
@@ -483,4 +667,3 @@ def display_historical_data(df, lang, t):
                 yaxis_title=t[lang]['avg_pm25_unit'],
                 template="plotly_white", plot_bgcolor='rgba(0,0,0,0)', showlegend=False)
             st.plotly_chart(fig_hist, use_container_width=True)
-
