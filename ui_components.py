@@ -19,29 +19,31 @@ def inject_custom_css():
 
             /* --- Modern Dashboard Container --- */
             .modern-card-container {
-                background: white;
-                border-radius: 2.5rem;
-                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+                /* Use theme-aware background */
+                background-color: var(--secondary-background-color);
+                border-radius: 2rem;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
                 overflow: hidden;
-                border: 1px solid #f1f5f9;
-                margin-bottom: 20px;
-                max-width: 450px; /* Limit width for mobile look on desktop */
+                border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+                margin-bottom: 2rem;
+                max-width: 420px; /* Optimized width for mobile feel */
                 margin-left: auto;
                 margin-right: auto;
             }
 
             .modern-header-section {
-                padding: 2.5rem 1.5rem 3.5rem 1.5rem; /* Increased bottom padding */
+                padding: 3rem 1.5rem 4rem 1.5rem;
                 text-align: center;
                 position: relative;
-                color: white;
+                color: white; /* Always white text on gradient background */
             }
             
             .modern-content-section {
-                padding: 1.5rem;
-                background: #fff;
-                border-radius: 2.5rem 2.5rem 0 0; /* Rounded top to overlay header */
-                margin-top: -2rem; /* Pull up to overlap header */
+                padding: 2rem 1.5rem;
+                /* Matches container background */
+                background-color: var(--secondary-background-color);
+                border-radius: 2rem 2rem 0 0; 
+                margin-top: -2.5rem;
                 position: relative;
                 z-index: 10;
             }
@@ -49,23 +51,24 @@ def inject_custom_css():
             /* --- Circular Gauge --- */
             .gauge-wrapper {
                 position: relative;
-                width: 200px;
-                height: 200px;
+                width: 180px;
+                height: 180px;
                 margin: 0 auto;
             }
             .gauge-bg {
                 fill: none;
-                stroke: rgba(255,255,255,0.25);
-                stroke-width: 15;
+                stroke: rgba(255,255,255,0.2);
+                stroke-width: 14;
             }
             .gauge-progress {
                 fill: none;
                 stroke: white;
-                stroke-width: 15;
+                stroke-width: 14;
                 stroke-linecap: round;
                 transform: rotate(-90deg);
                 transform-origin: 50% 50%;
                 transition: stroke-dashoffset 1s ease-out;
+                filter: drop-shadow(0 0 4px rgba(255,255,255,0.3));
             }
             .gauge-text {
                 position: absolute;
@@ -77,13 +80,13 @@ def inject_custom_css():
                 line-height: 1;
             }
             .gauge-value {
-                font-size: 4.5rem;
+                font-size: 4rem;
                 font-weight: 700;
                 letter-spacing: -2px;
-                text-shadow: 0 4px 8px rgba(0,0,0,0.15);
+                text-shadow: 0 2px 10px rgba(0,0,0,0.1);
             }
             .gauge-unit {
-                font-size: 1rem;
+                font-size: 0.9rem;
                 opacity: 0.9;
                 margin-top: 4px;
                 font-weight: 500;
@@ -93,8 +96,8 @@ def inject_custom_css():
             div[role="radiogroup"] {
                 display: flex;
                 flex-direction: row;
-                background: #f1f5f9;
-                padding: 6px;
+                background: rgba(128, 128, 128, 0.1); /* Neutral subtle background */
+                padding: 4px;
                 border-radius: 1rem;
                 gap: 0;
                 margin-bottom: 1.5rem;
@@ -112,39 +115,40 @@ def inject_custom_css():
             div[role="radiogroup"] label > div {
                 width: 100%;
                 text-align: center;
-                padding: 10px 0;
+                padding: 8px 0;
                 border-radius: 0.8rem;
                 font-weight: 600;
-                font-size: 0.9rem;
+                font-size: 0.85rem;
                 border: none !important;
-                color: #64748b;
+                color: var(--text-color);
+                opacity: 0.6;
                 transition: all 0.2s ease;
             }
             div[role="radiogroup"] label input[type="radio"]:checked + div {
-                background: white;
-                color: #0f172a;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                background: var(--background-color); /* Use main bg color for active tab */
+                color: var(--text-color);
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
                 opacity: 1 !important;
             }
             div[data-testid="stRadio"] label > div:first-child { display: none; }
 
             /* --- Advice Main Card --- */
             .main-advice-card {
-                background: white;
-                border: 1px solid #e2e8f0;
+                background: var(--background-color);
+                border: 1px solid var(--border-color, rgba(128,128,128,0.2));
                 border-radius: 1.25rem;
                 padding: 1.25rem;
                 display: flex;
                 align-items: flex-start;
                 gap: 1rem;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+                box-shadow: 0 2px 8px rgba(0,0,0,0.02);
                 margin-bottom: 1.5rem;
                 transition: transform 0.2s;
             }
             .advice-icon-box {
-                width: 48px;
-                height: 48px;
-                border-radius: 14px;
+                width: 44px;
+                height: 44px;
+                border-radius: 12px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -156,12 +160,13 @@ def inject_custom_css():
                 margin: 0;
                 font-size: 1rem;
                 font-weight: 700;
-                color: #1e293b;
+                color: var(--text-color);
             }
             .advice-content p {
                 margin: 4px 0 0 0;
-                font-size: 0.9rem;
-                color: #64748b;
+                font-size: 0.85rem;
+                color: var(--text-color);
+                opacity: 0.8;
                 line-height: 1.5;
             }
 
@@ -171,7 +176,8 @@ def inject_custom_css():
                 font-weight: 700;
                 text-transform: uppercase;
                 letter-spacing: 0.05em;
-                color: #94a3b8;
+                color: var(--text-color);
+                opacity: 0.5;
                 margin-bottom: 0.75rem;
                 padding-left: 4px;
             }
@@ -181,23 +187,25 @@ def inject_custom_css():
                 gap: 0.75rem;
             }
             .action-card {
-                padding: 1rem 0.5rem;
+                padding: 1rem 0.25rem;
                 border-radius: 1rem;
-                border: 1px solid;
+                /* Use variable background for theme compatibility */
+                background-color: var(--background-color);
+                border: 1px solid; /* Color set inline */
                 text-align: center;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
                 gap: 6px;
-                background: #f8fafc;
                 height: 100%;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.02);
             }
-            .action-icon { opacity: 0.8; }
-            .action-label { font-size: 0.65rem; opacity: 0.7; text-transform: uppercase; font-weight: 600; }
+            .action-icon { opacity: 0.9; }
+            .action-label { font-size: 0.6rem; opacity: 0.7; text-transform: uppercase; font-weight: 600; color: var(--text-color); }
             .action-value { font-size: 0.8rem; font-weight: 700; white-space: nowrap; line-height: 1.2; }
 
-            /* Calendar & Other CSS */
+            /* --- Calendar & Other CSS --- */
             .calendar-day {
                 background-color: var(--secondary-background-color);
                 border-radius: 10px;
@@ -236,26 +244,22 @@ def display_realtime_pm(df, lang, t, date_str):
     advice_details = advice['details']
     
     # --- 1. Determine Color Theme & Status ---
+    # Define colors for status keys (Green, Yellow, Orange, Red)
     if latest_pm25 <= 15:
         theme_gradient = "linear-gradient(135deg, #2dd4bf 0%, #0ea5e9 100%)" # Teal to Sky
-        status_key = "safe"
-        act_bg, act_color, act_border = "#ecfdf5", "#047857", "#d1fae5"
+        status_color = "#0ea5e9" # Sky Blue
     elif latest_pm25 <= 25:
         theme_gradient = "linear-gradient(135deg, #34d399 0%, #10b981 100%)" # Emerald
-        status_key = "safe"
-        act_bg, act_color, act_border = "#ecfdf5", "#047857", "#d1fae5"
+        status_color = "#10b981" # Emerald
     elif latest_pm25 <= 37.5:
         theme_gradient = "linear-gradient(135deg, #facc15 0%, #eab308 100%)" # Yellow
-        status_key = "warning"
-        act_bg, act_color, act_border = "#fefce8", "#a16207", "#fef9c3"
+        status_color = "#eab308" # Yellow-Gold
     elif latest_pm25 <= 75:
         theme_gradient = "linear-gradient(135deg, #fb923c 0%, #ea580c 100%)" # Orange
-        status_key = "danger"
-        act_bg, act_color, act_border = "#fff7ed", "#c2410c", "#ffedd5"
+        status_color = "#ea580c" # Orange
     else:
         theme_gradient = "linear-gradient(135deg, #f87171 0%, #dc2626 100%)" # Red
-        status_key = "critical"
-        act_bg, act_color, act_border = "#fff1f2", "#be123c", "#ffe4e6"
+        status_color = "#dc2626" # Red
 
     # --- 2. Calculate Gauge ---
     percent = min((latest_pm25 / 120) * 100, 100)
@@ -272,13 +276,9 @@ def display_realtime_pm(df, lang, t, date_str):
         st.markdown(f"""
 <div class="modern-card-container">
 <div class="modern-header-section" style="background: {theme_gradient};">
-<!-- Background decoration -->
-<div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: white; opacity: 0.1; border-radius: 50%; filter: blur(40px);"></div>
-<div style="position: absolute; bottom: 0; left: 0; width: 100px; height: 100px; background: black; opacity: 0.05; border-radius: 50%; filter: blur(30px);"></div>
-
 <!-- Date Pill -->
-<div style="background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); padding: 4px 12px; border-radius: 20px; display: inline-block; margin-bottom: 20px;">
-<span style="font-size: 0.8rem; font-weight: 500; opacity: 0.95;">{date_str}</span>
+<div style="background: rgba(255,255,255,0.25); backdrop-filter: blur(8px); padding: 6px 16px; border-radius: 30px; display: inline-block; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.3);">
+<span style="font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;">{date_str}</span>
 </div>
 
 <!-- Gauge -->
@@ -299,8 +299,6 @@ style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset}
 """, unsafe_allow_html=True)
 
         # --- 4. Tabs Selection (Interactive) ---
-        # Note: This sits technically "between" the HTML blocks visually
-        
         tab_options = [t[lang]['general_public'], t[lang]['risk_group']]
         selected_tab = st.radio("Target Group", tab_options, label_visibility="collapsed")
         
@@ -329,9 +327,9 @@ style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset}
 
         # --- 6. Render Bottom Content ---
         st.markdown(f"""
-<div style="max-width: 450px; margin: 0 auto;">
+<div style="max-width: 420px; margin: 0 auto;">
 <!-- Main Advice Card -->
-<div class="main-advice-card" style="border-left: 4px solid {act_color};">
+<div class="main-advice-card" style="border-left: 4px solid {status_color};">
 <div class="advice-icon-box" style="background: {theme_gradient};">
 {main_icon_svg}
 </div>
@@ -345,19 +343,19 @@ style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset}
 <div class="action-grid-title">{t[lang]['advice_header']}</div>
 <div class="action-grid">
 <!-- Mask -->
-<div class="action-card" style="background: {act_bg}; border-color: {act_border}; color: {act_color};">
+<div class="action-card" style="border-color: {status_color}; color: {status_color};">
 <div class="action-icon">{icon_mask}</div>
 <div class="action-label">{t[lang]['advice_cat_mask']}</div>
 <div class="action-value">{act_mask}</div>
 </div>
 <!-- Activity -->
-<div class="action-card" style="background: {act_bg}; border-color: {act_border}; color: {act_color};">
+<div class="action-card" style="border-color: {status_color}; color: {status_color};">
 <div class="action-icon">{icon_activity}</div>
 <div class="action-label">{t[lang]['advice_cat_activity']}</div>
 <div class="action-value">{act_activity}</div>
 </div>
 <!-- Indoors -->
-<div class="action-card" style="background: {act_bg}; border-color: {act_border}; color: {act_color};">
+<div class="action-card" style="border-color: {status_color}; color: {status_color};">
 <div class="action-icon">{icon_home}</div>
 <div class="action-label">{t[lang]['advice_cat_indoors']}</div>
 <div class="action-value">{act_home}</div>
@@ -393,7 +391,7 @@ def display_external_assessment(lang, t):
     st.markdown(f"""
     <style>
         .assessment-card {{
-            background-color: #F0F8FF; /* Light blue background */
+            background-color: var(--secondary-background-color);
             border-left: 6px solid #1E90FF; /* DodgerBlue accent line */
             padding: 24px;
             border-radius: 10px;
@@ -404,6 +402,7 @@ def display_external_assessment(lang, t):
             font-size: 1.05rem;
             line-height: 1.6;
             margin-bottom: 20px;
+            color: var(--text-color);
         }}
         a.assessment-button {{
             display: inline-block;
