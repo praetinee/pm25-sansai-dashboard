@@ -9,234 +9,234 @@ from utils import get_aqi_level
 def inject_custom_css():
     """Injects custom CSS to make the app responsive and theme-aware."""
     st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+            
+            /* Global Font */
+            html, body, [class*="st-"], .stApp, .stApp * {
+                font-family: 'Sarabun', sans-serif !important;
+            }
 
-/* Global Font */
-html, body, [class*="st-"], .stApp, .stApp * {
-    font-family: 'Sarabun', sans-serif !important;
-}
+            /* --- Modern Layout Containers --- */
+            .main-container {
+                max-width: 1200px; 
+                margin: 0 auto;
+                padding: 10px;
+            }
 
-/* --- Modern Layout Containers --- */
-.main-container {
-    max-width: 1200px; 
-    margin: 0 auto;
-    padding: 10px;
-}
+            /* --- Left Side: Status Card --- */
+            .status-card {
+                border-radius: 2rem;
+                padding: 2rem;
+                text-align: center;
+                color: white;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+                position: relative;
+                overflow: hidden;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: center; 
+                align-items: center;
+                min-height: 480px;
+            }
+            
+            /* Supporter Section */
+            .supporter-top {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                margin-bottom: 1.5rem;
+                width: 100%;
+            }
+            
+            .supporter-label {
+                font-size: 0.7rem;
+                opacity: 0.85;
+                margin-bottom: 0.3rem;
+                color: rgba(255,255,255,0.9);
+                letter-spacing: 0.5px;
+                font-weight: 300;
+            }
+            
+            .supporter-logo-box {
+                background: rgba(255, 255, 255, 0.95);
+                padding: 4px 8px; 
+                border-radius: 12px;
+                display: inline-block;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                line-height: 0;
+            }
+            
+            .supporter-logo-box img {
+                display: block;
+                margin: 0;
+            }
 
-/* --- Left Side: Status Card --- */
-.status-card {
-    border-radius: 2rem;
-    padding: 2rem;
-    text-align: center;
-    color: white;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    position: relative;
-    overflow: hidden;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center; 
-    align-items: center;
-    min-height: 480px;
-}
+            .date-pill {
+                display: inline-block;
+                background: rgba(255, 255, 255, 0.2);
+                backdrop-filter: blur(10px);
+                padding: 6px 16px;
+                border-radius: 30px;
+                font-size: 0.85rem;
+                font-weight: 500;
+                margin-bottom: 2rem; 
+            }
 
-/* Supporter Section */
-.supporter-top {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    width: 100%;
-}
+            /* --- Gauge Area --- */
+            .gauge-container {
+                position: relative;
+                width: 220px;
+                height: 220px;
+                margin: 0 auto;
+            }
+            .gauge-svg {
+                width: 100%;
+                height: 100%;
+                transform: rotate(-90deg);
+            }
+            .gauge-track {
+                fill: none;
+                stroke: rgba(255,255,255,0.2);
+                stroke-width: 18;
+            }
+            .gauge-fill {
+                fill: none;
+                stroke: white;
+                stroke-width: 18;
+                stroke-linecap: round;
+                transition: stroke-dashoffset 1s ease-out;
+            }
+            .gauge-content {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                color: white;
+            }
+            .gauge-number {
+                font-size: 5rem;
+                font-weight: 700;
+                line-height: 1;
+                letter-spacing: -2px;
+            }
+            .gauge-unit {
+                font-size: 1.1rem;
+                font-weight: 500;
+                opacity: 0.9;
+            }
 
-.supporter-label {
-    font-size: 0.7rem;
-    opacity: 0.85;
-    margin-bottom: 0.3rem;
-    color: rgba(255,255,255,0.9);
-    letter-spacing: 0.5px;
-    font-weight: 300;
-}
+            /* --- Right Side: Advice Cards --- */
+            .advice-wrapper {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+                height: 100%;
+            }
 
-.supporter-logo-box {
-    background: rgba(255, 255, 255, 0.95);
-    padding: 4px 8px; 
-    border-radius: 12px;
-    display: inline-block;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    line-height: 0;
-}
+            .advice-section-card {
+                background: var(--secondary-background-color);
+                border-radius: 1.5rem;
+                padding: 1.5rem;
+                display: flex;
+                align-items: center;
+                gap: 1.25rem;
+                border-left: 6px solid transparent; 
+                box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            }
+            
+            .advice-icon-wrapper {
+                min-width: 56px;
+                height: 56px;
+                border-radius: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 1.5rem;
+            }
+            
+            .advice-text-content h4 {
+                margin: 0 0 4px 0;
+                font-size: 1.1rem;
+                font-weight: 700;
+                color: var(--text-color);
+            }
+            .advice-text-content p {
+                margin: 0;
+                font-size: 0.95rem;
+                opacity: 0.8;
+                line-height: 1.4;
+                color: var(--text-color);
+            }
 
-.supporter-logo-box img {
-    display: block;
-    margin: 0;
-}
+            /* --- Right Side: Action Grid --- */
+            .action-grid-header {
+                font-size: 0.9rem;
+                font-weight: 700;
+                opacity: 0.7;
+                margin: 1.5rem 0 0.75rem 0.5rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
 
-.date-pill {
-    display: inline-block;
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    padding: 6px 16px;
-    border-radius: 30px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    margin-bottom: 2rem; 
-}
+            .action-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px;
+            }
+            .action-item {
+                background: transparent;
+                border: 2px solid;
+                border-radius: 1.5rem;
+                padding: 0.75rem 0.25rem;
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                min-height: 130px;
+                transition: transform 0.2s;
+            }
+            .action-item:hover {
+                transform: translateY(-3px);
+            }
+            .action-icon-svg {
+                margin-bottom: 8px;
+                width: 42px !important;
+                height: 42px !important;
+            }
+            .action-label {
+                font-size: 0.85rem;
+                font-weight: 600;
+                opacity: 0.9;
+                margin-bottom: 4px;
+            }
+            .action-val {
+                font-size: 1.1rem;
+                font-weight: 700;
+                line-height: 1.2;
+            }
 
-/* --- Gauge Area --- */
-.gauge-container {
-    position: relative;
-    width: 220px;
-    height: 220px;
-    margin: 0 auto;
-}
-.gauge-svg {
-    width: 100%;
-    height: 100%;
-    transform: rotate(-90deg);
-}
-.gauge-track {
-    fill: none;
-    stroke: rgba(255,255,255,0.2);
-    stroke-width: 18;
-}
-.gauge-fill {
-    fill: none;
-    stroke: white;
-    stroke-width: 18;
-    stroke-linecap: round;
-    transition: stroke-dashoffset 1s ease-out;
-}
-.gauge-content {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    color: white;
-}
-.gauge-number {
-    font-size: 5rem;
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: -2px;
-}
-.gauge-unit {
-    font-size: 1.1rem;
-    font-weight: 500;
-    opacity: 0.9;
-}
-
-/* --- Right Side: Advice Cards --- */
-.advice-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    height: 100%;
-}
-
-.advice-section-card {
-    background: var(--secondary-background-color);
-    border-radius: 1.5rem;
-    padding: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-    border-left: 6px solid transparent; 
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-}
-
-.advice-icon-wrapper {
-    min-width: 56px;
-    height: 56px;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 1.5rem;
-}
-
-.advice-text-content h4 {
-    margin: 0 0 4px 0;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text-color);
-}
-.advice-text-content p {
-    margin: 0;
-    font-size: 0.95rem;
-    opacity: 0.8;
-    line-height: 1.4;
-    color: var(--text-color);
-}
-
-/* --- Right Side: Action Grid --- */
-.action-grid-header {
-    font-size: 0.9rem;
-    font-weight: 700;
-    opacity: 0.7;
-    margin: 1.5rem 0 0.75rem 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.action-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-}
-.action-item {
-    background: transparent;
-    border: 2px solid;
-    border-radius: 1.5rem;
-    padding: 0.75rem 0.25rem; /* Reduced Padding */
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 130px;
-    transition: transform 0.2s;
-}
-.action-item:hover {
-    transform: translateY(-3px);
-}
-.action-icon-svg {
-    margin-bottom: 8px;
-    width: 42px !important;
-    height: 42px !important;
-}
-.action-label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    opacity: 0.9;
-    margin-bottom: 4px;
-}
-.action-val {
-    font-size: 1.1rem;
-    font-weight: 700;
-    line-height: 1.2;
-}
-
-/* --- Calendar --- */
-.calendar-day {
-    background-color: var(--secondary-background-color);
-    border-radius: 10px;
-    padding: 10px;
-    text-align: center;
-    min-height: 90px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
-    border-bottom: 5px solid transparent;
-}
-.calendar-day-header { align-self: flex-start; font-size: 0.9rem; font-weight: 500; opacity: 0.8; }
-.calendar-day-value { font-size: 1.5rem; font-weight: 700; line-height: 1; }
-.calendar-day-na { background-color: var(--secondary-background-color); color: var(--text-color); opacity: 0.5; box-shadow: none; }
-</style>
+            /* --- Calendar --- */
+            .calendar-day {
+                background-color: var(--secondary-background-color);
+                border-radius: 10px;
+                padding: 10px;
+                text-align: center;
+                min-height: 90px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+                border-bottom: 5px solid transparent;
+            }
+            .calendar-day-header { align-self: flex-start; font-size: 0.9rem; font-weight: 500; opacity: 0.8; }
+            .calendar-day-value { font-size: 1.5rem; font-weight: 700; line-height: 1; }
+            .calendar-day-na { background-color: var(--secondary-background-color); color: var(--text-color); opacity: 0.5; box-shadow: none; }
+        </style>
     """, unsafe_allow_html=True)
 
 def display_realtime_pm(df, lang, t, date_str):
@@ -271,7 +271,6 @@ def display_realtime_pm(df, lang, t, date_str):
 
     # --- LEFT COLUMN ---
     with col_left:
-        # Using fully unindented HTML string
         html_left = f"""
 <div class="status-card" style="background-color: {bg_color};">
 <div class="supporter-top">
@@ -299,13 +298,15 @@ def display_realtime_pm(df, lang, t, date_str):
     with col_right:
         title_gen = t[lang]['general_public']
         desc_gen = advice['summary']
-        # Icon: User
+        
+        # 1. User Icon (General)
         icon_gen = """<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>"""
 
         title_risk = t[lang]['risk_group']
         desc_risk = advice_details['risk_group']
-        # Icon: User + Heart (Representing Elderly/Kids/Patients)
-        icon_risk = """<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 1 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 1 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><circle cx="12" cy="9" r="2.5" fill="currentColor" stroke="none"/></svg>"""
+        
+        # 2. Heart Icon (Risk Group) - แก้ไขใหม่เป็นรูปหัวใจชัดเจน
+        icon_risk = """<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>"""
 
         act_mask = advice_details['mask']
         act_activity = advice_details['activity']
