@@ -7,319 +7,269 @@ import math
 from utils import get_aqi_level
 
 def inject_custom_css():
-    """Injects custom CSS to make the app responsive and theme-aware with premium effects."""
-    st.markdown("""
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
-            
-            /* Global Font */
-            html, body, [class*="st-"], .stApp, .stApp * {
-                font-family: 'Sarabun', sans-serif !important;
-            }
+    """Injects custom CSS to make the app responsive and theme-aware."""
+    # HTML/CSS string defined flush-left to prevent markdown code block interpretation
+    css = """
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+    
+    /* Global Font */
+    html, body, [class*="st-"], .stApp, .stApp * {
+        font-family: 'Sarabun', sans-serif !important;
+    }
 
-            /* --- Modern Layout Containers --- */
-            .main-container {
-                max-width: 1200px; 
-                margin: 0 auto;
-                padding: 20px;
-            }
+    /* --- Modern Layout Containers --- */
+    .main-container {
+        max-width: 1200px; 
+        margin: 0 auto;
+        padding: 10px;
+    }
 
-            /* --- Premium Card Base Style --- */
-            .premium-card {
-                border-radius: 24px;
-                background: rgba(255, 255, 255, 0.8);
-                backdrop-filter: blur(20px);
-                -webkit-backdrop-filter: blur(20px);
-                border: 1px solid rgba(255, 255, 255, 0.6);
-                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
-            }
+    /* --- Left Side: Status Card --- */
+    .status-card {
+        border-radius: 2rem;
+        padding: 2rem;
+        text-align: center;
+        color: white;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        min-height: 480px;
+    }
+    
+    /* Supporter Section */
+    .supporter-top {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        margin-top: 1rem;
+        width: 100%;
+        z-index: 2;
+    }
+    
+    .supporter-label {
+        font-size: 0.7rem;
+        opacity: 0.9;
+        margin-bottom: 0.5rem;
+        color: rgba(255,255,255,0.95);
+        letter-spacing: 0.5px;
+        font-weight: 300;
+    }
+    
+    .supporter-logo-box {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 6px 12px; 
+        border-radius: 12px;
+        display: inline-block;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        line-height: 0;
+    }
+    
+    .supporter-logo-box img {
+        display: block;
+        margin: 0;
+    }
 
-            /* --- Left Side: Status Card (Glow Effect) --- */
-            .status-card {
-                border-radius: 32px;
-                padding: 2.5rem;
-                text-align: center;
-                color: white;
-                position: relative;
-                overflow: hidden;
-                height: 100%;
-                display: flex;
-                flex-direction: column;
-                justify-content: center; 
-                align-items: center;
-                min-height: 520px;
-                box-shadow: 0 20px 50px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(255,255,255,0.2);
-                /* Subtle Animation Background */
-                background-size: 200% 200%;
-                animation: gradientMove 8s ease infinite;
-            }
+    .date-pill {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        padding: 6px 16px;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 2rem; 
+        z-index: 2;
+    }
 
-            @keyframes gradientMove {
-                0% { background-position: 0% 50%; }
-                50% { background-position: 100% 50%; }
-                100% { background-position: 0% 50%; }
-            }
-            
-            /* Supporter Section (Glassmorphism) */
-            .supporter-top {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                margin-bottom: 2rem;
-                width: 100%;
-                z-index: 2;
-            }
-            
-            .supporter-label {
-                font-size: 0.75rem;
-                opacity: 0.9;
-                margin-bottom: 0.5rem;
-                color: rgba(255,255,255,0.95);
-                letter-spacing: 1px;
-                font-weight: 400;
-                text-transform: uppercase;
-            }
-            
-            .supporter-logo-box {
-                background: rgba(255, 255, 255, 0.9);
-                padding: 6px 12px; 
-                border-radius: 16px;
-                display: inline-block;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-                backdrop-filter: blur(4px);
-                transition: transform 0.3s ease;
-            }
-            .supporter-logo-box:hover {
-                transform: scale(1.05);
-                background: white;
-            }
-            
-            .supporter-logo-box img {
-                display: block;
-                margin: 0;
-            }
+    /* --- Gauge Area --- */
+    .gauge-container {
+        position: relative;
+        width: 220px;
+        height: 220px;
+        margin: 0 auto;
+        z-index: 1;
+    }
+    .gauge-svg {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+    }
+    .gauge-track {
+        fill: none;
+        stroke: rgba(255,255,255,0.2);
+        stroke-width: 18;
+    }
+    .gauge-fill {
+        fill: none;
+        stroke: white;
+        stroke-width: 18;
+        stroke-linecap: round;
+        transition: stroke-dashoffset 1s ease-out;
+    }
+    .gauge-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        color: white;
+    }
+    .gauge-number {
+        font-size: 5rem;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -2px;
+    }
+    .gauge-unit {
+        font-size: 1.1rem;
+        font-weight: 500;
+        opacity: 0.9;
+    }
 
-            .date-pill {
-                display: inline-block;
-                background: rgba(0, 0, 0, 0.15);
-                backdrop-filter: blur(12px);
-                padding: 8px 24px;
-                border-radius: 50px;
-                font-size: 0.85rem;
-                font-weight: 600;
-                margin-bottom: 2.5rem; 
-                border: 1px solid rgba(255,255,255,0.2);
-                box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-                z-index: 2;
-            }
+    /* --- Right Side: Advice Cards --- */
+    .advice-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        height: 100%;
+    }
 
-            /* --- Gauge Area (Glow) --- */
-            .gauge-container {
-                position: relative;
-                width: 240px;
-                height: 240px;
-                margin: 0 auto;
-                z-index: 2;
-                filter: drop-shadow(0 0 15px rgba(255,255,255,0.4));
-            }
-            .gauge-svg {
-                width: 100%;
-                height: 100%;
-                transform: rotate(-90deg);
-            }
-            .gauge-track {
-                fill: none;
-                stroke: rgba(255,255,255,0.15);
-                stroke-width: 16;
-            }
-            .gauge-fill {
-                fill: none;
-                stroke: white;
-                stroke-width: 16;
-                stroke-linecap: round;
-                transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1);
-                filter: drop-shadow(0 0 8px rgba(255,255,255,0.6));
-            }
-            .gauge-content {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                text-align: center;
-                color: white;
-            }
-            .gauge-number {
-                font-size: 5.5rem;
-                font-weight: 800;
-                line-height: 1;
-                letter-spacing: -3px;
-                text-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            }
-            .gauge-unit {
-                font-size: 1.2rem;
-                font-weight: 500;
-                opacity: 0.9;
-                margin-top: 4px;
-                text-transform: lowercase;
-            }
+    .advice-section-card {
+        background: var(--secondary-background-color);
+        border-radius: 1.5rem;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        border-left: 6px solid transparent; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    
+    .advice-icon-wrapper {
+        min-width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+    
+    .advice-text-content h4 {
+        margin: 0 0 4px 0;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-color);
+    }
+    .advice-text-content p {
+        margin: 0;
+        font-size: 0.95rem;
+        opacity: 0.8;
+        line-height: 1.4;
+        color: var(--text-color);
+    }
 
-            /* --- Right Side: Advice Cards --- */
-            .advice-wrapper {
-                display: flex;
-                flex-direction: column;
-                gap: 1rem;
-                height: 100%;
-            }
+    /* --- Right Side: Action Grid --- */
+    .action-grid-header {
+        font-size: 0.9rem;
+        font-weight: 700;
+        opacity: 0.7;
+        margin: 1.5rem 0 0.75rem 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
 
-            .advice-section-card {
-                background: white;
-                border-radius: 24px;
-                padding: 1.5rem 2rem;
-                display: flex;
-                align-items: center;
-                gap: 1.5rem;
-                border-left: 6px solid transparent; 
-                box-shadow: 0 10px 30px rgba(0,0,0,0.03);
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                position: relative;
-                overflow: hidden;
-            }
-            .advice-section-card:hover {
-                transform: translateY(-4px);
-                box-shadow: 0 20px 40px rgba(0,0,0,0.06);
-            }
-            
-            .advice-icon-wrapper {
-                min-width: 64px;
-                height: 64px;
-                border-radius: 20px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-size: 1.8rem;
-                box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            }
-            
-            .advice-text-content h4 {
-                margin: 0 0 6px 0;
-                font-size: 1.2rem;
-                font-weight: 700;
-                color: #1e293b;
-            }
-            .advice-text-content p {
-                margin: 0;
-                font-size: 1rem;
-                opacity: 0.7;
-                line-height: 1.5;
-                color: #334155;
-            }
+    .action-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+    .action-item {
+        background: transparent;
+        border: 2px solid;
+        border-radius: 1.5rem;
+        padding: 0.5rem 0.25rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 120px;
+        transition: transform 0.2s;
+    }
+    .action-item:hover {
+        transform: translateY(-3px);
+    }
+    .action-icon-svg {
+        margin-bottom: 6px;
+        width: 42px !important;
+        height: 42px !important;
+    }
+    .action-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        opacity: 0.9;
+        margin-bottom: 2px;
+    }
+    .action-val {
+        font-size: 1.1rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
 
-            /* --- Right Side: Action Grid --- */
-            .action-grid-header {
-                font-size: 0.8rem;
-                font-weight: 800;
-                opacity: 0.5;
-                margin: 2rem 0 1rem 0.5rem;
-                text-transform: uppercase;
-                letter-spacing: 1.5px;
-                color: #64748b;
-            }
-
-            .action-grid {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 16px;
-            }
-            .action-item {
-                background: white;
-                border: 2px solid;
-                border-radius: 24px;
-                padding: 1.5rem 0.5rem;
-                text-align: center;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                min-height: 140px;
-                transition: all 0.3s ease;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.02);
-                position: relative;
-            }
-            .action-item:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 15px 30px rgba(0,0,0,0.05);
-            }
-            .action-icon-svg {
-                margin-bottom: 12px;
-                width: 48px !important;
-                height: 48px !important;
-                filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05));
-            }
-            .action-label {
-                font-size: 0.75rem;
-                font-weight: 700;
-                opacity: 0.6;
-                margin-bottom: 4px;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            }
-            .action-val {
-                font-size: 1rem;
-                font-weight: 800;
-                line-height: 1.2;
-            }
-
-            /* --- Calendar --- */
-            .calendar-day {
-                background-color: white;
-                border-radius: 16px;
-                padding: 12px;
-                text-align: center;
-                min-height: 90px;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-                border-bottom: 4px solid transparent;
-                transition: transform 0.2s;
-            }
-            .calendar-day:hover {
-                transform: translateY(-3px);
-                box-shadow: 0 8px 25px rgba(0,0,0,0.06);
-            }
-            .calendar-day-header { align-self: flex-start; font-size: 0.8rem; font-weight: 600; opacity: 0.5; }
-            .calendar-day-value { font-size: 1.6rem; font-weight: 800; line-height: 1; color: #334155; }
-            .calendar-day-na { background-color: #f8fafc; color: #cbd5e1; box-shadow: none; }
-        </style>
-    """, unsafe_allow_html=True)
+    /* --- Calendar --- */
+    .calendar-day {
+        background-color: var(--secondary-background-color);
+        border-radius: 10px;
+        padding: 10px;
+        text-align: center;
+        min-height: 90px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+        border-bottom: 5px solid transparent;
+    }
+    .calendar-day-header { align-self: flex-start; font-size: 0.9rem; font-weight: 500; opacity: 0.8; }
+    .calendar-day-value { font-size: 1.5rem; font-weight: 700; line-height: 1; }
+    .calendar-day-na { background-color: var(--secondary-background-color); color: var(--text-color); opacity: 0.5; box-shadow: none; }
+</style>
+"""
+    st.markdown(css, unsafe_allow_html=True)
 
 def display_realtime_pm(df, lang, t, date_str):
     latest_pm25 = df['PM2.5'][0]
     level_text, color, emoji, advice = get_aqi_level(latest_pm25, lang, t)
     advice_details = advice['details']
     
-    # --- Color & Theme Logic (Gradients) ---
-    # Using more vibrant, modern gradients
+    # --- Color & Theme Logic ---
     if latest_pm25 <= 15: # Excellent
-        bg_gradient = "linear-gradient(135deg, #34d399 0%, #059669 100%)" # Emerald/Teal
-        accent_color = "#059669"
+        bg_color = "#10b981"
+        accent_color = "#10b981"
     elif latest_pm25 <= 25: # Good
-        bg_gradient = "linear-gradient(135deg, #10b981 0%, #047857 100%)" # Green
-        accent_color = "#047857"
+        bg_color = "#10b981" 
+        accent_color = "#10b981"
     elif latest_pm25 <= 37.5: # Moderate
-        bg_gradient = "linear-gradient(135deg, #fbbf24 0%, #d97706 100%)" # Amber
-        accent_color = "#d97706"
+        bg_color = "#fbbf24"
+        accent_color = "#fbbf24"
     elif latest_pm25 <= 75: # Unhealthy
-        bg_gradient = "linear-gradient(135deg, #fb923c 0%, #c2410c 100%)" # Orange
-        accent_color = "#c2410c"
+        bg_color = "#f97316"
+        accent_color = "#f97316"
     else: # Hazardous
-        bg_gradient = "linear-gradient(135deg, #f87171 0%, #991b1b 100%)" # Red
-        accent_color = "#991b1b"
+        bg_color = "#ef4444"
+        accent_color = "#ef4444"
 
     # Gauge Calculation
     percent = min((latest_pm25 / 120) * 100, 100)
-    radius = 90
+    radius = 80
     circumference = 2 * math.pi * radius
     stroke_dashoffset = circumference - (percent / 100) * circumference
 
@@ -327,31 +277,26 @@ def display_realtime_pm(df, lang, t, date_str):
 
     # --- LEFT COLUMN ---
     with col_left:
+        # Define HTML string with NO indentation at the start
         html_left = f"""
-<div class="status-card" style="background: {bg_gradient};">
-    <!-- Glowing Orb Decoration -->
-    <div style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%); border-radius: 50%;"></div>
-    <div style="position: absolute; bottom: -30px; left: -30px; width: 150px; height: 150px; background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%); border-radius: 50%;"></div>
-
-    <div class="supporter-top">
-        <div class="supporter-label">สนับสนุนข้อมูลโดย</div>
-        <div class="supporter-logo-box">
-            <img src="https://www.cmuccdc.org/template/image/logo_ccdc.png" style="height: 36px; width: auto; display: block;">
-        </div>
-    </div>
-    
-    <div class="date-pill">{date_str}</div>
-    
-    <div class="gauge-container">
-        <svg class="gauge-svg" viewBox="0 0 220 220">
-            <circle cx="110" cy="110" r="{radius}" class="gauge-track"></circle>
-            <circle cx="110" cy="110" r="{radius}" class="gauge-fill" style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset};"></circle>
-        </svg>
-        <div class="gauge-content">
-            <div class="gauge-number">{latest_pm25:.0f}</div>
-            <div class="gauge-unit">μg/m³</div>
-        </div>
-    </div>
+<div class="status-card" style="background-color: {bg_color};">
+<div class="supporter-top">
+<div class="supporter-label">สนับสนุนข้อมูลโดย</div>
+<div class="supporter-logo-box">
+<img src="https://www.cmuccdc.org/template/image/logo_ccdc.png" style="height: 36px; width: auto; display: block;">
+</div>
+</div>
+<div class="date-pill">{date_str}</div>
+<div class="gauge-container">
+<svg class="gauge-svg" viewBox="0 0 200 200">
+<circle cx="100" cy="100" r="{radius}" class="gauge-track"></circle>
+<circle cx="100" cy="100" r="{radius}" class="gauge-fill" style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset};"></circle>
+</svg>
+<div class="gauge-content">
+<div class="gauge-number">{latest_pm25:.0f}</div>
+<div class="gauge-unit">μg/m³</div>
+</div>
+</div>
 </div>
 """
         st.markdown(html_left, unsafe_allow_html=True)
@@ -360,13 +305,15 @@ def display_realtime_pm(df, lang, t, date_str):
     with col_right:
         title_gen = t[lang]['general_public']
         desc_gen = advice['summary']
-        # Icon: User (Modern Soft Style)
-        icon_gen = """<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>"""
+        
+        # Icon: User
+        icon_gen = """<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>"""
 
         title_risk = t[lang]['risk_group']
         desc_risk = advice_details['risk_group']
-        # Icon: Heart (Modern Soft Style)
-        icon_risk = """<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 1 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 1 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>"""
+        
+        # Icon: Heart (หัวใจ)
+        icon_risk = """<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>"""
 
         act_mask = advice_details['mask']
         act_activity = advice_details['activity']
@@ -376,47 +323,45 @@ def display_realtime_pm(df, lang, t, date_str):
         icon_activity_s = """<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>"""
         icon_home_s = """<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>"""
 
+        # Define HTML string with NO indentation at the start
         html_right = f"""
 <div class="advice-wrapper">
-    <div class="advice-section-card" style="border-left-color: {accent_color};">
-        <div class="advice-icon-wrapper" style="background: {bg_gradient};">
-            {icon_gen}
-        </div>
-        <div class="advice-text-content">
-            <h4>{title_gen}</h4>
-            <p>{desc_gen}</p>
-        </div>
-    </div>
-    
-    <div class="advice-section-card" style="border-left-color: {accent_color};">
-        <div class="advice-icon-wrapper" style="background: {bg_gradient};">
-            {icon_risk}
-        </div>
-        <div class="advice-text-content">
-            <h4>{title_risk}</h4>
-            <p>{desc_risk}</p>
-        </div>
-    </div>
-    
-    <div class="action-grid-header">{t[lang]['advice_header']}</div>
-    
-    <div class="action-grid">
-        <div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
-            <div class="action-icon-svg">{icon_mask}</div>
-            <div class="action-label">{t[lang]['advice_cat_mask']}</div>
-            <div class="action-val">{act_mask}</div>
-        </div>
-        <div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
-            <div class="action-icon-svg">{icon_activity_s}</div>
-            <div class="action-label">{t[lang]['advice_cat_activity']}</div>
-            <div class="action-val">{act_activity}</div>
-        </div>
-        <div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
-            <div class="action-icon-svg">{icon_home_s}</div>
-            <div class="action-label">{t[lang]['advice_cat_indoors']}</div>
-            <div class="action-val">{act_home}</div>
-        </div>
-    </div>
+<div class="advice-section-card" style="border-left-color: {accent_color};">
+<div class="advice-icon-wrapper" style="background-color: {accent_color};">
+{icon_gen}
+</div>
+<div class="advice-text-content">
+<h4>{title_gen}</h4>
+<p>{desc_gen}</p>
+</div>
+</div>
+<div class="advice-section-card" style="border-left-color: {accent_color};">
+<div class="advice-icon-wrapper" style="background-color: {accent_color};">
+{icon_risk}
+</div>
+<div class="advice-text-content">
+<h4>{title_risk}</h4>
+<p>{desc_risk}</p>
+</div>
+</div>
+<div class="action-grid-header">{t[lang]['advice_header']}</div>
+<div class="action-grid">
+<div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
+<div class="action-icon-svg">{icon_mask}</div>
+<div class="action-label">{t[lang]['advice_cat_mask']}</div>
+<div class="action-val">{act_mask}</div>
+</div>
+<div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
+<div class="action-icon-svg">{icon_activity_s}</div>
+<div class="action-label">{t[lang]['advice_cat_activity']}</div>
+<div class="action-val">{act_activity}</div>
+</div>
+<div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
+<div class="action-icon-svg">{icon_home_s}</div>
+<div class="action-label">{t[lang]['advice_cat_indoors']}</div>
+<div class="action-val">{act_home}</div>
+</div>
+</div>
 </div>
 """
         st.markdown(html_right, unsafe_allow_html=True)
@@ -442,27 +387,24 @@ def display_realtime_pm(df, lang, t, date_str):
 
 def display_external_assessment(lang, t):
     st.subheader(t[lang]['external_assessment_title'])
-    st.markdown(f"""
+    # HTML string defined flush-left
+    html = f"""
 <style>
 .assessment-card {{
-background-color: white;
-border-radius: 24px;
-padding: 2rem;
-box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-border-left: 8px solid #1E90FF;
-transition: transform 0.2s;
+background-color: #F0F8FF;
+border-left: 6px solid #1E90FF;
+padding: 24px;
+border-radius: 10px;
+margin: 20px 0px;
+box-shadow: 0 4px 8px rgba(0,0,0,0.05);
 }}
-.assessment-card:hover {{ transform: translateY(-3px); }}
-.assessment-card p {{ font-size: 1.1rem; line-height: 1.7; margin-bottom: 24px; color: #334155; }}
+.assessment-card p {{ font-size: 1.05rem; line-height: 1.6; margin-bottom: 20px; }}
 a.assessment-button {{
-display: inline-block; width: 100%; 
-background: linear-gradient(135deg, #1E90FF 0%, #0066CC 100%);
-color: white; padding: 18px;
-border-radius: 16px; text-align: center; font-weight: 700; font-size: 1.15rem; text-decoration: none;
-box-shadow: 0 4px 15px rgba(30, 144, 255, 0.3);
-transition: all 0.3s ease;
+display: inline-block; width: 100%; background-color: #1E90FF; color: white; padding: 16px;
+border-radius: 8px; text-align: center; font-weight: 600; font-size: 1.1rem; text-decoration: none;
+transition: background-color 0.3s ease, transform 0.2s ease;
 }}
-a.assessment-button:hover {{ transform: translateY(-2px); box-shadow: 0 8px 25px rgba(30, 144, 255, 0.4); }}
+a.assessment-button:hover {{ background-color: #1C86EE; transform: translateY(-2px); }}
 </style>
 <div class="assessment-card">
 <p>{t[lang]['external_assessment_intro']}</p>
@@ -470,7 +412,8 @@ a.assessment-button:hover {{ transform: translateY(-2px); box-shadow: 0 8px 25px
 {t[lang]['assessment_button_text']}
 </a>
 </div>
-""", unsafe_allow_html=True)
+"""
+    st.markdown(html, unsafe_allow_html=True)
 
 def display_health_impact(df, lang, t):
     current_year = datetime.now().year
