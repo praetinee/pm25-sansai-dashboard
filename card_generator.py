@@ -162,7 +162,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         draw.rounded_rectangle([lp_x, logo_y, lp_x+lp_w, logo_y+lp_h], radius=20, fill=(255, 255, 255, 240))
         img.paste(logo_img, (lp_x + 30, logo_y + 15), logo_img)
         
-        draw.text((width//2, logo_y - 30), "สนับสนุนข้อมูลโดย", font=f_small, fill=(255,255,255, 220), anchor="ms", language='th')
+        draw.text((width//2, logo_y - 30), "สนับสนุนข้อมูลโดย", font=f_small, fill=(255,255,255, 220), anchor="ms")
 
     # --- B. Date ---
     bbox_date = draw.textbbox((0, 0), date_str, font=f_pill)
@@ -176,7 +176,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     p_draw = ImageDraw.Draw(pill_img)
     p_draw.rounded_rectangle([0, 0, date_w, date_h], radius=30, fill=(255, 255, 255, 50))
     img.paste(pill_img, (date_x, date_y), pill_img)
-    draw.text((width//2, date_y + date_h//2 - 3), date_str, font=f_pill, fill=(255,255,255,255), anchor="mm", language='th')
+    draw.text((width//2, date_y + date_h//2 - 3), date_str, font=f_pill, fill=(255,255,255,255), anchor="mm")
 
     # --- C. Modern Gauge (Semi-Transparent White) ---
     gauge_cy = 480
@@ -198,7 +198,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     draw.text((width//2, gauge_cy + 90), "µg/m³", font=f_unit_label, fill=bg_rgb, anchor="mm")
     
     # Status Text
-    draw.text((width//2, gauge_cy + 270), f"{level}", font=f_header, fill="white", anchor="mm", language='th')
+    draw.text((width//2, gauge_cy + 270), f"{level}", font=f_header, fill="white", anchor="mm")
 
     # ==========================================
     # 2. BOTTOM SHEET (White Card Layout)
@@ -233,13 +233,14 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         tx = ic_x + icon_size + 30
         tw = card_w - (tx - margin) - 20
         
-        # INCREASED SPACING HERE: Title down +10px
-        draw.text((tx, ic_y + 10), title, font=f_title, fill="#1e293b", anchor="lt", language='th')
+        # INCREASED SPACING: Title down to y+5
+        draw.text((tx, ic_y + 5), title, font=f_title, fill="#1e293b", anchor="lt")
         
         desc_lines = wrap_text(desc, f_body, tw, draw)
-        # INCREASED GAP HERE: Start desc at +80px (was +60px) to clear upper vowels of desc line from lower vowels of title line
+        # INCREASED GAP: Start desc at +90px (30px gap from approx title end)
+        # INCREASED LINE HEIGHT: 50px per line
         for i, line in enumerate(desc_lines[:2]):
-            draw.text((tx, ic_y + 80 + (i*45)), line, font=f_body, fill="#64748b", anchor="lt", language='th')
+            draw.text((tx, ic_y + 90 + (i*50)), line, font=f_body, fill="#64748b", anchor="lt")
             
         return start_y + c_h + 30
 
@@ -257,7 +258,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     # ==========================================
     
     action_y = curr_y + 60 
-    draw.text((margin + 10, action_y), t[lang]['advice_header'], font=f_subtitle, fill="#94a3b8", anchor="ls", language='th')
+    draw.text((margin + 10, action_y), t[lang]['advice_header'], font=f_subtitle, fill="#94a3b8", anchor="ls")
     
     grid_y = action_y + 40
     grid_gap = 30
@@ -293,16 +294,17 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
             img.paste(act_icon, (int(cx-22), int(ic_y+17)), act_icon)
         
         # Label Text: Increased spacing from icon (+115px)
-        draw.text((cx, ic_y + 115), act['label'], font=f_pill, fill="#64748b", anchor="ms", language='th')
+        draw.text((cx, ic_y + 115), act['label'], font=f_pill, fill="#64748b", anchor="ms")
         
-        # Value Text: Increased spacing from Label (+190px) to prevent overlap
+        # Value Text: Increased spacing from Label (+190px)
         v_lines = wrap_text(act['val'], f_action_val, col_w-20, draw)
         vy = ic_y + 190
+        # Increased line spacing: 50px
         for k, vl in enumerate(v_lines[:3]):
-             draw.text((cx, vy + (k*48)), vl, font=f_action_val, fill=bg_rgb, anchor="ms", language='th')
+             draw.text((cx, vy + (k*50)), vl, font=f_action_val, fill=bg_rgb, anchor="ms")
 
     # Footer
-    draw.text((width//2, height - 80), t[lang]['report_card_footer'], font=f_small, fill="#cbd5e1", anchor="mm", language='th')
+    draw.text((width//2, height - 80), t[lang]['report_card_footer'], font=f_small, fill="#cbd5e1", anchor="mm")
 
     # Final Rounding
     final_img = round_corners(img, 40)
