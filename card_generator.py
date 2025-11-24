@@ -102,6 +102,22 @@ def wrap_text(text, font, max_width, draw):
     if current_line: lines.append(current_line)
     return lines
 
+def round_corners(im, radius):
+    """Rounds the corners of an image using a transparent mask."""
+    mask = Image.new('L', im.size, 0)
+    draw = ImageDraw.Draw(mask)
+    draw.rounded_rectangle([(0, 0), im.size], radius=radius, fill=255)
+    
+    # Ensure image has alpha channel
+    im = im.convert("RGBA")
+    
+    # Create a new transparent image
+    output = Image.new('RGBA', im.size, (0, 0, 0, 0))
+    
+    # Paste the original image using the mask
+    output.paste(im, (0, 0), mask=mask)
+    return output
+
 # --- 3. Main Generator ---
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
     # Canvas
@@ -117,16 +133,15 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     font_med_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Medium.ttf"
     font_reg_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
     
-    # Adjusted font sizes for better ratios
-    f_huge = get_font(font_bold_url, 220) # Reduced from 260 to 220 for better breathing room
+    f_huge = get_font(font_bold_url, 220) 
     f_header = get_font(font_bold_url, 90)
     f_title = get_font(font_bold_url, 42)
-    f_unit_label = get_font(font_med_url, 36) # New font for unit label
+    f_unit_label = get_font(font_med_url, 36) 
     f_subtitle = get_font(font_med_url, 36)
     f_body = get_font(font_reg_url, 30)
     f_small = get_font(font_reg_url, 26)
     f_pill = get_font(font_med_url, 28)
-    f_action_val = get_font(font_bold_url, 36)
+    f_action_val = get_font(font_bold_url, 34) # Reduced slightly to fit better
 
     # ==========================================
     # 1. TOP SECTION (Status)
@@ -163,30 +178,26 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     img.paste(pill_img, (date_x, date_y), pill_img)
     draw.text((width//2, date_y + date_h//2 - 3), date_str, font=f_pill, fill=(255,255,255,255), anchor="mm")
 
-    # --- C. Modern Gauge (Glassmorphism) ---
+    # --- C. Modern Gauge (Semi-Transparent White) ---
     gauge_cy = 480
-    gauge_r = 220 # Slightly larger radius
+    gauge_r = 220 
     g_box = [width//2 - gauge_r, gauge_cy - gauge_r, width//2 + gauge_r, gauge_cy + gauge_r]
     
-    # 1. Glassy Background Disc
-    # Draws a semi-transparent filled circle to give weight
-    draw.ellipse(g_box, fill=(255, 255, 255, 40))
+    # 1. Background Disc - Use 92% opacity white for "flexibility" and softness
+    draw.ellipse(g_box, fill=(255, 255, 255, 235))
     
-    # 2. Track Ring (Outer rim)
-    draw.arc(g_box, start=0, end=360, fill=(255,255,255, 80), width=15)
+    # 2. Track Ring
+    draw.arc(g_box, start=0, end=360, fill=(241, 245, 249, 100), width=25)
     
-    # 3. Progress Arc
+    # 3. Progress Arc (Theme Color)
     percent = min((latest_pm25 / 120) * 360, 360)
-    draw.arc(g_box, start=-90, end=-90+percent, fill=(255,255,255, 255), width=20)
+    draw.arc(g_box, start=-90, end=-90+percent, fill=bg_rgb, width=25)
     
-    # 4. Value & Unit (Balanced Layout)
-    # Move number slightly up to center it visually with the unit below
-    draw.text((width//2, gauge_cy - 30), f"{latest_pm25:.0f}", font=f_huge, fill="white", anchor="mm")
+    # 4. Value & Unit (Theme Color)
+    draw.text((width//2, gauge_cy - 30), f"{latest_pm25:.0f}", font=f_huge, fill=bg_rgb, anchor="mm")
+    draw.text((width//2, gauge_cy + 90), "µg/m³", font=f_unit_label, fill=bg_rgb, anchor="mm")
     
-    # Unit below number, lighter font
-    draw.text((width//2, gauge_cy + 90), "µg/m³", font=f_unit_label, fill=(255,255,255,230), anchor="mm")
-    
-    # Status Text (Below the gauge circle)
+    # Status Text (White on Green Background)
     draw.text((width//2, gauge_cy + 270), f"{level}", font=f_header, fill="white", anchor="mm")
 
     # ==========================================
@@ -195,7 +206,8 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     sheet_y = 820
     
     # Draw Sheet (Rounded Top)
-    draw.rounded_rectangle([0, sheet_y, width, height+50], radius=60, fill="white", corners=(True, True, False, False))
+    # We draw slightly taller to cover bottom corners properly for rounding later
+    draw.rounded_rectangle([0, sheet_y, width, height+100], radius=60, fill="white", corners=(True, True, False, False))
     
     # Content Start
     content_y = sheet_y + 60
@@ -206,7 +218,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     def draw_modern_card(start_y, title, desc, icon_key, is_risk=False):
         c_h = 180
         
-        # Background (Very Light Grey)
+        # Background
         box = [margin, start_y, margin+card_w, start_y+c_h]
         draw.rounded_rectangle(box, radius=30, fill="#f8fafc")
         
@@ -251,15 +263,15 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     # ==========================================
     
     # Header
-    action_y = curr_y + 30
+    action_y = curr_y + 35
     draw.text((margin + 10, action_y), t[lang]['advice_header'], font=f_subtitle, fill="#94a3b8", anchor="ls")
     
     grid_y = action_y + 25
     grid_gap = 30
     col_w = (width - (margin*2) - (grid_gap*2)) / 3
     
-    # Fixed height for balance
-    col_h = 320
+    # Increased Height to prevent overlap: 320 -> 350
+    col_h = 350
     
     actions = [
         {'label': t[lang]['advice_cat_mask'], 'val': advice_details['mask'], 'icon': 'mask'},
@@ -267,8 +279,8 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         {'label': t[lang]['advice_cat_indoors'], 'val': advice_details['indoors'], 'icon': 'indoors'}
     ]
     
-    # Tint Color (Theme color with low opacity)
-    tint_color = bg_rgb + (20,) # 20/255 opacity ~ 8%
+    # Tint Color
+    tint_color = bg_rgb + (20,) # 20/255 opacity
 
     for i, act in enumerate(actions):
         bx = margin + i * (col_w + grid_gap)
@@ -296,15 +308,19 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         draw.text((cx, ic_y + 110), act['label'], font=f_pill, fill="#64748b", anchor="ms")
         
         # Value Text (Action)
+        # Increased gap significantly: +175
         v_lines = wrap_text(act['val'], f_action_val, col_w-20, draw)
-        vy = ic_y + 165 
-        for k, vl in enumerate(v_lines[:2]):
-             draw.text((cx, vy + (k*45)), vl, font=f_action_val, fill=bg_rgb, anchor="ms")
+        vy = ic_y + 175 
+        for k, vl in enumerate(v_lines[:3]): # Allow up to 3 lines
+             draw.text((cx, vy + (k*42)), vl, font=f_action_val, fill=bg_rgb, anchor="ms")
 
     # Footer
     draw.text((width//2, height - 50), t[lang]['report_card_footer'], font=f_small, fill="#cbd5e1", anchor="mm")
 
+    # Final Rounding of the Whole Card
+    final_img = round_corners(img, 40)
+
     # Final Output
     buf = BytesIO()
-    img.save(buf, format='PNG', quality=95)
+    final_img.save(buf, format='PNG', quality=95)
     return buf.getvalue()
