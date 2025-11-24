@@ -5,13 +5,16 @@ import streamlit as st
 import math
 
 # --- 1. Assets (Modern Icons) ---
-# Using consistent filled style icons for better readability on print
 ICON_URLS = {
-    'mask': "https://img.icons8.com/ios-filled/100/ffffff/protection-mask.png",
+    'mask': "https://img.icons8.com/ios-filled/100/ffffff/protection-mask.png", # White for colored bg or filled
     'activity': "https://img.icons8.com/ios-filled/100/ffffff/running.png",
     'indoors': "https://img.icons8.com/ios-filled/100/ffffff/home.png",
-    'user': "https://img.icons8.com/fluency-systems-filled/100/1e293b/user.png", # Dark color for white bg
-    'heart': "https://img.icons8.com/fluency-systems-filled/100/ef4444/like.png", # Red heart
+    'user': "https://img.icons8.com/ios-filled/100/ffffff/user.png", 
+    'heart': "https://img.icons8.com/ios-filled/100/ffffff/like.png",
+    # Icons for Action Grid (Dark version if needed, but we will colorize or use backgrounds)
+    'mask_dark': "https://img.icons8.com/ios-filled/100/64748b/protection-mask.png",
+    'activity_dark': "https://img.icons8.com/ios-filled/100/64748b/running.png",
+    'indoors_dark': "https://img.icons8.com/ios-filled/100/64748b/home.png",
     'logo': "https://www.cmuccdc.org/template/image/logo_ccdc.png"
 }
 
@@ -54,19 +57,16 @@ def get_image_from_url(url):
 def get_theme_color(pm):
     if pm <= 15: return '#10b981' # Emerald (Excellent)
     elif pm <= 25: return '#22c55e' # Green (Good)
-    elif pm <= 37.5: return '#eab308' # Yellow (Moderate) - Adjusted for better contrast
+    elif pm <= 37.5: return '#fbbf24' # Yellow (Moderate) - Matches Web
     elif pm <= 75: return '#f97316' # Orange (Unhealthy)
     else: return '#ef4444' # Red (Hazardous)
 
 def wrap_text(text, font, max_width, draw):
     """Simple text wrapper helper."""
     lines = []
-    if not text:
-        return lines
-        
-    words = text.split(' ') # Basic split by space (For Thai without spaces, this is limited but functional for basic sentences)
+    if not text: return lines
+    words = text.split(' ')
     current_line = words[0]
-    
     for word in words[1:]:
         test_line = current_line + " " + word
         bbox = draw.textbbox((0, 0), test_line, font=font)
@@ -81,216 +81,36 @@ def wrap_text(text, font, max_width, draw):
 
 # --- 3. Main Generator ---
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
-    """Generates a modern, premium PM2.5 report card image."""
+    """Generates a modern, web-alike PM2.5 report card image."""
     
     # Canvas Settings (High Res for Print)
     width, height = 1200, 1600
     bg_color = get_theme_color(latest_pm25)
-    card_bg_color = "#ffffff"
-    text_color_primary = "#1e293b"
-    text_color_secondary = "#64748b"
     
-    img = Image.new('RGB', (width, height), '#f1f5f9') # Very light slate background
+    # Create base
+    img = Image.new('RGB', (width, height), '#ffffff')
     draw = ImageDraw.Draw(img)
 
     # Fonts
-    # Using Sarabun for a modern, clean Thai look
     font_bold_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
     font_med_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Medium.ttf"
     font_reg_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
     
-    f_huge = get_font(font_bold_url, 260) # PM2.5 Number
-    f_header = get_font(font_bold_url, 80) # Status Level
-    f_title = get_font(font_bold_url, 40) # Section Titles
-    f_subtitle = get_font(font_med_url, 32) # Subtitles
-    f_body = get_font(font_reg_url, 30) # Body Text
-    f_small = get_font(font_reg_url, 24) # Footer/Small text
-    f_pill = get_font(font_med_url, 28) # Date Pill
+    f_huge = get_font(font_bold_url, 240)
+    f_header = get_font(font_bold_url, 80)
+    f_title = get_font(font_bold_url, 38)
+    f_subtitle = get_font(font_med_url, 32)
+    f_body = get_font(font_reg_url, 28)
+    f_small = get_font(font_reg_url, 24)
+    f_pill = get_font(font_med_url, 28)
 
-    # --- 1. Top Section (Hero) ---
-    # Create a curved header background
-    header_h = 650
-    draw.rectangle([0, 0, width, header_h - 80], fill=bg_color)
-    # Draw arc for bottom curve
-    draw.pieslice([-100, header_h - 200, width + 100, header_h], 0, 180, fill=bg_color)
+    # ==========================================
+    # 1. TOP SECTION (Imitating Left Status Card)
+    # ==========================================
+    top_h = 750
+    draw.rectangle([0, 0, width, top_h], fill=bg_color)
     
-    # Date Pill (Top Center) - FIXED TRANSPARENCY
-    date_padding_x = 40
-    date_padding_y = 15
-    bbox_date = draw.textbbox((0, 0), date_str, font=f_pill)
-    date_w = int(bbox_date[2] - bbox_date[0] + (date_padding_x * 2))
-    date_h = int(bbox_date[3] - bbox_date[1] + (date_padding_y * 2))
-    date_x = int((width - date_w) // 2)
-    date_y = 60
-    
-    # Create a separate RGBA image for the transparent pill
-    pill_img = Image.new('RGBA', (date_w, date_h), (0, 0, 0, 0))
-    pill_draw = ImageDraw.Draw(pill_img)
-    # Fill with white having alpha 64 (approx 25%) -> (255, 255, 255, 64)
-    pill_draw.rounded_rectangle([0, 0, date_w, date_h], radius=30, fill=(255, 255, 255, 64))
-    
-    # Paste onto main image using the pill itself as a mask (for alpha blending)
-    img.paste(pill_img, (date_x, date_y), pill_img)
-    
-    # Draw text on top (Solid White)
-    draw.text((width//2, date_y + date_h//2 - 2), date_str, font=f_pill, fill="white", anchor="mm")
-
-    # PM2.5 Value
-    pm_y = 280
-    draw.text((width//2, pm_y), f"{latest_pm25:.0f}", font=f_huge, fill="white", anchor="mm")
-    
-    # Unit
-    unit_text = "µg/m³"
-    draw.text((width//2, pm_y + 110), unit_text, font=f_title, fill="rgba(255,255,255,0.9)", anchor="mm")
-
-    # Status Level with Emoji
-    status_text = f"{emoji} {level}"
-    draw.text((width//2, pm_y + 190), status_text, font=f_header, fill="white", anchor="mm")
-
-    # --- 2. Main Content Card (Floating look) ---
-    content_y_start = 620
-    margin = 50
-    card_width = width - (margin * 2)
-    
-    # We will draw "Advice" sections here
-    
-    # Helper to draw an advice row
-    def draw_advice_row(start_y, title, desc, icon_key, is_risk=False):
-        row_h = 200
-        # Card Background
-        bg = "#ffffff"
-        border = "#e2e8f0"
-        
-        # Draw shadow (simulated with offset gray rect)
-        shadow_offset = 8
-        draw.rounded_rectangle(
-            [margin + shadow_offset, start_y + shadow_offset, margin + card_width + shadow_offset, start_y + row_h + shadow_offset], 
-            radius=30, fill="#cbd5e1"
-        )
-        
-        # Main Card Rect
-        draw.rounded_rectangle(
-            [margin, start_y, margin + card_width, start_y + row_h], 
-            radius=30, fill=bg, outline=border, width=2
-        )
-        
-        # Left Accent Bar
-        bar_color = bg_color # Use theme color for accents
-        draw.rounded_rectangle(
-            [margin, start_y, margin + 20, start_y + row_h], 
-            radius=0, fill=bar_color, corners=(True, False, False, True)
-        )
-        
-        # Icon Area
-        icon_size = 90
-        icon_x = margin + 50
-        icon_y = start_y + (row_h - icon_size) // 2
-        
-        # Icon Background Circle
-        draw.ellipse(
-            [icon_x, icon_y, icon_x + icon_size, icon_y + icon_size], 
-            fill="#f1f5f9" if not is_risk else "#fee2e2" # Light gray or light red for risk
-        )
-        
-        # Load and paste icon
-        icon_img = get_image_from_url(ICON_URLS[icon_key])
-        if icon_img:
-            # Resize
-            icon_img = icon_img.resize((50, 50), Image.Resampling.LANCZOS)
-            # Paste centered in circle
-            paste_x = icon_x + (icon_size - 50)//2
-            paste_y = icon_y + (icon_size - 50)//2
-            img.paste(icon_img, (paste_x, paste_y), icon_img)
-
-        # Text Area
-        text_x = icon_x + icon_size + 40
-        text_w = card_width - (text_x - margin) - 40
-        
-        # Title
-        draw.text((text_x, start_y + 45), title, font=f_title, fill=text_color_primary, anchor="ls")
-        
-        # Description (Wrapped)
-        lines = wrap_text(desc, f_body, text_w, draw)
-        line_height = 40
-        curr_text_y = start_y + 60
-        for i, line in enumerate(lines[:3]): # Max 3 lines
-            draw.text((text_x, curr_text_y + (i * line_height)), line, font=f_body, fill=text_color_secondary, anchor="ls")
-
-        return start_y + row_h + 40 # Return next Y position
-
-    # Get General Advice Text
-    gen_desc = "ปฏิบัติตามคำแนะนำเพื่อสุขภาพ" # Default
-    if latest_pm25 <= 25:
-        gen_desc = t[lang]['advice']['advice_1']['summary']
-    elif latest_pm25 <= 37.5:
-        gen_desc = t[lang]['advice']['advice_3']['summary'] # Use moderate
-    elif latest_pm25 <= 75:
-        gen_desc = t[lang]['advice']['advice_4']['summary']
-    else:
-        gen_desc = t[lang]['advice']['advice_5']['summary']
-
-    current_y = content_y_start
-    
-    # 2.1 General Public Card
-    current_y = draw_advice_row(current_y, t[lang]['general_public'], gen_desc, 'user')
-    
-    # 2.2 Risk Group Card
-    current_y = draw_advice_row(current_y, t[lang]['risk_group'], advice_details['risk_group'], 'heart', is_risk=True)
-
-    # --- 3. Action Grid (Footer) ---
-    action_header_y = current_y + 20
-    draw.text((width//2, action_header_y), t[lang]['advice_header'], font=f_subtitle, fill="#94a3b8", anchor="mm")
-    
-    grid_y = action_header_y + 60
-    grid_gap = 30
-    grid_total_w = width - (margin * 2)
-    col_w = (grid_total_w - (grid_gap * 2)) / 3
-    col_h = 240
-    
-    actions = [
-        {'label': t[lang]['advice_cat_mask'], 'val': advice_details['mask'], 'icon': 'mask'},
-        {'label': t[lang]['advice_cat_activity'], 'val': advice_details['activity'], 'icon': 'activity'},
-        {'label': t[lang]['advice_cat_indoors'], 'val': advice_details['indoors'], 'icon': 'indoors'}
-    ]
-    
-    for i, action in enumerate(actions):
-        box_x = margin + i * (col_w + grid_gap)
-        
-        # Action Box
-        draw.rounded_rectangle(
-            [box_x, grid_y, box_x + col_w, grid_y + col_h],
-            radius=30, fill="white", outline=bg_color, width=3
-        )
-        
-        # Icon Circle
-        ic_size = 80
-        ic_cx = box_x + col_w/2
-        ic_cy = grid_y + 60
-        
-        draw.ellipse(
-            [ic_cx - ic_size/2, ic_cy - ic_size/2, ic_cx + ic_size/2, ic_cy + ic_size/2],
-            fill=bg_color
-        )
-        
-        # Icon
-        act_icon = get_image_from_url(ICON_URLS[action['icon']])
-        if act_icon:
-            act_icon = act_icon.resize((45, 45), Image.Resampling.LANCZOS)
-            img.paste(act_icon, (int(ic_cx - 22), int(ic_cy - 22)), act_icon)
-            
-        # Label
-        draw.text((ic_cx, ic_cy + 60), action['label'], font=f_pill, fill=text_color_secondary, anchor="ms")
-        
-        # Value (Wrapped if long)
-        val_lines = wrap_text(action['val'], f_subtitle, col_w - 20, draw)
-        val_y = ic_cy + 100
-        for j, vline in enumerate(val_lines[:2]): # limit 2 lines
-            draw.text((ic_cx, val_y + (j*35)), vline, font=f_subtitle, fill=bg_color, anchor="ms")
-
-    # --- 4. Footer Logo & Credit ---
-    footer_y = height - 100
-    
-    # Logo
+    # --- A. Logo & Supporter ---
     logo_img = get_image_from_url(ICON_URLS['logo'])
     if logo_img:
         logo_h = 60
@@ -298,11 +118,179 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         logo_w = int(logo_h * aspect)
         logo_img = logo_img.resize((logo_w, logo_h), Image.Resampling.LANCZOS)
         
-        # Draw logo centered
-        logo_x = (width - logo_w) // 2
-        img.paste(logo_img, (logo_x, footer_y - 40), logo_img)
+        # White pill background for logo
+        lp_w, lp_h = logo_w + 60, logo_h + 30
+        lp_x = (width - lp_w) // 2
+        lp_y = 50
+        draw.rounded_rectangle([lp_x, lp_y, lp_x+lp_w, lp_y+lp_h], radius=20, fill="white")
+        img.paste(logo_img, (lp_x + 30, lp_y + 15), logo_img)
         
-    draw.text((width//2, footer_y + 40), t[lang]['report_card_footer'], font=f_small, fill="#cbd5e1", anchor="mm")
+        # "Supported by" text
+        draw.text((width//2, lp_y - 25), "สนับสนุนข้อมูลโดย", font=f_small, fill="rgba(255,255,255,0.9)", anchor="ms")
+
+    # --- B. Date Pill ---
+    date_padding_x, date_padding_y = 40, 15
+    bbox_date = draw.textbbox((0, 0), date_str, font=f_pill)
+    date_w = int(bbox_date[2] - bbox_date[0] + (date_padding_x * 2))
+    date_h = int(bbox_date[3] - bbox_date[1] + (date_padding_y * 2))
+    date_x = int((width - date_w) // 2)
+    date_y = 180
+    
+    # Transparent Pill Trick
+    pill_img = Image.new('RGBA', (date_w, date_h), (0, 0, 0, 0))
+    pill_draw = ImageDraw.Draw(pill_img)
+    pill_draw.rounded_rectangle([0, 0, date_w, date_h], radius=30, fill=(255, 255, 255, 50)) # ~20% opacity
+    img.paste(pill_img, (date_x, date_y), pill_img)
+    draw.text((width//2, date_y + date_h//2 - 2), date_str, font=f_pill, fill="white", anchor="mm")
+
+    # --- C. Gauge & Value ---
+    gauge_center_y = 480
+    gauge_radius = 220
+    
+    # Draw Gauge Track (Faded White Circle)
+    # We draw a full circle track to look clean
+    g_box = [width//2 - gauge_radius, gauge_center_y - gauge_radius, width//2 + gauge_radius, gauge_center_y + gauge_radius]
+    
+    # Track (Simulated transparency via drawing solid color blended manually or just using a lighter version of theme color? 
+    # Actually, plain semi-transparent white works best on colored bg)
+    track_img = Image.new('RGBA', (width, height), (0,0,0,0))
+    track_draw = ImageDraw.Draw(track_img)
+    track_draw.ellipse(g_box, outline=(255,255,255, 70), width=25) # Track
+    img.paste(track_img, (0,0), track_img)
+
+    # Progress Arc (Solid White)
+    # Map PM2.5 0-120 to 0-360 degrees roughly, or just keep it static full circle for print simplicity? 
+    # Let's do a static nice frame, it looks elegant. 
+    # Or actually calculate angle:
+    percent = min((latest_pm25 / 120) * 360, 360)
+    # Start from top (-90)
+    draw.arc(g_box, start=-90, end=-90+percent, fill="white", width=25)
+
+    # Value
+    draw.text((width//2, gauge_center_y), f"{latest_pm25:.0f}", font=f_huge, fill="white", anchor="mm")
+    
+    # Unit
+    draw.text((width//2, gauge_center_y + 100), "µg/m³", font=f_title, fill="rgba(255,255,255,0.9)", anchor="mm")
+    
+    # Status Text
+    draw.text((width//2, gauge_center_y + 200), f"{emoji} {level}", font=f_header, fill="white", anchor="mm")
+
+
+    # ==========================================
+    # 2. BOTTOM SECTION (Imitating Right Advice)
+    # ==========================================
+    content_y = top_h + 50
+    margin = 50
+    card_w = width - (margin * 2)
+
+    # Helper for Web-Style Advice Card
+    def draw_web_card(start_y, title, desc, icon_key, is_risk=False):
+        c_h = 200
+        
+        # 1. Shadow
+        draw.rounded_rectangle([margin+5, start_y+5, margin+card_w+5, start_y+c_h+5], radius=25, fill="#f1f5f9")
+        
+        # 2. Card Body (White/Light Gray)
+        card_bg = "#f8fafc" # Very light gray like web secondary bg
+        draw.rounded_rectangle([margin, start_y, margin+card_w, start_y+c_h], radius=25, fill=card_bg)
+        
+        # 3. Left Border Accent
+        # We need to simulate the left border radius carefully or just draw a rect.
+        # Simple rect on left side
+        accent_color = bg_color # Use the theme color
+        draw.rounded_rectangle([margin, start_y, margin+15, start_y+c_h], radius=0, fill=accent_color, corners=(True, False, False, True))
+        
+        # 4. Icon Box
+        icon_box_size = 80
+        ib_x = margin + 40
+        ib_y = start_y + (c_h - icon_box_size)//2
+        
+        draw.rounded_rectangle([ib_x, ib_y, ib_x+icon_box_size, ib_y+icon_box_size], radius=20, fill=accent_color)
+        
+        # Icon
+        icon_url = ICON_URLS[icon_key] if not is_risk else ICON_URLS['heart']
+        # If user icon, we want white. The list has white icons.
+        icon_img = get_image_from_url(icon_url)
+        if icon_img:
+            icon_img = icon_img.resize((50, 50), Image.Resampling.LANCZOS)
+            img.paste(icon_img, (ib_x+15, ib_y+15), icon_img)
+            
+        # 5. Text
+        text_x = ib_x + icon_box_size + 30
+        text_max_w = card_w - (text_x - margin) - 20
+        
+        draw.text((text_x, ib_y + 5), title, font=f_title, fill="#1e293b", anchor="lt")
+        
+        lines = wrap_text(desc, f_body, text_max_w, draw)
+        for i, line in enumerate(lines[:3]):
+            draw.text((text_x, ib_y + 55 + (i*35)), line, font=f_body, fill="#64748b", anchor="lt")
+            
+        return start_y + c_h + 30
+
+    # Get Descriptions
+    gen_desc = "ปฏิบัติตามคำแนะนำเพื่อสุขภาพ"
+    if latest_pm25 <= 25: gen_desc = t[lang]['advice']['advice_1']['summary']
+    elif latest_pm25 <= 37.5: gen_desc = t[lang]['advice']['advice_3']['summary']
+    elif latest_pm25 <= 75: gen_desc = t[lang]['advice']['advice_4']['summary']
+    else: gen_desc = t[lang]['advice']['advice_5']['summary']
+
+    # Draw Cards
+    curr_y = draw_web_card(content_y, t[lang]['general_public'], gen_desc, 'user')
+    curr_y = draw_web_card(curr_y, t[lang]['risk_group'], advice_details['risk_group'], 'heart', is_risk=True)
+
+    # --- Action Grid ---
+    action_header_y = curr_y + 20
+    draw.text((margin, action_header_y), t[lang]['advice_header'], font=f_subtitle, fill="#94a3b8", anchor="ls")
+    
+    grid_y = action_header_y + 20
+    grid_gap = 25
+    col_w = (width - (margin*2) - (grid_gap*2)) / 3
+    col_h = 240
+    
+    actions = [
+        {'label': t[lang]['advice_cat_mask'], 'val': advice_details['mask'], 'icon': 'mask_dark'},
+        {'label': t[lang]['advice_cat_activity'], 'val': advice_details['activity'], 'icon': 'activity_dark'},
+        {'label': t[lang]['advice_cat_indoors'], 'val': advice_details['indoors'], 'icon': 'indoors_dark'}
+    ]
+    
+    for i, act in enumerate(actions):
+        bx = margin + i * (col_w + grid_gap)
+        
+        # Box Border (Web style)
+        draw.rounded_rectangle([bx, grid_y, bx+col_w, grid_y+col_h], radius=25, outline=bg_color, width=3, fill="white")
+        
+        # Center Content
+        cx = bx + col_w/2
+        
+        # Icon (Colored by theme or simple dark grey?)
+        # Web uses theme color for icon wrapper or text. 
+        # Let's use the theme color for the icon.
+        # Since we only have white/grey icons, let's draw a colored circle like the previous version, it looks better on print.
+        
+        # Using a transparent colored circle
+        ic_bg_size = 70
+        ic_y = grid_y + 50
+        draw.ellipse([cx-ic_bg_size/2, ic_y, cx+ic_bg_size/2, ic_y+ic_bg_size], fill=bg_color)
+        
+        # Load White Icon for contrast
+        # Use the white keys from ICON_URLS
+        white_key = list(ICON_URLS.keys())[i] # map 0->mask, 1->activity, 2->indoors
+        act_icon = get_image_from_url(ICON_URLS[white_key])
+        if act_icon:
+            act_icon = act_icon.resize((40, 40), Image.Resampling.LANCZOS)
+            img.paste(act_icon, (int(cx-20), int(ic_y+15)), act_icon)
+            
+        # Text
+        draw.text((cx, ic_y + 90), act['label'], font=f_pill, fill="#64748b", anchor="ms")
+        
+        # Value (Bold, Theme Color)
+        v_lines = wrap_text(act['val'], f_title, col_w-20, draw)
+        vy = ic_y + 130
+        for k, vl in enumerate(v_lines[:2]):
+             draw.text((cx, vy + (k*40)), vl, font=f_title, fill=bg_color, anchor="ms")
+
+    # Footer Credit
+    draw.text((width//2, height - 40), t[lang]['report_card_footer'], font=f_small, fill="#cbd5e1", anchor="mm")
 
     # Output
     buf = BytesIO()
