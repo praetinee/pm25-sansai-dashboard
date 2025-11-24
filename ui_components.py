@@ -19,7 +19,7 @@ def inject_custom_css():
 
             /* --- Modern Layout Containers --- */
             .main-container {
-                max-width: 1000px; /* Increased width for 2-column layout */
+                max-width: 1200px; /* Wide enough for side-by-side */
                 margin: 0 auto;
                 padding: 10px;
             }
@@ -27,27 +27,27 @@ def inject_custom_css():
             /* --- Left Side: Status Card --- */
             .status-card {
                 border-radius: 2rem;
-                padding: 2.5rem 1.5rem;
+                padding: 2rem;
                 text-align: center;
                 color: white;
                 box-shadow: 0 10px 30px rgba(0,0,0,0.1);
                 position: relative;
                 overflow: hidden;
-                height: 100%; /* Full height to match right side */
+                height: 100%;
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
                 align-items: center;
-                min-height: 420px; /* Increased min-height to match double cards */
+                min-height: 400px;
             }
             
             .date-pill {
                 display: inline-block;
                 background: rgba(255, 255, 255, 0.2);
                 backdrop-filter: blur(10px);
-                padding: 6px 16px;
-                border-radius: 20px;
-                font-size: 0.85rem;
+                padding: 8px 20px;
+                border-radius: 30px;
+                font-size: 0.9rem;
                 font-weight: 500;
                 margin-bottom: 2rem;
             }
@@ -55,8 +55,8 @@ def inject_custom_css():
             /* --- Gauge Area --- */
             .gauge-container {
                 position: relative;
-                width: 200px;
-                height: 200px;
+                width: 220px;
+                height: 220px;
                 margin: 0 auto;
             }
             .gauge-svg {
@@ -67,12 +67,12 @@ def inject_custom_css():
             .gauge-track {
                 fill: none;
                 stroke: rgba(255,255,255,0.2);
-                stroke-width: 15;
+                stroke-width: 18;
             }
             .gauge-fill {
                 fill: none;
                 stroke: white;
-                stroke-width: 15;
+                stroke-width: 18;
                 stroke-linecap: round;
                 transition: stroke-dashoffset 1s ease-out;
             }
@@ -85,84 +85,102 @@ def inject_custom_css():
                 color: white;
             }
             .gauge-number {
-                font-size: 4.5rem;
+                font-size: 5rem;
                 font-weight: 700;
                 line-height: 1;
                 letter-spacing: -2px;
             }
             .gauge-unit {
-                font-size: 1rem;
+                font-size: 1.1rem;
                 font-weight: 500;
                 opacity: 0.9;
             }
 
-            /* --- Right Side: Advice Card --- */
+            /* --- Right Side: Advice Cards --- */
+            .advice-wrapper {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+                height: 100%;
+            }
+
             .advice-section-card {
                 background: var(--secondary-background-color);
                 border-radius: 1.5rem;
-                padding: 1.25rem;
+                padding: 1.5rem;
                 display: flex;
                 align-items: center;
-                gap: 1rem;
-                margin-bottom: 1rem;
-                border: 2px solid transparent; /* Dynamic border color inline */
-                transition: transform 0.2s;
+                gap: 1.25rem;
+                /* Default Border */
+                border-left: 6px solid transparent; 
+                box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             }
-            .advice-section-card:hover {
-                transform: translateX(5px);
-            }
+            
             .advice-icon-wrapper {
-                min-width: 48px;
-                height: 48px;
-                border-radius: 14px;
+                min-width: 56px;
+                height: 56px;
+                border-radius: 16px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 color: white;
-                font-size: 1.2rem;
+                font-size: 1.5rem;
             }
+            
             .advice-text-content h4 {
                 margin: 0 0 4px 0;
-                font-size: 1rem;
+                font-size: 1.1rem;
                 font-weight: 700;
+                color: var(--text-color);
             }
             .advice-text-content p {
                 margin: 0;
-                font-size: 0.9rem;
+                font-size: 0.95rem;
                 opacity: 0.8;
                 line-height: 1.4;
+                color: var(--text-color);
             }
 
             /* --- Right Side: Action Grid --- */
+            .action-grid-header {
+                font-size: 0.85rem;
+                font-weight: 700;
+                opacity: 0.6;
+                margin: 1.5rem 0 0.75rem 0.5rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+
             .action-grid {
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
-                gap: 10px;
+                gap: 12px;
             }
             .action-item {
                 background: transparent;
                 border: 2px solid; /* Color set inline */
                 border-radius: 1.2rem;
-                padding: 1rem 0.5rem;
+                padding: 1.25rem 0.5rem;
                 text-align: center;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                height: 100%;
-                transition: transform 0.2s;
                 min-height: 110px;
+                transition: transform 0.2s;
             }
             .action-item:hover {
                 transform: translateY(-3px);
             }
             .action-icon-svg {
-                margin-bottom: 8px;
+                margin-bottom: 10px;
+                width: 24px;
+                height: 24px;
             }
             .action-label {
-                font-size: 0.65rem;
+                font-size: 0.7rem;
                 font-weight: 600;
-                opacity: 0.7;
+                opacity: 0.8;
                 margin-bottom: 4px;
             }
             .action-val {
@@ -217,101 +235,94 @@ def display_realtime_pm(df, lang, t, date_str):
     circumference = 2 * math.pi * radius
     stroke_dashoffset = circumference - (percent / 100) * circumference
 
-    # --- Main Layout Container ---
-    st.markdown('<div class="main-container">', unsafe_allow_html=True)
-    
-    # Create 2 Columns: Left (40%) and Right (60%)
+    # Create 2 Columns Layout: Left (Gauge) | Right (Info)
     col_left, col_right = st.columns([4, 6], gap="large")
 
-    # --- LEFT COLUMN: PM2.5 Value & Gauge ---
+    # --- LEFT COLUMN: Status Card ---
     with col_left:
+        # Using flush-left string to prevent code block rendering
         st.markdown(f"""
-        <div class="status-card" style="background-color: {bg_color};">
-            <div class="date-pill">{date_str}</div>
-            <div class="gauge-container">
-                <svg class="gauge-svg" viewBox="0 0 200 200">
-                    <circle cx="100" cy="100" r="{radius}" class="gauge-track"></circle>
-                    <circle cx="100" cy="100" r="{radius}" class="gauge-fill" 
-                        style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset};"></circle>
-                </svg>
-                <div class="gauge-content">
-                    <div class="gauge-number">{latest_pm25:.0f}</div>
-                    <div class="gauge-unit">μg/m³</div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+<div class="status-card" style="background-color: {bg_color};">
+<div class="date-pill">{date_str}</div>
+<div class="gauge-container">
+<svg class="gauge-svg" viewBox="0 0 200 200">
+<circle cx="100" cy="100" r="{radius}" class="gauge-track"></circle>
+<circle cx="100" cy="100" r="{radius}" class="gauge-fill" 
+style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset};"></circle>
+</svg>
+<div class="gauge-content">
+<div class="gauge-number">{latest_pm25:.0f}</div>
+<div class="gauge-unit">μg/m³</div>
+</div>
+</div>
+</div>
+""", unsafe_allow_html=True)
 
-    # --- RIGHT COLUMN: Advice & Actions ---
+    # --- RIGHT COLUMN: Advice Stack ---
     with col_right:
-        # Define Content
+        # Prepare Content
         title_gen = t[lang]['general_public']
         desc_gen = advice['summary']
-        icon_gen = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>"""
+        icon_gen = """<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>"""
 
         title_risk = t[lang]['risk_group']
         desc_risk = advice_details['risk_group']
-        icon_risk = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 1 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 1 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>"""
+        icon_risk = """<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 1 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 1 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>"""
 
         act_mask = advice_details['mask']
         act_activity = advice_details['activity']
         act_home = advice_details['indoors']
 
-        # Icons
-        icon_mask = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>"""
+        icon_mask = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>"""
         icon_activity_s = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>"""
         icon_home_s = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>"""
 
-        # 3. Render Two Advice Cards Stacked + Action Grid
         st.markdown(f"""
-        <div class="main-container">
-            <!-- General Public Card -->
-            <div class="advice-section-card" style="border-left: 4px solid {accent_color};">
-                <div class="advice-icon-wrapper" style="background-color: {accent_color};">
-                    {icon_gen}
-                </div>
-                <div class="advice-text-content">
-                    <h4>{title_gen}</h4>
-                    <p>{desc_gen}</p>
-                </div>
-            </div>
+<div class="advice-wrapper">
+<!-- General Public Card -->
+<div class="advice-section-card" style="border-left-color: {accent_color};">
+<div class="advice-icon-wrapper" style="background-color: {accent_color};">
+{icon_gen}
+</div>
+<div class="advice-text-content">
+<h4>{title_gen}</h4>
+<p>{desc_gen}</p>
+</div>
+</div>
 
-            <!-- Risk Group Card -->
-            <div class="advice-section-card" style="border-left: 4px solid {accent_color};">
-                <div class="advice-icon-wrapper" style="background-color: {accent_color};">
-                    {icon_risk}
-                </div>
-                <div class="advice-text-content">
-                    <h4>{title_risk}</h4>
-                    <p>{desc_risk}</p>
-                </div>
-            </div>
+<!-- Risk Group Card -->
+<div class="advice-section-card" style="border-left-color: {accent_color};">
+<div class="advice-icon-wrapper" style="background-color: {accent_color};">
+{icon_risk}
+</div>
+<div class="advice-text-content">
+<h4>{title_risk}</h4>
+<p>{desc_risk}</p>
+</div>
+</div>
 
-            <!-- Action Grid Header -->
-            <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 12px; opacity: 0.7; margin-top: 1.5rem;">{t[lang]['advice_header']}</div>
-            
-            <!-- Action Grid -->
-            <div class="action-grid">
-                <div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
-                    <div class="action-icon-svg">{icon_mask}</div>
-                    <div class="action-label">{t[lang]['advice_cat_mask']}</div>
-                    <div class="action-val">{act_mask}</div>
-                </div>
-                <div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
-                    <div class="action-icon-svg">{icon_activity_s}</div>
-                    <div class="action-label">{t[lang]['advice_cat_activity']}</div>
-                    <div class="action-val">{act_activity}</div>
-                </div>
-                <div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
-                    <div class="action-icon-svg">{icon_home_s}</div>
-                    <div class="action-label">{t[lang]['advice_cat_indoors']}</div>
-                    <div class="action-val">{act_home}</div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+<div class="action-grid-header">{t[lang]['advice_header']}</div>
 
-    st.markdown('</div>', unsafe_allow_html=True) # End Main Container
+<div class="action-grid">
+<div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
+<div class="action-icon-svg">{icon_mask}</div>
+<div class="action-label">{t[lang]['advice_cat_mask']}</div>
+<div class="action-val">{act_mask}</div>
+</div>
+<div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
+<div class="action-icon-svg">{icon_activity_s}</div>
+<div class="action-label">{t[lang]['advice_cat_activity']}</div>
+<div class="action-val">{act_activity}</div>
+</div>
+<div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
+<div class="action-icon-svg">{icon_home_s}</div>
+<div class="action-label">{t[lang]['advice_cat_indoors']}</div>
+<div class="action-val">{act_home}</div>
+</div>
+</div>
+</div>
+""", unsafe_allow_html=True)
+
     st.write("") # Spacer
 
     # Footer Actions
