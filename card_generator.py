@@ -6,22 +6,20 @@ import math
 
 # --- 1. Assets (Modern Icons) ---
 ICON_URLS = {
-    'mask': "https://img.icons8.com/ios-filled/100/ffffff/protection-mask.png", # White for colored bg or filled
+    'mask': "https://img.icons8.com/ios-filled/100/ffffff/protection-mask.png",
     'activity': "https://img.icons8.com/ios-filled/100/ffffff/running.png",
     'indoors': "https://img.icons8.com/ios-filled/100/ffffff/home.png",
     'user': "https://img.icons8.com/ios-filled/100/ffffff/user.png", 
     'heart': "https://img.icons8.com/ios-filled/100/ffffff/like.png",
-    # Icons for Action Grid (Dark version if needed, but we will colorize or use backgrounds)
     'mask_dark': "https://img.icons8.com/ios-filled/100/64748b/protection-mask.png",
     'activity_dark': "https://img.icons8.com/ios-filled/100/64748b/running.png",
     'indoors_dark': "https://img.icons8.com/ios-filled/100/64748b/home.png",
     'logo': "https://www.cmuccdc.org/template/image/logo_ccdc.png"
 }
 
-# --- Fix: Cache Bytes instead of Objects ---
+# --- Cache Bytes ---
 @st.cache_data
 def download_asset_bytes(url):
-    """Downloads bytes from a URL. Cached to prevent re-downloading."""
     try:
         response = requests.get(url, timeout=10)
         response.raise_for_status()
@@ -31,7 +29,6 @@ def download_asset_bytes(url):
         return None
 
 def get_font(url, size):
-    """Creates a font object from cached bytes."""
     font_bytes = download_asset_bytes(url)
     if font_bytes:
         try:
@@ -42,7 +39,6 @@ def get_font(url, size):
     return ImageFont.load_default()
 
 def get_image_from_url(url):
-    """Creates an image object from cached bytes."""
     img_bytes = download_asset_bytes(url)
     if img_bytes:
         try:
@@ -53,29 +49,26 @@ def get_image_from_url(url):
             return None
     return None
 
-# --- 2. Color Themes ---
+# --- 2. Color Themes & Utils ---
 def get_theme_color(pm):
-    if pm <= 15: return '#10b981' # Emerald (Excellent)
-    elif pm <= 25: return '#22c55e' # Green (Good)
-    elif pm <= 37.5: return '#fbbf24' # Yellow (Moderate) - Matches Web
-    elif pm <= 75: return '#f97316' # Orange (Unhealthy)
-    else: return '#ef4444' # Red (Hazardous)
+    if pm <= 15: return '#10b981' # Emerald
+    elif pm <= 25: return '#22c55e' # Green
+    elif pm <= 37.5: return '#fbbf24' # Yellow
+    elif pm <= 75: return '#f97316' # Orange
+    else: return '#ef4444' # Red
+
+def hex_to_rgb(hex_color):
+    hex_color = hex_color.lstrip('#')
+    return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
 
 def wrap_text(text, font, max_width, draw):
-    """
-    Robust text wrapper helper that handles languages without spaces (like Thai).
-    """
     lines = []
     if not text: return lines
     
-    # 1. Try splitting by spaces first (for English or mixed)
     words = text.split(' ')
     current_line = ""
     
     for word in words:
-        # Check if adding this word (with a space if needed) exceeds width
-        # OR if the word itself is massive (common in Thai if no spaces present)
-        
         test_line_with_space = current_line + " " + word if current_line else word
         bbox = draw.textbbox((0, 0), test_line_with_space, font=font)
         w = bbox[2] - bbox[0]
@@ -83,21 +76,17 @@ def wrap_text(text, font, max_width, draw):
         if w <= max_width:
             current_line = test_line_with_space
         else:
-            # If the word fits on a new line, push current line and start new
             bbox_word = draw.textbbox((0, 0), word, font=font)
             word_w = bbox_word[2] - bbox_word[0]
             
             if word_w <= max_width:
-                if current_line:
-                    lines.append(current_line)
+                if current_line: lines.append(current_line)
                 current_line = word
             else:
-                # The word itself is too long (Thai sentence case), split by character
                 if current_line:
                     lines.append(current_line)
                     current_line = ""
                 
-                # Character-based splitting for long words
                 chars = list(word)
                 temp_line = ""
                 for char in chars:
@@ -110,21 +99,41 @@ def wrap_text(text, font, max_width, draw):
                         temp_line = char
                 current_line = temp_line
 
-    if current_line:
-        lines.append(current_line)
-        
+    if current_line: lines.append(current_line)
     return lines
+
+def draw_shadow(img, box, radius, blur=15, opacity=50):
+    """Draws a blurred shadow on the image."""
+    x0, y0, x1, y1 = box
+    w, h = x1 - x0, y1 - y0
+    
+    # Create larger buffer for blur
+    shadow_w = w + blur * 4
+    shadow_h = h + blur * 4
+    shadow = Image.new('RGBA', (shadow_w, shadow_h), (0, 0, 0, 0))
+    s_draw = ImageDraw.Draw(shadow)
+    
+    # Draw black rectangle centered
+    s_draw.rounded_rectangle(
+        [blur*2, blur*2, blur*2 + w, blur*2 + h], 
+        radius=radius, 
+        fill=(0, 0, 0, opacity)
+    )
+    
+    # Blur
+    shadow = shadow.filter(ImageFilter.GaussianBlur(blur))
+    
+    # Paste (offset slightly downwards for natural light)
+    img.paste(shadow, (x0 - blur*2, y0 - blur*2 + 5), shadow)
 
 # --- 3. Main Generator ---
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
-    """Generates a modern, web-alike PM2.5 report card image."""
-    
-    # Canvas Settings (High Res for Print)
+    # Canvas
     width, height = 1200, 1600
-    bg_color = get_theme_color(latest_pm25)
+    bg_color_hex = get_theme_color(latest_pm25)
+    bg_rgb = hex_to_rgb(bg_color_hex)
     
-    # Create base with RGBA to support transparency correctly
-    img = Image.new('RGBA', (width, height), '#ffffff')
+    img = Image.new('RGBA', (width, height), bg_color_hex) # Background is theme color
     draw = ImageDraw.Draw(img)
 
     # Fonts
@@ -132,21 +141,20 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     font_med_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Medium.ttf"
     font_reg_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
     
-    f_huge = get_font(font_bold_url, 240)
-    f_header = get_font(font_bold_url, 80)
-    f_title = get_font(font_bold_url, 38)
-    f_subtitle = get_font(font_med_url, 32)
-    f_body = get_font(font_reg_url, 28)
-    f_small = get_font(font_reg_url, 24)
+    f_huge = get_font(font_bold_url, 260)
+    f_header = get_font(font_bold_url, 90)
+    f_title = get_font(font_bold_url, 42)
+    f_subtitle = get_font(font_med_url, 36)
+    f_body = get_font(font_reg_url, 30)
+    f_small = get_font(font_reg_url, 26)
     f_pill = get_font(font_med_url, 28)
 
     # ==========================================
-    # 1. TOP SECTION (Imitating Left Status Card)
+    # 1. TOP SECTION (Status)
     # ==========================================
-    top_h = 750
-    draw.rectangle([0, 0, width, top_h], fill=bg_color)
     
-    # --- A. Logo & Supporter ---
+    # --- A. Logo Area ---
+    logo_y = 60
     logo_img = get_image_from_url(ICON_URLS['logo'])
     if logo_img:
         logo_h = 60
@@ -154,171 +162,168 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         logo_w = int(logo_h * aspect)
         logo_img = logo_img.resize((logo_w, logo_h), Image.Resampling.LANCZOS)
         
-        # White pill background for logo
+        # Pill for logo
         lp_w, lp_h = logo_w + 60, logo_h + 30
         lp_x = (width - lp_w) // 2
-        lp_y = 50
-        draw.rounded_rectangle([lp_x, lp_y, lp_x+lp_w, lp_y+lp_h], radius=20, fill="white")
-        img.paste(logo_img, (lp_x + 30, lp_y + 15), logo_img)
+        draw.rounded_rectangle([lp_x, logo_y, lp_x+lp_w, logo_y+lp_h], radius=20, fill=(255, 255, 255, 240))
+        img.paste(logo_img, (lp_x + 30, logo_y + 15), logo_img)
         
-        # "Supported by" text - Using Tuple for RGBA instead of string
-        draw.text((width//2, lp_y - 25), "สนับสนุนข้อมูลโดย", font=f_small, fill=(255, 255, 255, 230), anchor="ms")
+        draw.text((width//2, logo_y - 30), "สนับสนุนข้อมูลโดย", font=f_small, fill=(255,255,255, 220), anchor="ms")
 
-    # --- B. Date Pill ---
-    date_padding_x, date_padding_y = 40, 15
+    # --- B. Date ---
     bbox_date = draw.textbbox((0, 0), date_str, font=f_pill)
-    date_w = int(bbox_date[2] - bbox_date[0] + (date_padding_x * 2))
-    date_h = int(bbox_date[3] - bbox_date[1] + (date_padding_y * 2))
-    date_x = int((width - date_w) // 2)
+    date_w = int(bbox_date[2] - bbox_date[0] + 80)
+    date_h = int(bbox_date[3] - bbox_date[1] + 30)
+    date_x = (width - date_w) // 2
     date_y = 180
     
-    # Transparent Pill Trick
+    # Date Pill
     pill_img = Image.new('RGBA', (date_w, date_h), (0, 0, 0, 0))
-    pill_draw = ImageDraw.Draw(pill_img)
-    pill_draw.rounded_rectangle([0, 0, date_w, date_h], radius=30, fill=(255, 255, 255, 50)) # ~20% opacity
+    p_draw = ImageDraw.Draw(pill_img)
+    p_draw.rounded_rectangle([0, 0, date_w, date_h], radius=30, fill=(255, 255, 255, 50))
     img.paste(pill_img, (date_x, date_y), pill_img)
-    draw.text((width//2, date_y + date_h//2 - 2), date_str, font=f_pill, fill="white", anchor="mm")
+    draw.text((width//2, date_y + date_h//2 - 3), date_str, font=f_pill, fill=(255,255,255,255), anchor="mm")
 
-    # --- C. Gauge & Value ---
-    gauge_center_y = 480
-    gauge_radius = 220
-    
-    # Draw Gauge Track (Faded White Circle)
-    g_box = [width//2 - gauge_radius, gauge_center_y - gauge_radius, width//2 + gauge_radius, gauge_center_y + gauge_radius]
+    # --- C. Gauge ---
+    gauge_cy = 480
+    gauge_r = 200
+    g_box = [width//2 - gauge_r, gauge_cy - gauge_r, width//2 + gauge_r, gauge_cy + gauge_r]
     
     # Track
-    track_img = Image.new('RGBA', (width, height), (0,0,0,0))
-    track_draw = ImageDraw.Draw(track_img)
-    track_draw.ellipse(g_box, outline=(255,255,255, 70), width=25) # Track
-    img.paste(track_img, (0,0), track_img)
-
-    # Progress Arc (Solid White)
+    draw.arc(g_box, start=0, end=360, fill=(255,255,255, 60), width=25)
+    
+    # Progress
     percent = min((latest_pm25 / 120) * 360, 360)
-    # Start from top (-90)
-    draw.arc(g_box, start=-90, end=-90+percent, fill="white", width=25)
-
-    # Value
-    draw.text((width//2, gauge_center_y), f"{latest_pm25:.0f}", font=f_huge, fill="white", anchor="mm")
+    draw.arc(g_box, start=-90, end=-90+percent, fill=(255,255,255, 255), width=25)
     
-    # Unit - Using Tuple for RGBA
-    draw.text((width//2, gauge_center_y + 100), "µg/m³", font=f_title, fill=(255, 255, 255, 230), anchor="mm")
-    
-    # Status Text
-    draw.text((width//2, gauge_center_y + 200), f"{emoji} {level}", font=f_header, fill="white", anchor="mm")
-
+    # Value & Unit
+    draw.text((width//2, gauge_cy - 20), f"{latest_pm25:.0f}", font=f_huge, fill="white", anchor="mm")
+    draw.text((width//2, gauge_cy + 100), "µg/m³", font=f_title, fill=(255,255,255,220), anchor="mm")
+    draw.text((width//2, gauge_cy + 230), f"{emoji} {level}", font=f_header, fill="white", anchor="mm")
 
     # ==========================================
-    # 2. BOTTOM SECTION (Imitating Right Advice)
+    # 2. BOTTOM SHEET (White Card Layout)
     # ==========================================
-    content_y = top_h + 50
-    margin = 50
+    sheet_y = 820
+    
+    # Draw Sheet (Rounded Top)
+    draw.rounded_rectangle([0, sheet_y, width, height+50], radius=60, fill="white", corners=(True, True, False, False))
+    
+    # Content Start
+    content_y = sheet_y + 60
+    margin = 60
     card_w = width - (margin * 2)
 
-    # Helper for Web-Style Advice Card
-    def draw_web_card(start_y, title, desc, icon_key, is_risk=False):
-        c_h = 200
+    # Helper: Modern Row Card
+    def draw_modern_card(start_y, title, desc, icon_key, is_risk=False):
+        c_h = 180
         
-        # 1. Shadow
-        draw.rounded_rectangle([margin+5, start_y+5, margin+card_w+5, start_y+c_h+5], radius=25, fill="#f1f5f9")
+        # Background (Very Light Grey)
+        box = [margin, start_y, margin+card_w, start_y+c_h]
+        # draw_shadow(img, box, radius=30, blur=15, opacity=20) # Optional: Shadow for cards
+        draw.rounded_rectangle(box, radius=30, fill="#f8fafc")
         
-        # 2. Card Body (White/Light Gray)
-        card_bg = "#f8fafc" # Very light gray like web secondary bg
-        draw.rounded_rectangle([margin, start_y, margin+card_w, start_y+c_h], radius=25, fill=card_bg)
+        # Icon Circle
+        icon_size = 90
+        ic_x = margin + 30
+        ic_y = start_y + (c_h - icon_size)//2
         
-        # 3. Left Border Accent
-        accent_color = bg_color # Use the theme color
-        draw.rounded_rectangle([margin, start_y, margin+15, start_y+c_h], radius=0, fill=accent_color, corners=(True, False, False, True))
-        
-        # 4. Icon Box
-        icon_box_size = 80
-        ib_x = margin + 40
-        ib_y = start_y + (c_h - icon_box_size)//2
-        
-        draw.rounded_rectangle([ib_x, ib_y, ib_x+icon_box_size, ib_y+icon_box_size], radius=20, fill=accent_color)
+        # Circle BG
+        draw.ellipse([ic_x, ic_y, ic_x+icon_size, ic_y+icon_size], fill=bg_rgb)
         
         # Icon
         icon_url = ICON_URLS[icon_key] if not is_risk else ICON_URLS['heart']
         icon_img = get_image_from_url(icon_url)
         if icon_img:
             icon_img = icon_img.resize((50, 50), Image.Resampling.LANCZOS)
-            img.paste(icon_img, (ib_x+15, ib_y+15), icon_img)
+            img.paste(icon_img, (ic_x+20, ic_y+20), icon_img)
             
-        # 5. Text
-        text_x = ib_x + icon_box_size + 30
-        text_max_w = card_w - (text_x - margin) - 20
+        # Text
+        tx = ic_x + icon_size + 30
+        tw = card_w - (tx - margin) - 20
         
-        draw.text((text_x, ib_y + 5), title, font=f_title, fill="#1e293b", anchor="lt")
+        draw.text((tx, ic_y + 5), title, font=f_title, fill="#1e293b", anchor="lt")
         
-        lines = wrap_text(desc, f_body, text_max_w, draw)
-        for i, line in enumerate(lines[:3]):
-            draw.text((text_x, ib_y + 55 + (i*35)), line, font=f_body, fill="#64748b", anchor="lt")
+        desc_lines = wrap_text(desc, f_body, tw, draw)
+        for i, line in enumerate(desc_lines[:2]):
+            draw.text((tx, ic_y + 60 + (i*38)), line, font=f_body, fill="#64748b", anchor="lt")
             
         return start_y + c_h + 30
 
-    # Get Descriptions
-    gen_desc = "ปฏิบัติตามคำแนะนำเพื่อสุขภาพ"
-    if latest_pm25 <= 25: gen_desc = t[lang]['advice']['advice_1']['summary']
-    elif latest_pm25 <= 37.5: gen_desc = t[lang]['advice']['advice_3']['summary']
-    elif latest_pm25 <= 75: gen_desc = t[lang]['advice']['advice_4']['summary']
-    else: gen_desc = t[lang]['advice']['advice_5']['summary']
+    # Descriptions
+    gen_desc = t[lang]['advice']['advice_1']['summary'] if latest_pm25 <= 25 else \
+               t[lang]['advice']['advice_3']['summary'] if latest_pm25 <= 37.5 else \
+               t[lang]['advice']['advice_4']['summary'] if latest_pm25 <= 75 else \
+               t[lang]['advice']['advice_5']['summary']
 
-    # Draw Cards
-    curr_y = draw_web_card(content_y, t[lang]['general_public'], gen_desc, 'user')
-    curr_y = draw_web_card(curr_y, t[lang]['risk_group'], advice_details['risk_group'], 'heart', is_risk=True)
+    curr_y = draw_modern_card(content_y, t[lang]['general_public'], gen_desc, 'user')
+    curr_y = draw_modern_card(curr_y, t[lang]['risk_group'], advice_details['risk_group'], 'heart', is_risk=True)
 
-    # --- Action Grid ---
-    action_header_y = curr_y + 20
-    draw.text((margin, action_header_y), t[lang]['advice_header'], font=f_subtitle, fill="#94a3b8", anchor="ls")
+    # ==========================================
+    # 3. ACTION GRID (Modern Tinted Boxes)
+    # ==========================================
     
-    grid_y = action_header_y + 20
-    grid_gap = 25
+    # Header
+    action_y = curr_y + 20
+    draw.text((margin + 10, action_y), t[lang]['advice_header'], font=f_subtitle, fill="#94a3b8", anchor="ls")
+    
+    grid_y = action_y + 20
+    grid_gap = 30
     col_w = (width - (margin*2) - (grid_gap*2)) / 3
-    col_h = 240
+    col_h = 260
     
     actions = [
-        {'label': t[lang]['advice_cat_mask'], 'val': advice_details['mask'], 'icon': 'mask_dark'},
-        {'label': t[lang]['advice_cat_activity'], 'val': advice_details['activity'], 'icon': 'activity_dark'},
-        {'label': t[lang]['advice_cat_indoors'], 'val': advice_details['indoors'], 'icon': 'indoors_dark'}
+        {'label': t[lang]['advice_cat_mask'], 'val': advice_details['mask'], 'icon': 'mask'},
+        {'label': t[lang]['advice_cat_activity'], 'val': advice_details['activity'], 'icon': 'activity'},
+        {'label': t[lang]['advice_cat_indoors'], 'val': advice_details['indoors'], 'icon': 'indoors'}
     ]
     
-    # Explicitly map indices to the white icon keys we want for the circles
-    white_icon_keys = ['mask', 'activity', 'indoors']
+    # Tint Color (Theme color with low opacity)
+    tint_color = bg_rgb + (20,) # 20/255 opacity ~ 8%
+    border_color = bg_rgb + (255,)
 
     for i, act in enumerate(actions):
         bx = margin + i * (col_w + grid_gap)
+        by = grid_y
         
-        # Box Border
-        draw.rounded_rectangle([bx, grid_y, bx+col_w, grid_y+col_h], radius=25, outline=bg_color, width=3, fill="white")
+        # Background Tint
+        tint_img = Image.new('RGBA', (int(col_w), int(col_h)), (0,0,0,0))
+        t_draw = ImageDraw.Draw(tint_img)
+        t_draw.rounded_rectangle([0, 0, col_w, col_h], radius=30, fill=tint_color, outline=None)
+        img.paste(tint_img, (int(bx), int(by)), tint_img)
         
-        # Center Content
+        # Border (Optional, keep it clean without or very thin)
+        # draw.rounded_rectangle([bx, by, bx+col_w, by+col_h], radius=30, outline=border_color, width=2)
+
+        # Icon Circle (White BG)
         cx = bx + col_w/2
+        ic_bg_size = 80
+        ic_y = by + 40
+        draw.ellipse([cx-ic_bg_size/2, ic_y, cx+ic_bg_size/2, ic_y+ic_bg_size], fill="white")
         
-        # Icon Background Circle
-        ic_bg_size = 70
-        ic_y = grid_y + 50
-        draw.ellipse([cx-ic_bg_size/2, ic_y, cx+ic_bg_size/2, ic_y+ic_bg_size], fill=bg_color)
+        # Colored Icon inside (Use Theme Color for icon pixels if possible, or just grey)
+        # Simplest modern look: White Circle with colored icon.
+        # But we only have white icons. So let's use Theme Color Circle with White Icon (revert)
+        draw.ellipse([cx-ic_bg_size/2, ic_y, cx+ic_bg_size/2, ic_y+ic_bg_size], fill=bg_rgb)
         
-        # Load White Icon
-        if i < len(white_icon_keys):
-            white_key = white_icon_keys[i]
-            act_icon = get_image_from_url(ICON_URLS[white_key])
-            if act_icon:
-                act_icon = act_icon.resize((40, 40), Image.Resampling.LANCZOS)
-                img.paste(act_icon, (int(cx-20), int(ic_y+15)), act_icon)
-            
-        # Text
-        draw.text((cx, ic_y + 90), act['label'], font=f_pill, fill="#64748b", anchor="ms")
+        act_icon = get_image_from_url(ICON_URLS[act['icon']])
+        if act_icon:
+            act_icon = act_icon.resize((45, 45), Image.Resampling.LANCZOS)
+            img.paste(act_icon, (int(cx-22), int(ic_y+17)), act_icon)
+        
+        # Label
+        draw.text((cx, ic_y + 100), act['label'], font=f_pill, fill="#64748b", anchor="ms")
         
         # Value
         v_lines = wrap_text(act['val'], f_title, col_w-20, draw)
-        vy = ic_y + 130
+        vy = ic_y + 140
         for k, vl in enumerate(v_lines[:2]):
-             draw.text((cx, vy + (k*40)), vl, font=f_title, fill=bg_color, anchor="ms")
+             draw.text((cx, vy + (k*45)), vl, font=f_title, fill=bg_rgb, anchor="ms")
 
-    # Footer Credit
-    draw.text((width//2, height - 40), t[lang]['report_card_footer'], font=f_small, fill="#cbd5e1", anchor="mm")
+    # Footer
+    draw.text((width//2, height - 50), t[lang]['report_card_footer'], font=f_small, fill="#cbd5e1", anchor="mm")
 
-    # Output
+    # Final Output
     buf = BytesIO()
     img.save(buf, format='PNG', quality=95)
     return buf.getvalue()
