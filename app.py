@@ -55,13 +55,10 @@ if lang == 'th':
     date_str = latest_dt.strftime(f"%d {thai_month} {thai_year}, %H:%M:%S")
 else:
     date_str = latest_dt.strftime('%d %B %Y, %H:%M:%S')
-    
-# st.markdown(f"{t[lang]['latest_data']} `{date_str}`") # Moved inside the card
 
 st.write("") # Spacer
 
 # --- Main Display ---
-# Note: Quiz tab logic is removed. Displaying dashboard directly.
 display_realtime_pm(df, lang, t, date_str)
 st.divider()
 display_24hr_chart(df, lang, t)
