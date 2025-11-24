@@ -123,8 +123,8 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     width, height = 1200, 1600
     bg_color = get_theme_color(latest_pm25)
     
-    # Create base
-    img = Image.new('RGB', (width, height), '#ffffff')
+    # Create base with RGBA to support transparency correctly
+    img = Image.new('RGBA', (width, height), '#ffffff')
     draw = ImageDraw.Draw(img)
 
     # Fonts
@@ -161,8 +161,8 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         draw.rounded_rectangle([lp_x, lp_y, lp_x+lp_w, lp_y+lp_h], radius=20, fill="white")
         img.paste(logo_img, (lp_x + 30, lp_y + 15), logo_img)
         
-        # "Supported by" text
-        draw.text((width//2, lp_y - 25), "สนับสนุนข้อมูลโดย", font=f_small, fill="rgba(255,255,255,0.9)", anchor="ms")
+        # "Supported by" text - Using Tuple for RGBA instead of string
+        draw.text((width//2, lp_y - 25), "สนับสนุนข้อมูลโดย", font=f_small, fill=(255, 255, 255, 230), anchor="ms")
 
     # --- B. Date Pill ---
     date_padding_x, date_padding_y = 40, 15
@@ -184,20 +184,15 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     gauge_radius = 220
     
     # Draw Gauge Track (Faded White Circle)
-    # We draw a full circle track to look clean
     g_box = [width//2 - gauge_radius, gauge_center_y - gauge_radius, width//2 + gauge_radius, gauge_center_y + gauge_radius]
     
-    # Track (Simulated transparency via drawing solid color blended manually or just using a lighter version of theme color? 
-    # Actually, plain semi-transparent white works best on colored bg)
+    # Track
     track_img = Image.new('RGBA', (width, height), (0,0,0,0))
     track_draw = ImageDraw.Draw(track_img)
     track_draw.ellipse(g_box, outline=(255,255,255, 70), width=25) # Track
     img.paste(track_img, (0,0), track_img)
 
     # Progress Arc (Solid White)
-    # Map PM2.5 0-120 to 0-360 degrees roughly, or just keep it static full circle for print simplicity? 
-    # Let's do a static nice frame, it looks elegant. 
-    # Or actually calculate angle:
     percent = min((latest_pm25 / 120) * 360, 360)
     # Start from top (-90)
     draw.arc(g_box, start=-90, end=-90+percent, fill="white", width=25)
@@ -205,8 +200,8 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     # Value
     draw.text((width//2, gauge_center_y), f"{latest_pm25:.0f}", font=f_huge, fill="white", anchor="mm")
     
-    # Unit
-    draw.text((width//2, gauge_center_y + 100), "µg/m³", font=f_title, fill="rgba(255,255,255,0.9)", anchor="mm")
+    # Unit - Using Tuple for RGBA
+    draw.text((width//2, gauge_center_y + 100), "µg/m³", font=f_title, fill=(255, 255, 255, 230), anchor="mm")
     
     # Status Text
     draw.text((width//2, gauge_center_y + 200), f"{emoji} {level}", font=f_header, fill="white", anchor="mm")
@@ -231,8 +226,6 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         draw.rounded_rectangle([margin, start_y, margin+card_w, start_y+c_h], radius=25, fill=card_bg)
         
         # 3. Left Border Accent
-        # We need to simulate the left border radius carefully or just draw a rect.
-        # Simple rect on left side
         accent_color = bg_color # Use the theme color
         draw.rounded_rectangle([margin, start_y, margin+15, start_y+c_h], radius=0, fill=accent_color, corners=(True, False, False, True))
         
@@ -245,7 +238,6 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         
         # Icon
         icon_url = ICON_URLS[icon_key] if not is_risk else ICON_URLS['heart']
-        # If user icon, we want white. The list has white icons.
         icon_img = get_image_from_url(icon_url)
         if icon_img:
             icon_img = icon_img.resize((50, 50), Image.Resampling.LANCZOS)
@@ -295,22 +287,18 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     for i, act in enumerate(actions):
         bx = margin + i * (col_w + grid_gap)
         
-        # Box Border (Web style)
+        # Box Border
         draw.rounded_rectangle([bx, grid_y, bx+col_w, grid_y+col_h], radius=25, outline=bg_color, width=3, fill="white")
         
         # Center Content
         cx = bx + col_w/2
         
-        # Icon (Colored by theme or simple dark grey?)
-        # We use the theme color for the icon background circle.
-        
-        # Using a transparent colored circle
+        # Icon Background Circle
         ic_bg_size = 70
         ic_y = grid_y + 50
         draw.ellipse([cx-ic_bg_size/2, ic_y, cx+ic_bg_size/2, ic_y+ic_bg_size], fill=bg_color)
         
-        # Load White Icon for contrast
-        # Use the explicitly mapped key instead of relying on dictionary order
+        # Load White Icon
         if i < len(white_icon_keys):
             white_key = white_icon_keys[i]
             act_icon = get_image_from_url(ICON_URLS[white_key])
@@ -321,7 +309,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         # Text
         draw.text((cx, ic_y + 90), act['label'], font=f_pill, fill="#64748b", anchor="ms")
         
-        # Value (Bold, Theme Color)
+        # Value
         v_lines = wrap_text(act['val'], f_title, col_w-20, draw)
         vy = ic_y + 130
         for k, vl in enumerate(v_lines[:2]):
