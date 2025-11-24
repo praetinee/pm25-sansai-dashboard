@@ -133,34 +133,45 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     f_unit = get_font(font_med_url, 40)
     f_action_val = get_font(font_bold_url, 34)
 
-    # 1. HEADER
+    # ==========================================
+    # 1. HEADER SECTION (Logo & Date)
+    # ==========================================
+    
+    # --- LOGO (Top Left, Large, No Background) ---
     logo_img = get_image_from_url(ICON_URLS['logo'])
     if logo_img:
-        logo_h = 60
+        logo_h = 150 # Enlarged Size
         aspect = logo_img.width / logo_img.height
         logo_w = int(logo_h * aspect)
         logo_img = logo_img.resize((logo_w, logo_h), Image.Resampling.LANCZOS)
         
-        pill_w, pill_h = logo_w + 60, logo_h + 30
-        pill_x = (width - pill_w) // 2
-        pill_y = 60
-        draw.rounded_rectangle([pill_x, pill_y, pill_x+pill_w, pill_y+pill_h], radius=25, fill=(255, 255, 255, 240))
-        img.paste(logo_img, (pill_x + 30, pill_y + 15), logo_img)
-        draw_text_centered(draw, "สนับสนุนข้อมูลโดย", f_small, width//2, pill_y - 25, (255,255,255, 220))
+        # Position: Top Left with padding
+        logo_x = 60
+        logo_y = 50
+        
+        # Paste directly (No pill background)
+        img.paste(logo_img, (logo_x, logo_y), logo_img)
+        
+        # Removed "Supported by" text for cleaner look as requested
 
+    # --- DATE PILL (Moved to Top Right for Balance) ---
     date_bbox = draw.textbbox((0, 0), date_str, font=f_pill)
     date_w = date_bbox[2] - date_bbox[0] + 80
     date_h = date_bbox[3] - date_bbox[1] + 30
-    date_x = (width - date_w) // 2
-    date_y = 190
+    
+    # Align Top Right
+    date_x = width - date_w - 60 
+    date_y = 80 # Vertically aligned roughly with logo center
     
     date_bg = Image.new('RGBA', (int(date_w), int(date_h)), (0,0,0,0))
     date_draw = ImageDraw.Draw(date_bg)
     date_draw.rounded_rectangle([0, 0, date_w, date_h], radius=30, fill=(255, 255, 255, 50))
     img.paste(date_bg, (int(date_x), int(date_y)), date_bg)
-    draw_text_centered(draw, date_str, f_pill, width//2, date_y + date_h//2 - 4, (255,255,255,255))
+    draw_text_centered(draw, date_str, f_pill, date_x + date_w//2, date_y + date_h//2 - 4, (255,255,255,255))
 
-    # 2. GAUGE
+    # ==========================================
+    # 2. GAUGE SECTION
+    # ==========================================
     gauge_cy = 550
     gauge_r = 230
     draw.ellipse([width//2 - gauge_r, gauge_cy - gauge_r, width//2 + gauge_r, gauge_cy + gauge_r], fill="white")
@@ -173,7 +184,9 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     draw_text_centered(draw, "µg/m³", f_unit, width//2, gauge_cy + 100, theme_rgb)
     draw_text_centered(draw, level, f_header, width//2, gauge_cy + 290, "white")
 
-    # 3. WHITE SHEET
+    # ==========================================
+    # 3. WHITE SHEET (Body)
+    # ==========================================
     sheet_y = 920
     draw.rounded_rectangle([0, sheet_y, width, height + 200], radius=80, fill="white", corners=(True, True, False, False))
 
@@ -214,14 +227,16 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     current_y = draw_advice_card(content_y_start, t[lang]['general_public'], gen_desc, 'user')
     current_y = draw_advice_card(current_y, t[lang]['risk_group'], advice_details['risk_group'], 'heart', is_risk=True)
 
-    # 4. ACTION GRID
+    # ==========================================
+    # 4. ACTION GRID (Bottom)
+    # ==========================================
     current_y += 40
     draw_text_left(draw, t[lang]['advice_header'], f_subtitle, margin_x + 10, current_y, "#94a3b8")
     
     grid_y = current_y + 60
     grid_gap = 30
     
-    # Calculate column width here! (Moved from inside loop)
+    # Calculate column width here! (Correctly placed)
     col_w = (width - (margin_x * 2) - (grid_gap * 2)) / 3
     col_h = 450
     
@@ -262,7 +277,9 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         for k, vl in enumerate(v_lines[:4]):
             draw_text_centered(draw, vl, f_action_val, cx, val_y_start + (k * 45), theme_rgb)
 
+    # ==========================================
     # 5. FOOTER
+    # ==========================================
     draw_text_centered(draw, t[lang]['report_card_footer'], f_small, width//2, height - 80, "#cbd5e1")
 
     final_img = round_corners(img, 60)
