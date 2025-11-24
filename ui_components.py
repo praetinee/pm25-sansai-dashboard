@@ -36,9 +36,9 @@ def inject_custom_css():
                 height: 100%;
                 display: flex;
                 flex-direction: column;
-                justify-content: center; /* Adjusted for new layout */
+                justify-content: center; 
                 align-items: center;
-                min-height: 450px; 
+                min-height: 480px; /* Match height with right side content */
             }
             
             /* New style for top supporter section */
@@ -75,7 +75,7 @@ def inject_custom_css():
                 border-radius: 30px;
                 font-size: 0.85rem;
                 font-weight: 500;
-                margin-bottom: 2rem; /* Space below date before gauge */
+                margin-bottom: 2rem; 
             }
 
             /* --- Gauge Area --- */
@@ -167,11 +167,11 @@ def inject_custom_css():
                 color: var(--text-color);
             }
 
-            /* --- Right Side: Action Grid --- */
+            /* --- Right Side: Action Grid (UPDATED SIZES) --- */
             .action-grid-header {
-                font-size: 0.85rem;
+                font-size: 0.9rem;
                 font-weight: 700;
-                opacity: 0.6;
+                opacity: 0.7;
                 margin: 1.5rem 0 0.75rem 0.5rem;
                 text-transform: uppercase;
                 letter-spacing: 0.05em;
@@ -185,33 +185,34 @@ def inject_custom_css():
             .action-item {
                 background: transparent;
                 border: 2px solid; /* Color set inline */
-                border-radius: 1.2rem;
-                padding: 1.25rem 0.5rem;
+                border-radius: 1.5rem; /* Slightly more rounded */
+                padding: 1.5rem 0.5rem; /* More padding */
                 text-align: center;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                min-height: 110px;
+                min-height: 140px; /* Taller card */
                 transition: transform 0.2s;
             }
             .action-item:hover {
                 transform: translateY(-3px);
             }
             .action-icon-svg {
-                margin-bottom: 10px;
-                width: 24px;
-                height: 24px;
+                margin-bottom: 12px;
+                width: 42px !important;  /* Increased Size */
+                height: 42px !important; /* Increased Size */
             }
             .action-label {
-                font-size: 0.7rem;
+                font-size: 0.85rem; /* Larger Label */
                 font-weight: 600;
-                opacity: 0.8;
-                margin-bottom: 4px;
+                opacity: 0.9;
+                margin-bottom: 6px;
             }
             .action-val {
-                font-size: 0.85rem;
+                font-size: 1.1rem; /* Larger Value */
                 font-weight: 700;
+                line-height: 1.2;
             }
 
             /* --- Calendar --- */
@@ -269,7 +270,6 @@ def display_realtime_pm(df, lang, t, date_str):
         # IMPORTANT: HTML strings must be strictly flush left to prevent code block rendering
         html_left = f"""
 <div class="status-card" style="background-color: {bg_color};">
-<!-- Supporter Logo Section (Moved to Top) -->
 <div class="supporter-top">
 <div class="supporter-label">สนับสนุนข้อมูลโดย</div>
 <div class="supporter-logo-box">
@@ -308,9 +308,10 @@ def display_realtime_pm(df, lang, t, date_str):
         act_activity = advice_details['activity']
         act_home = advice_details['indoors']
 
-        icon_mask = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>"""
-        icon_activity_s = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>"""
-        icon_home_s = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>"""
+        # Icons - Adjusted viewBox and sizes in CSS, but SVG logic remains same
+        icon_mask = """<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>"""
+        icon_activity_s = """<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>"""
+        icon_home_s = """<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>"""
 
         # HTML for Right Column
         html_right = f"""
