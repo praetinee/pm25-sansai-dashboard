@@ -120,7 +120,7 @@ def round_corners(im, radius):
 
 # --- 3. Main Generator ---
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
-    # Canvas - INCREASED HEIGHT to 2000px for maximum breathing room
+    # Canvas - 2000px height for good spacing
     width, height = 1200, 2000
     bg_color_hex = get_theme_color(latest_pm25)
     bg_rgb = hex_to_rgb(bg_color_hex)
@@ -162,7 +162,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         draw.rounded_rectangle([lp_x, logo_y, lp_x+lp_w, logo_y+lp_h], radius=20, fill=(255, 255, 255, 240))
         img.paste(logo_img, (lp_x + 30, logo_y + 15), logo_img)
         
-        draw.text((width//2, logo_y - 30), "สนับสนุนข้อมูลโดย", font=f_small, fill=(255,255,255, 220), anchor="ms")
+        draw.text((width//2, logo_y - 30), "สนับสนุนข้อมูลโดย", font=f_small, fill=(255,255,255, 220), anchor="ms", language='th')
 
     # --- B. Date ---
     bbox_date = draw.textbbox((0, 0), date_str, font=f_pill)
@@ -176,40 +176,36 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     p_draw = ImageDraw.Draw(pill_img)
     p_draw.rounded_rectangle([0, 0, date_w, date_h], radius=30, fill=(255, 255, 255, 50))
     img.paste(pill_img, (date_x, date_y), pill_img)
-    draw.text((width//2, date_y + date_h//2 - 3), date_str, font=f_pill, fill=(255,255,255,255), anchor="mm")
+    draw.text((width//2, date_y + date_h//2 - 3), date_str, font=f_pill, fill=(255,255,255,255), anchor="mm", language='th')
 
     # --- C. Modern Gauge (Semi-Transparent White) ---
     gauge_cy = 480
     gauge_r = 220 
     g_box = [width//2 - gauge_r, gauge_cy - gauge_r, width//2 + gauge_r, gauge_cy + gauge_r]
     
-    # 1. Background Disc - Use 92% opacity white for "flexibility" and softness
+    # 1. Background Disc
     draw.ellipse(g_box, fill=(255, 255, 255, 235))
     
     # 2. Track Ring
     draw.arc(g_box, start=0, end=360, fill=(241, 245, 249, 100), width=25)
     
-    # 3. Progress Arc (Theme Color)
+    # 3. Progress Arc
     percent = min((latest_pm25 / 120) * 360, 360)
     draw.arc(g_box, start=-90, end=-90+percent, fill=bg_rgb, width=25)
     
-    # 4. Value & Unit (Theme Color)
+    # 4. Value & Unit
     draw.text((width//2, gauge_cy - 30), f"{latest_pm25:.0f}", font=f_huge, fill=bg_rgb, anchor="mm")
     draw.text((width//2, gauge_cy + 90), "µg/m³", font=f_unit_label, fill=bg_rgb, anchor="mm")
     
-    # Status Text (White on Green Background)
-    draw.text((width//2, gauge_cy + 270), f"{level}", font=f_header, fill="white", anchor="mm")
+    # Status Text
+    draw.text((width//2, gauge_cy + 270), f"{level}", font=f_header, fill="white", anchor="mm", language='th')
 
     # ==========================================
     # 2. BOTTOM SHEET (White Card Layout)
     # ==========================================
     sheet_y = 820
-    
-    # Draw Sheet (Rounded Top)
-    # Taller white sheet
     draw.rounded_rectangle([0, sheet_y, width, height+100], radius=60, fill="white", corners=(True, True, False, False))
     
-    # Content Start
     content_y = sheet_y + 60
     margin = 60
     card_w = width - (margin * 2)
@@ -218,19 +214,15 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     def draw_modern_card(start_y, title, desc, icon_key, is_risk=False):
         c_h = 180
         
-        # Background
         box = [margin, start_y, margin+card_w, start_y+c_h]
         draw.rounded_rectangle(box, radius=30, fill="#f8fafc")
         
-        # Icon Circle
         icon_size = 90
         ic_x = margin + 30
         ic_y = start_y + (c_h - icon_size)//2
         
-        # Circle BG
         draw.ellipse([ic_x, ic_y, ic_x+icon_size, ic_y+icon_size], fill=bg_rgb)
         
-        # Icon
         icon_url = ICON_URLS[icon_key] if not is_risk else ICON_URLS['heart']
         icon_img = get_image_from_url(icon_url)
         if icon_img:
@@ -241,11 +233,13 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         tx = ic_x + icon_size + 30
         tw = card_w - (tx - margin) - 20
         
-        draw.text((tx, ic_y + 5), title, font=f_title, fill="#1e293b", anchor="lt")
+        # INCREASED SPACING HERE: Title down +10px
+        draw.text((tx, ic_y + 10), title, font=f_title, fill="#1e293b", anchor="lt", language='th')
         
         desc_lines = wrap_text(desc, f_body, tw, draw)
+        # INCREASED GAP HERE: Start desc at +80px (was +60px) to clear upper vowels of desc line from lower vowels of title line
         for i, line in enumerate(desc_lines[:2]):
-            draw.text((tx, ic_y + 60 + (i*38)), line, font=f_body, fill="#64748b", anchor="lt")
+            draw.text((tx, ic_y + 80 + (i*45)), line, font=f_body, fill="#64748b", anchor="lt", language='th')
             
         return start_y + c_h + 30
 
@@ -262,15 +256,12 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     # 3. ACTION GRID (Modern Tinted Boxes)
     # ==========================================
     
-    # Header - More padding from above cards
     action_y = curr_y + 60 
-    draw.text((margin + 10, action_y), t[lang]['advice_header'], font=f_subtitle, fill="#94a3b8", anchor="ls")
+    draw.text((margin + 10, action_y), t[lang]['advice_header'], font=f_subtitle, fill="#94a3b8", anchor="ls", language='th')
     
     grid_y = action_y + 40
     grid_gap = 30
     col_w = (width - (margin*2) - (grid_gap*2)) / 3
-    
-    # Increased Height: 380px to accommodate text comfortably
     col_h = 380
     
     actions = [
@@ -279,20 +270,17 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         {'label': t[lang]['advice_cat_indoors'], 'val': advice_details['indoors'], 'icon': 'indoors'}
     ]
     
-    # Tint Color
-    tint_color = bg_rgb + (20,) # 20/255 opacity
+    tint_color = bg_rgb + (20,)
 
     for i, act in enumerate(actions):
         bx = margin + i * (col_w + grid_gap)
         by = grid_y
         
-        # Background Tint
         tint_img = Image.new('RGBA', (int(col_w), int(col_h)), (0,0,0,0))
         t_draw = ImageDraw.Draw(tint_img)
         t_draw.rounded_rectangle([0, 0, col_w, col_h], radius=30, fill=tint_color, outline=None)
         img.paste(tint_img, (int(bx), int(by)), tint_img)
         
-        # Icon Circle
         cx = bx + col_w/2
         ic_bg_size = 80
         ic_y = by + 40
@@ -304,20 +292,19 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
             act_icon = act_icon.resize((45, 45), Image.Resampling.LANCZOS)
             img.paste(act_icon, (int(cx-22), int(ic_y+17)), act_icon)
         
-        # Label Text (Topic)
-        draw.text((cx, ic_y + 110), act['label'], font=f_pill, fill="#64748b", anchor="ms")
+        # Label Text: Increased spacing from icon (+115px)
+        draw.text((cx, ic_y + 115), act['label'], font=f_pill, fill="#64748b", anchor="ms", language='th')
         
-        # Value Text (Action)
-        # Maintained generous gap +175
+        # Value Text: Increased spacing from Label (+190px) to prevent overlap
         v_lines = wrap_text(act['val'], f_action_val, col_w-20, draw)
-        vy = ic_y + 175 
-        for k, vl in enumerate(v_lines[:3]): # Allow up to 3 lines
-             draw.text((cx, vy + (k*42)), vl, font=f_action_val, fill=bg_rgb, anchor="ms")
+        vy = ic_y + 190
+        for k, vl in enumerate(v_lines[:3]):
+             draw.text((cx, vy + (k*48)), vl, font=f_action_val, fill=bg_rgb, anchor="ms", language='th')
 
-    # Footer - Pushed to absolute bottom area
-    draw.text((width//2, height - 80), t[lang]['report_card_footer'], font=f_small, fill="#cbd5e1", anchor="mm")
+    # Footer
+    draw.text((width//2, height - 80), t[lang]['report_card_footer'], font=f_small, fill="#cbd5e1", anchor="mm", language='th')
 
-    # Final Rounding of the Whole Card
+    # Final Rounding
     final_img = round_corners(img, 40)
 
     # Final Output
