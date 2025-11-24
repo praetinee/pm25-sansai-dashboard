@@ -62,21 +62,57 @@ def get_theme_color(pm):
     else: return '#ef4444' # Red (Hazardous)
 
 def wrap_text(text, font, max_width, draw):
-    """Simple text wrapper helper."""
+    """
+    Robust text wrapper helper that handles languages without spaces (like Thai).
+    """
     lines = []
     if not text: return lines
+    
+    # 1. Try splitting by spaces first (for English or mixed)
     words = text.split(' ')
-    current_line = words[0]
-    for word in words[1:]:
-        test_line = current_line + " " + word
-        bbox = draw.textbbox((0, 0), test_line, font=font)
+    current_line = ""
+    
+    for word in words:
+        # Check if adding this word (with a space if needed) exceeds width
+        # OR if the word itself is massive (common in Thai if no spaces present)
+        
+        test_line_with_space = current_line + " " + word if current_line else word
+        bbox = draw.textbbox((0, 0), test_line_with_space, font=font)
         w = bbox[2] - bbox[0]
+        
         if w <= max_width:
-            current_line = test_line
+            current_line = test_line_with_space
         else:
-            lines.append(current_line)
-            current_line = word
-    lines.append(current_line)
+            # If the word fits on a new line, push current line and start new
+            bbox_word = draw.textbbox((0, 0), word, font=font)
+            word_w = bbox_word[2] - bbox_word[0]
+            
+            if word_w <= max_width:
+                if current_line:
+                    lines.append(current_line)
+                current_line = word
+            else:
+                # The word itself is too long (Thai sentence case), split by character
+                if current_line:
+                    lines.append(current_line)
+                    current_line = ""
+                
+                # Character-based splitting for long words
+                chars = list(word)
+                temp_line = ""
+                for char in chars:
+                    test_char_line = temp_line + char
+                    c_bbox = draw.textbbox((0, 0), test_char_line, font=font)
+                    if (c_bbox[2] - c_bbox[0]) <= max_width:
+                        temp_line = test_char_line
+                    else:
+                        lines.append(temp_line)
+                        temp_line = char
+                current_line = temp_line
+
+    if current_line:
+        lines.append(current_line)
+        
     return lines
 
 # --- 3. Main Generator ---
@@ -253,6 +289,9 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         {'label': t[lang]['advice_cat_indoors'], 'val': advice_details['indoors'], 'icon': 'indoors_dark'}
     ]
     
+    # Explicitly map indices to the white icon keys we want for the circles
+    white_icon_keys = ['mask', 'activity', 'indoors']
+
     for i, act in enumerate(actions):
         bx = margin + i * (col_w + grid_gap)
         
@@ -263,9 +302,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         cx = bx + col_w/2
         
         # Icon (Colored by theme or simple dark grey?)
-        # Web uses theme color for icon wrapper or text. 
-        # Let's use the theme color for the icon.
-        # Since we only have white/grey icons, let's draw a colored circle like the previous version, it looks better on print.
+        # We use the theme color for the icon background circle.
         
         # Using a transparent colored circle
         ic_bg_size = 70
@@ -273,12 +310,13 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         draw.ellipse([cx-ic_bg_size/2, ic_y, cx+ic_bg_size/2, ic_y+ic_bg_size], fill=bg_color)
         
         # Load White Icon for contrast
-        # Use the white keys from ICON_URLS
-        white_key = list(ICON_URLS.keys())[i] # map 0->mask, 1->activity, 2->indoors
-        act_icon = get_image_from_url(ICON_URLS[white_key])
-        if act_icon:
-            act_icon = act_icon.resize((40, 40), Image.Resampling.LANCZOS)
-            img.paste(act_icon, (int(cx-20), int(ic_y+15)), act_icon)
+        # Use the explicitly mapped key instead of relying on dictionary order
+        if i < len(white_icon_keys):
+            white_key = white_icon_keys[i]
+            act_icon = get_image_from_url(ICON_URLS[white_key])
+            if act_icon:
+                act_icon = act_icon.resize((40, 40), Image.Resampling.LANCZOS)
+                img.paste(act_icon, (int(cx-20), int(ic_y+15)), act_icon)
             
         # Text
         draw.text((cx, ic_y + 90), act['label'], font=f_pill, fill="#64748b", anchor="ms")
