@@ -38,47 +38,58 @@ def inject_custom_css():
                 flex-direction: column;
                 justify-content: center; 
                 align-items: center;
-                min-height: 520px; /* Increased height slightly */
+                min-height: 480px;
             }
             
-            /* --- NEW Header Section (Logo Left, Date Right) --- */
-            .card-header {
+            /* Supporter Section */
+            .supporter-top {
                 display: flex;
-                justify-content: space-between;
-                align-items: flex-start;
+                flex-direction: column;
+                align-items: center;
+                margin-bottom: 1.5rem;
                 width: 100%;
-                margin-bottom: 2rem;
-                position: absolute;
-                top: 2rem;
-                left: 0;
-                padding: 0 2rem;
             }
             
-            .ccdc-logo {
-                height: 85px; /* Bigger Logo */
-                width: auto;
+            .supporter-label {
+                font-size: 0.7rem;
+                opacity: 0.85;
+                margin-bottom: 0.3rem;
+                color: rgba(255,255,255,0.9);
+                letter-spacing: 0.5px;
+                font-weight: 300;
+            }
+            
+            .supporter-logo-box {
+                background: rgba(255, 255, 255, 0.95);
+                padding: 4px 8px; 
+                border-radius: 12px;
+                display: inline-block;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                line-height: 0;
+            }
+            
+            .supporter-logo-box img {
                 display: block;
-                filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+                margin: 0;
             }
 
             .date-pill {
                 display: inline-block;
-                background: rgba(255, 255, 255, 0.25);
-                backdrop-filter: blur(8px);
-                padding: 8px 20px;
+                background: rgba(255, 255, 255, 0.2);
+                backdrop-filter: blur(10px);
+                padding: 6px 16px;
                 border-radius: 30px;
-                font-size: 0.9rem;
-                font-weight: 600;
-                white-space: nowrap;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+                font-size: 0.85rem;
+                font-weight: 500;
+                margin-bottom: 2rem; 
             }
 
             /* --- Gauge Area --- */
             .gauge-container {
                 position: relative;
-                width: 240px;
-                height: 240px;
-                margin: 3rem auto 1rem auto; /* Added top margin to clear header */
+                width: 220px;
+                height: 220px;
+                margin: 0 auto;
             }
             .gauge-svg {
                 width: 100%;
@@ -88,12 +99,12 @@ def inject_custom_css():
             .gauge-track {
                 fill: none;
                 stroke: rgba(255,255,255,0.2);
-                stroke-width: 20;
+                stroke-width: 18;
             }
             .gauge-fill {
                 fill: none;
                 stroke: white;
-                stroke-width: 20;
+                stroke-width: 18;
                 stroke-linecap: round;
                 transition: stroke-dashoffset 1s ease-out;
             }
@@ -106,23 +117,15 @@ def inject_custom_css():
                 color: white;
             }
             .gauge-number {
-                font-size: 5.5rem;
+                font-size: 5rem;
                 font-weight: 700;
                 line-height: 1;
                 letter-spacing: -2px;
-                text-shadow: 0 2px 10px rgba(0,0,0,0.1);
             }
             .gauge-unit {
-                font-size: 1.2rem;
+                font-size: 1.1rem;
                 font-weight: 500;
-                opacity: 0.95;
-                margin-top: 5px;
-            }
-            .gauge-status {
-                margin-top: 1rem;
-                font-size: 2rem;
-                font-weight: 700;
-                text-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                opacity: 0.9;
             }
 
             /* --- Right Side: Advice Cards --- */
@@ -246,8 +249,8 @@ def display_realtime_pm(df, lang, t, date_str):
         bg_color = "#10b981"
         accent_color = "#10b981"
     elif latest_pm25 <= 25: # Good
-        bg_color = "#22c55e" 
-        accent_color = "#22c55e"
+        bg_color = "#10b981" 
+        accent_color = "#10b981"
     elif latest_pm25 <= 37.5: # Moderate
         bg_color = "#fbbf24"
         accent_color = "#fbbf24"
@@ -260,52 +263,49 @@ def display_realtime_pm(df, lang, t, date_str):
 
     # Gauge Calculation
     percent = min((latest_pm25 / 120) * 100, 100)
-    radius = 100
+    radius = 80
     circumference = 2 * math.pi * radius
     stroke_dashoffset = circumference - (percent / 100) * circumference
 
     col_left, col_right = st.columns([4, 6], gap="large")
 
-    # --- LEFT COLUMN (Status Card) ---
+    # --- LEFT COLUMN ---
     with col_left:
         html_left = f"""
 <div class="status-card" style="background-color: {bg_color};">
-    <!-- Header: Logo Left, Date Right -->
-    <div class="card-header">
-        <img src="https://www.cmuccdc.org/template/image/logo_ccdc.png" class="ccdc-logo">
-        <div class="date-pill">{date_str}</div>
-    </div>
-
-    <!-- Gauge -->
-    <div class="gauge-container">
-        <svg class="gauge-svg" viewBox="0 0 240 240">
-            <circle cx="120" cy="120" r="{radius}" class="gauge-track"></circle>
-            <circle cx="120" cy="120" r="{radius}" class="gauge-fill" style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset};"></circle>
-        </svg>
-        <div class="gauge-content">
-            <div class="gauge-number">{latest_pm25:.0f}</div>
-            <div class="gauge-unit">μg/m³</div>
-        </div>
-    </div>
-    
-    <!-- Status Text -->
-    <div class="gauge-status">
-        {level_text}
-    </div>
+<div class="supporter-top">
+<div class="supporter-label">สนับสนุนข้อมูลโดย</div>
+<div class="supporter-logo-box">
+<img src="https://www.cmuccdc.org/template/image/logo_ccdc.png" style="height: 36px; width: auto; display: block;">
+</div>
+</div>
+<div class="date-pill">{date_str}</div>
+<div class="gauge-container">
+<svg class="gauge-svg" viewBox="0 0 200 200">
+<circle cx="100" cy="100" r="{radius}" class="gauge-track"></circle>
+<circle cx="100" cy="100" r="{radius}" class="gauge-fill" style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset};"></circle>
+</svg>
+<div class="gauge-content">
+<div class="gauge-number">{latest_pm25:.0f}</div>
+<div class="gauge-unit">μg/m³</div>
+</div>
+</div>
 </div>
 """
         st.markdown(html_left, unsafe_allow_html=True)
 
-    # --- RIGHT COLUMN (Advice) ---
+    # --- RIGHT COLUMN ---
     with col_right:
         title_gen = t[lang]['general_public']
         desc_gen = advice['summary']
         
+        # 1. User Icon (General)
         icon_gen = """<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>"""
 
         title_risk = t[lang]['risk_group']
         desc_risk = advice_details['risk_group']
         
+        # 2. Heart Icon (Risk Group) - แก้ไขใหม่เป็นรูปหัวใจชัดเจน
         icon_risk = """<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>"""
 
         act_mask = advice_details['mask']
