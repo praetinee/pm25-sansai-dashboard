@@ -139,7 +139,6 @@ def inject_custom_css():
                 align-items: flex-start;
                 gap: 1rem;
                 margin-bottom: 1.5rem;
-                /* Default Border */
                 border: 2px solid transparent; 
             }
             .advice-icon-wrapper {
@@ -224,27 +223,22 @@ def display_realtime_pm(df, lang, t, date_str):
     level_text, color, emoji, advice = get_aqi_level(latest_pm25, lang, t)
     advice_details = advice['details']
     
-    # --- Color & Theme Logic (Matching the uploaded image style) ---
+    # --- Color & Theme Logic (Matching Reference) ---
     if latest_pm25 <= 15: # Excellent (Teal/Green)
         bg_color = "#10b981" # Emerald 500
         accent_color = "#10b981"
-        bg_light = "rgba(16, 185, 129, 0.1)"
     elif latest_pm25 <= 25: # Good (Green)
         bg_color = "#10b981" 
         accent_color = "#10b981"
-        bg_light = "rgba(16, 185, 129, 0.1)"
     elif latest_pm25 <= 37.5: # Moderate (Yellow)
         bg_color = "#fbbf24" # Amber 400
         accent_color = "#fbbf24"
-        bg_light = "rgba(251, 191, 36, 0.1)"
     elif latest_pm25 <= 75: # Unhealthy (Orange)
         bg_color = "#f97316" # Orange 500
         accent_color = "#f97316"
-        bg_light = "rgba(249, 115, 22, 0.1)"
     else: # Hazardous (Red)
         bg_color = "#ef4444" # Red 500
         accent_color = "#ef4444"
-        bg_light = "rgba(239, 68, 68, 0.1)"
 
     # Gauge Calculation
     percent = min((latest_pm25 / 120) * 100, 100)
@@ -254,35 +248,33 @@ def display_realtime_pm(df, lang, t, date_str):
 
     col_center, = st.columns([1])
     with col_center:
-        # 1. Top Status Card
+        # 1. Top Status Card (Flush left HTML string)
         st.markdown(f"""
-        <div class="main-container">
-            <div class="status-card" style="background-color: {bg_color};">
-                <div class="date-pill">{date_str}</div>
-                
-                <div class="gauge-container">
-                    <svg class="gauge-svg" viewBox="0 0 200 200">
-                        <circle cx="100" cy="100" r="{radius}" class="gauge-track"></circle>
-                        <circle cx="100" cy="100" r="{radius}" class="gauge-fill" 
-                            style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset};"></circle>
-                    </svg>
-                    <div class="gauge-content">
-                        <div class="gauge-number">{latest_pm25:.0f}</div>
-                        <div class="gauge-unit">μg/m³</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+<div class="main-container">
+<div class="status-card" style="background-color: {bg_color};">
+<div class="date-pill">{date_str}</div>
+<div class="gauge-container">
+<svg class="gauge-svg" viewBox="0 0 200 200">
+<circle cx="100" cy="100" r="{radius}" class="gauge-track"></circle>
+<circle cx="100" cy="100" r="{radius}" class="gauge-fill" 
+style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset};"></circle>
+</svg>
+<div class="gauge-content">
+<div class="gauge-number">{latest_pm25:.0f}</div>
+<div class="gauge-unit">μg/m³</div>
+</div>
+</div>
+</div>
+</div>
+""", unsafe_allow_html=True)
 
-        # 2. Tabs (Radio Button)
+        # 2. Tabs (Radio Button) - Outside HTML block
         tab_options = [t[lang]['general_public'], t[lang]['risk_group']]
-        # Wrap in container to match width
         st.markdown('<div class="main-container" style="padding-top:0;">', unsafe_allow_html=True)
         selected_tab = st.radio("Target Group", tab_options, label_visibility="collapsed")
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # 3. Advice Content
+        # 3. Advice Content & Logic
         is_general = (selected_tab == t[lang]['general_public'])
         
         if is_general:
@@ -303,40 +295,39 @@ def display_realtime_pm(df, lang, t, date_str):
         icon_activity_s = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>"""
         icon_home_s = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>"""
 
+        # 4. Bottom Content (Flush left HTML string)
         st.markdown(f"""
-        <div class="main-container">
-            <!-- Advice Main Card -->
-            <div class="advice-section-card" style="border-left: 4px solid {accent_color};">
-                <div class="advice-icon-wrapper" style="background-color: {accent_color};">
-                    {icon_svg}
-                </div>
-                <div class="advice-text-content">
-                    <h4>{title}</h4>
-                    <p>{desc}</p>
-                </div>
-            </div>
+<div class="main-container">
+<div class="advice-section-card" style="border-left: 4px solid {accent_color};">
+<div class="advice-icon-wrapper" style="background-color: {accent_color};">
+{icon_svg}
+</div>
+<div class="advice-text-content">
+<h4>{title}</h4>
+<p>{desc}</p>
+</div>
+</div>
 
-            <!-- Action Grid (Outline Style) -->
-            <div style="font-size: 0.8rem; font-weight: 700; margin-bottom: 10px; opacity: 0.6;">{t[lang]['advice_header']}</div>
-            <div class="action-grid">
-                <div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
-                    <div class="action-icon-svg">{icon_mask}</div>
-                    <div class="action-label">{t[lang]['advice_cat_mask']}</div>
-                    <div class="action-val">{act_mask}</div>
-                </div>
-                <div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
-                    <div class="action-icon-svg">{icon_activity_s}</div>
-                    <div class="action-label">{t[lang]['advice_cat_activity']}</div>
-                    <div class="action-val">{act_activity}</div>
-                </div>
-                <div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
-                    <div class="action-icon-svg">{icon_home_s}</div>
-                    <div class="action-label">{t[lang]['advice_cat_indoors']}</div>
-                    <div class="action-val">{act_home}</div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+<div style="font-size: 0.8rem; font-weight: 700; margin-bottom: 10px; opacity: 0.6;">{t[lang]['advice_header']}</div>
+<div class="action-grid">
+<div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
+<div class="action-icon-svg">{icon_mask}</div>
+<div class="action-label">{t[lang]['advice_cat_mask']}</div>
+<div class="action-val">{act_mask}</div>
+</div>
+<div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
+<div class="action-icon-svg">{icon_activity_s}</div>
+<div class="action-label">{t[lang]['advice_cat_activity']}</div>
+<div class="action-val">{act_activity}</div>
+</div>
+<div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
+<div class="action-icon-svg">{icon_home_s}</div>
+<div class="action-label">{t[lang]['advice_cat_indoors']}</div>
+<div class="action-val">{act_home}</div>
+</div>
+</div>
+</div>
+""", unsafe_allow_html=True)
 
         st.write("") # Spacer
 
@@ -357,7 +348,7 @@ def display_realtime_pm(df, lang, t, date_str):
                     mime="image/png",
                     use_container_width=True)
 
-# --- Re-export other functions unchanged ---
+# --- Re-export other functions ---
 def display_external_assessment(lang, t):
     st.subheader(t[lang]['external_assessment_title'])
     st.markdown(f"""
