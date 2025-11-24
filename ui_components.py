@@ -36,20 +36,46 @@ def inject_custom_css():
                 height: 100%;
                 display: flex;
                 flex-direction: column;
-                justify-content: space-between; /* Space out content */
+                justify-content: center; /* Adjusted for new layout */
                 align-items: center;
-                min-height: 450px; /* Increased height for logo */
+                min-height: 450px; 
             }
             
+            /* New style for top supporter section */
+            .supporter-top {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                margin-bottom: 1.5rem;
+                width: 100%;
+            }
+            
+            .supporter-label {
+                font-size: 0.7rem;
+                opacity: 0.85;
+                margin-bottom: 0.3rem;
+                color: rgba(255,255,255,0.9);
+                letter-spacing: 0.5px;
+                font-weight: 300;
+            }
+            
+            .supporter-logo-box {
+                background: rgba(255, 255, 255, 0.95);
+                padding: 6px 14px;
+                border-radius: 12px;
+                display: inline-block;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            }
+
             .date-pill {
                 display: inline-block;
                 background: rgba(255, 255, 255, 0.2);
                 backdrop-filter: blur(10px);
-                padding: 8px 20px;
+                padding: 6px 16px;
                 border-radius: 30px;
-                font-size: 0.9rem;
+                font-size: 0.85rem;
                 font-weight: 500;
-                margin-bottom: 1.5rem;
+                margin-bottom: 2rem; /* Space below date before gauge */
             }
 
             /* --- Gauge Area --- */
@@ -243,7 +269,16 @@ def display_realtime_pm(df, lang, t, date_str):
         # IMPORTANT: HTML strings must be strictly flush left to prevent code block rendering
         html_left = f"""
 <div class="status-card" style="background-color: {bg_color};">
+<!-- Supporter Logo Section (Moved to Top) -->
+<div class="supporter-top">
+<div class="supporter-label">สนับสนุนข้อมูลโดย</div>
+<div class="supporter-logo-box">
+<img src="https://www.cmuccdc.org/template/image/logo_ccdc.png" style="height: 36px; width: auto; display: block;">
+</div>
+</div>
+
 <div class="date-pill">{date_str}</div>
+
 <div class="gauge-container">
 <svg class="gauge-svg" viewBox="0 0 200 200">
 <circle cx="100" cy="100" r="{radius}" class="gauge-track"></circle>
@@ -252,12 +287,6 @@ def display_realtime_pm(df, lang, t, date_str):
 <div class="gauge-content">
 <div class="gauge-number">{latest_pm25:.0f}</div>
 <div class="gauge-unit">μg/m³</div>
-</div>
-</div>
-<div style="margin-top: 2rem; width: 100%;">
-<div style="font-size: 0.75rem; opacity: 0.9; margin-bottom: 0.5rem; color: rgba(255,255,255,0.95);">สนับสนุนเครื่องตรวจวัดโดย</div>
-<div style="background: white; padding: 10px 20px; border-radius: 16px; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-<img src="https://www.cmuccdc.org/template/image/logo_ccdc.png" style="height: 40px; width: auto; display: block;">
 </div>
 </div>
 </div>
