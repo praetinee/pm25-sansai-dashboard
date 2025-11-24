@@ -19,22 +19,26 @@ def inject_custom_css():
 
             /* --- Modern Layout Containers --- */
             .main-container {
-                max-width: 500px;
+                max-width: 1000px; /* Increased width for 2-column layout */
                 margin: 0 auto;
                 padding: 10px;
             }
 
-            /* --- Top Card (Status) --- */
+            /* --- Left Side: Status Card --- */
             .status-card {
                 border-radius: 2rem;
-                padding: 2rem 1.5rem;
+                padding: 2.5rem 1.5rem;
                 text-align: center;
                 color: white;
                 box-shadow: 0 10px 30px rgba(0,0,0,0.1);
                 position: relative;
                 overflow: hidden;
-                margin-bottom: 1.5rem;
-                transition: all 0.3s ease;
+                height: 100%; /* Full height to match right side */
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                min-height: 350px;
             }
             
             .date-pill {
@@ -45,15 +49,15 @@ def inject_custom_css():
                 border-radius: 20px;
                 font-size: 0.85rem;
                 font-weight: 500;
-                margin-bottom: 1.5rem;
+                margin-bottom: 2rem;
             }
 
             /* --- Gauge Area --- */
             .gauge-container {
                 position: relative;
-                width: 180px;
-                height: 180px;
-                margin: 0 auto 1rem auto;
+                width: 200px;
+                height: 200px;
+                margin: 0 auto;
             }
             .gauge-svg {
                 width: 100%;
@@ -63,12 +67,12 @@ def inject_custom_css():
             .gauge-track {
                 fill: none;
                 stroke: rgba(255,255,255,0.2);
-                stroke-width: 12;
+                stroke-width: 15;
             }
             .gauge-fill {
                 fill: none;
                 stroke: white;
-                stroke-width: 12;
+                stroke-width: 15;
                 stroke-linecap: round;
                 transition: stroke-dashoffset 1s ease-out;
             }
@@ -81,17 +85,18 @@ def inject_custom_css():
                 color: white;
             }
             .gauge-number {
-                font-size: 3.5rem;
+                font-size: 4.5rem;
                 font-weight: 700;
                 line-height: 1;
+                letter-spacing: -2px;
             }
             .gauge-unit {
-                font-size: 0.9rem;
+                font-size: 1rem;
                 font-weight: 500;
                 opacity: 0.9;
             }
 
-            /* --- Tabs (Styled as buttons) --- */
+            /* --- Right Side: Tabs --- */
             div[role="radiogroup"] {
                 background: var(--secondary-background-color);
                 padding: 4px;
@@ -130,21 +135,21 @@ def inject_custom_css():
             }
             div[data-testid="stRadio"] label > div:first-child { display: none; }
 
-            /* --- Advice Card (Dark/Outline Style) --- */
+            /* --- Right Side: Advice Card --- */
             .advice-section-card {
                 background: var(--secondary-background-color);
                 border-radius: 1.5rem;
                 padding: 1.5rem;
                 display: flex;
-                align-items: flex-start;
-                gap: 1rem;
+                align-items: center;
+                gap: 1.25rem;
                 margin-bottom: 1.5rem;
-                border: 2px solid transparent; 
+                border: 2px solid transparent; /* Dynamic border color inline */
             }
             .advice-icon-wrapper {
-                min-width: 48px;
-                height: 48px;
-                border-radius: 12px;
+                min-width: 56px;
+                height: 56px;
+                border-radius: 16px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -153,27 +158,27 @@ def inject_custom_css():
             }
             .advice-text-content h4 {
                 margin: 0 0 4px 0;
-                font-size: 1.1rem;
+                font-size: 1.2rem;
                 font-weight: 700;
             }
             .advice-text-content p {
                 margin: 0;
-                font-size: 0.9rem;
+                font-size: 0.95rem;
                 opacity: 0.8;
                 line-height: 1.4;
             }
 
-            /* --- Action Grid (Outline Style) --- */
+            /* --- Right Side: Action Grid --- */
             .action-grid {
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
-                gap: 10px;
+                gap: 12px;
             }
             .action-item {
                 background: transparent;
                 border: 2px solid; /* Color set inline */
                 border-radius: 1.2rem;
-                padding: 1rem 0.5rem;
+                padding: 1.25rem 0.5rem;
                 text-align: center;
                 display: flex;
                 flex-direction: column;
@@ -181,21 +186,22 @@ def inject_custom_css():
                 justify-content: center;
                 height: 100%;
                 transition: transform 0.2s;
+                min-height: 120px;
             }
             .action-item:hover {
-                transform: translateY(-2px);
+                transform: translateY(-3px);
             }
             .action-icon-svg {
-                margin-bottom: 8px;
+                margin-bottom: 10px;
             }
             .action-label {
-                font-size: 0.65rem;
+                font-size: 0.7rem;
                 font-weight: 600;
-                opacity: 0.8;
-                margin-bottom: 2px;
+                opacity: 0.7;
+                margin-bottom: 4px;
             }
             .action-val {
-                font-size: 0.85rem;
+                font-size: 0.9rem;
                 font-weight: 700;
             }
 
@@ -223,7 +229,7 @@ def display_realtime_pm(df, lang, t, date_str):
     level_text, color, emoji, advice = get_aqi_level(latest_pm25, lang, t)
     advice_details = advice['details']
     
-    # --- Color & Theme Logic (Matching Reference) ---
+    # --- Color & Theme Logic ---
     if latest_pm25 <= 15: # Excellent (Teal/Green)
         bg_color = "#10b981" # Emerald 500
         accent_color = "#10b981"
@@ -246,107 +252,112 @@ def display_realtime_pm(df, lang, t, date_str):
     circumference = 2 * math.pi * radius
     stroke_dashoffset = circumference - (percent / 100) * circumference
 
-    col_center, = st.columns([1])
-    with col_center:
-        # 1. Top Status Card (Flush left HTML string)
+    # --- Main Layout Container ---
+    st.markdown('<div class="main-container">', unsafe_allow_html=True)
+    
+    # Create 2 Columns: Left (40%) and Right (60%)
+    col_left, col_right = st.columns([4, 6], gap="large")
+
+    # --- LEFT COLUMN: PM2.5 Value & Gauge ---
+    with col_left:
         st.markdown(f"""
-<div class="main-container">
-<div class="status-card" style="background-color: {bg_color};">
-<div class="date-pill">{date_str}</div>
-<div class="gauge-container">
-<svg class="gauge-svg" viewBox="0 0 200 200">
-<circle cx="100" cy="100" r="{radius}" class="gauge-track"></circle>
-<circle cx="100" cy="100" r="{radius}" class="gauge-fill" 
-style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset};"></circle>
-</svg>
-<div class="gauge-content">
-<div class="gauge-number">{latest_pm25:.0f}</div>
-<div class="gauge-unit">μg/m³</div>
-</div>
-</div>
-</div>
-</div>
-""", unsafe_allow_html=True)
+        <div class="status-card" style="background-color: {bg_color};">
+            <div class="date-pill">{date_str}</div>
+            <div class="gauge-container">
+                <svg class="gauge-svg" viewBox="0 0 200 200">
+                    <circle cx="100" cy="100" r="{radius}" class="gauge-track"></circle>
+                    <circle cx="100" cy="100" r="{radius}" class="gauge-fill" 
+                        style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset};"></circle>
+                </svg>
+                <div class="gauge-content">
+                    <div class="gauge-number">{latest_pm25:.0f}</div>
+                    <div class="gauge-unit">μg/m³</div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        # 2. Tabs (Radio Button) - Outside HTML block
+    # --- RIGHT COLUMN: Advice & Actions ---
+    with col_right:
+        # 1. Tabs
         tab_options = [t[lang]['general_public'], t[lang]['risk_group']]
-        st.markdown('<div class="main-container" style="padding-top:0;">', unsafe_allow_html=True)
         selected_tab = st.radio("Target Group", tab_options, label_visibility="collapsed")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        # 3. Advice Content & Logic
-        is_general = (selected_tab == t[lang]['general_public'])
         
+        # 2. Prepare Content
+        is_general = (selected_tab == t[lang]['general_public'])
         if is_general:
             title = t[lang]['general_public']
             desc = advice['summary']
-            icon_svg = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>"""
+            icon_svg = """<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>"""
         else:
             title = t[lang]['risk_group']
             desc = advice_details['risk_group']
-            icon_svg = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 1 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 1 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>"""
+            icon_svg = """<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>"""
 
         act_mask = advice_details['mask']
         act_activity = advice_details['activity']
         act_home = advice_details['indoors']
 
         # Icons
-        icon_mask = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>"""
+        icon_mask = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>"""
         icon_activity_s = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>"""
         icon_home_s = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>"""
 
-        # 4. Bottom Content (Flush left HTML string)
+        # 3. Render Advice + Grid
         st.markdown(f"""
-<div class="main-container">
-<div class="advice-section-card" style="border-left: 4px solid {accent_color};">
-<div class="advice-icon-wrapper" style="background-color: {accent_color};">
-{icon_svg}
-</div>
-<div class="advice-text-content">
-<h4>{title}</h4>
-<p>{desc}</p>
-</div>
-</div>
+        <!-- Advice Card -->
+        <div class="advice-section-card" style="border-left: 6px solid {accent_color};">
+            <div class="advice-icon-wrapper" style="background-color: {accent_color};">
+                {icon_svg}
+            </div>
+            <div class="advice-text-content">
+                <h4>{title}</h4>
+                <p>{desc}</p>
+            </div>
+        </div>
 
-<div style="font-size: 0.8rem; font-weight: 700; margin-bottom: 10px; opacity: 0.6;">{t[lang]['advice_header']}</div>
-<div class="action-grid">
-<div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
-<div class="action-icon-svg">{icon_mask}</div>
-<div class="action-label">{t[lang]['advice_cat_mask']}</div>
-<div class="action-val">{act_mask}</div>
-</div>
-<div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
-<div class="action-icon-svg">{icon_activity_s}</div>
-<div class="action-label">{t[lang]['advice_cat_activity']}</div>
-<div class="action-val">{act_activity}</div>
-</div>
-<div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
-<div class="action-icon-svg">{icon_home_s}</div>
-<div class="action-label">{t[lang]['advice_cat_indoors']}</div>
-<div class="action-val">{act_home}</div>
-</div>
-</div>
-</div>
-""", unsafe_allow_html=True)
+        <!-- Action Grid Header -->
+        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 12px; opacity: 0.7;">{t[lang]['advice_header']}</div>
+        
+        <!-- Action Grid -->
+        <div class="action-grid">
+            <div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
+                <div class="action-icon-svg">{icon_mask}</div>
+                <div class="action-label">{t[lang]['advice_cat_mask']}</div>
+                <div class="action-val">{act_mask}</div>
+            </div>
+            <div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
+                <div class="action-icon-svg">{icon_activity_s}</div>
+                <div class="action-label">{t[lang]['advice_cat_activity']}</div>
+                <div class="action-val">{act_activity}</div>
+            </div>
+            <div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
+                <div class="action-icon-svg">{icon_home_s}</div>
+                <div class="action-label">{t[lang]['advice_cat_indoors']}</div>
+                <div class="action-val">{act_home}</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        st.write("") # Spacer
+    st.markdown('</div>', unsafe_allow_html=True) # End Main Container
+    st.write("") # Spacer
 
-        # Footer Actions
-        b_col1, b_col2 = st.columns([1, 1])
-        with b_col1:
-            if st.button(f"🔄 {t[lang]['refresh_button']}", use_container_width=True):
-                st.cache_data.clear()
-                st.rerun()
-        with b_col2:
-            from card_generator import generate_report_card
-            report_card_bytes = generate_report_card(latest_pm25, level_text, color, emoji, advice_details, date_str, lang, t)
-            if report_card_bytes:
-                st.download_button(
-                    label=f"🖼️ {t[lang]['download_button']}",
-                    data=report_card_bytes,
-                    file_name=f"pm25_report_{datetime.now().strftime('%Y%m%d_%H%M')}.png",
-                    mime="image/png",
-                    use_container_width=True)
+    # Footer Actions
+    b_col1, b_col2 = st.columns([1, 1])
+    with b_col1:
+        if st.button(f"🔄 {t[lang]['refresh_button']}", use_container_width=True):
+            st.cache_data.clear()
+            st.rerun()
+    with b_col2:
+        from card_generator import generate_report_card
+        report_card_bytes = generate_report_card(latest_pm25, level_text, color, emoji, advice_details, date_str, lang, t)
+        if report_card_bytes:
+            st.download_button(
+                label=f"🖼️ {t[lang]['download_button']}",
+                data=report_card_bytes,
+                file_name=f"pm25_report_{datetime.now().strftime('%Y%m%d_%H%M')}.png",
+                mime="image/png",
+                use_container_width=True)
 
 # --- Re-export other functions ---
 def display_external_assessment(lang, t):
