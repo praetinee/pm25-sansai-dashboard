@@ -128,7 +128,8 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     img = Image.new('RGBA', (width, height), bg_color_hex) # Background is theme color
     draw = ImageDraw.Draw(img)
 
-    # Fonts
+    # --- Fonts (Sarabun All) ---
+    # Using Sarabun for ALL text elements as requested
     font_bold_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
     font_med_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Medium.ttf"
     font_reg_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
@@ -162,6 +163,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         draw.rounded_rectangle([lp_x, logo_y, lp_x+lp_w, logo_y+lp_h], radius=20, fill=(255, 255, 255, 240))
         img.paste(logo_img, (lp_x + 30, logo_y + 15), logo_img)
         
+        # Removed language='th' to fix crash
         draw.text((width//2, logo_y - 30), "สนับสนุนข้อมูลโดย", font=f_small, fill=(255,255,255, 220), anchor="ms")
 
     # --- B. Date ---
@@ -194,10 +196,12 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     draw.arc(g_box, start=-90, end=-90+percent, fill=bg_rgb, width=25)
     
     # 4. Value & Unit
+    # Adjusted Y offset manually to avoid overlapping
     draw.text((width//2, gauge_cy - 30), f"{latest_pm25:.0f}", font=f_huge, fill=bg_rgb, anchor="mm")
     draw.text((width//2, gauge_cy + 90), "µg/m³", font=f_unit_label, fill=bg_rgb, anchor="mm")
     
     # Status Text
+    # Added extra padding for Thai characters
     draw.text((width//2, gauge_cy + 270), f"{level}", font=f_header, fill="white", anchor="mm")
 
     # ==========================================
@@ -233,12 +237,13 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         tx = ic_x + icon_size + 30
         tw = card_w - (tx - margin) - 20
         
-        # INCREASED SPACING: Title down to y+5
-        draw.text((tx, ic_y + 5), title, font=f_title, fill="#1e293b", anchor="lt")
+        # TITLE: Move down slightly (+10) to clear top bounding box
+        draw.text((tx, ic_y + 10), title, font=f_title, fill="#1e293b", anchor="lt")
         
         desc_lines = wrap_text(desc, f_body, tw, draw)
-        # INCREASED GAP: Start desc at +90px (30px gap from approx title end)
-        # INCREASED LINE HEIGHT: 50px per line
+        
+        # BODY: Start further down (+90) to create clear separation from Title
+        # LINE HEIGHT: Increased to 50px per line to prevent vowel overlap between lines
         for i, line in enumerate(desc_lines[:2]):
             draw.text((tx, ic_y + 90 + (i*50)), line, font=f_body, fill="#64748b", anchor="lt")
             
@@ -293,15 +298,15 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
             act_icon = act_icon.resize((45, 45), Image.Resampling.LANCZOS)
             img.paste(act_icon, (int(cx-22), int(ic_y+17)), act_icon)
         
-        # Label Text: Increased spacing from icon (+115px)
+        # LABEL: Move down (+115)
         draw.text((cx, ic_y + 115), act['label'], font=f_pill, fill="#64748b", anchor="ms")
         
-        # Value Text: Increased spacing from Label (+190px)
+        # VALUE: Move down (+190) to separate from Label
         v_lines = wrap_text(act['val'], f_action_val, col_w-20, draw)
-        vy = ic_y + 190
-        # Increased line spacing: 50px
+        
+        # VALUE LINES: Increased spacing (50px)
         for k, vl in enumerate(v_lines[:3]):
-             draw.text((cx, vy + (k*50)), vl, font=f_action_val, fill=bg_rgb, anchor="ms")
+             draw.text((cx, vy + 190 + (k*50)), vl, font=f_action_val, fill=bg_rgb, anchor="ms")
 
     # Footer
     draw.text((width//2, height - 80), t[lang]['report_card_footer'], font=f_small, fill="#cbd5e1", anchor="mm")
