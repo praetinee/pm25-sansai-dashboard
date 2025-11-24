@@ -15,7 +15,7 @@ ICON_URLS = {
 }
 
 CANVAS_WIDTH = 1200
-CANVAS_HEIGHT = 2400 # Increased significantly for safety
+CANVAS_HEIGHT = 2400 # High res vertical canvas
 
 # --- Cache & Utils ---
 @st.cache_data
@@ -59,10 +59,6 @@ def hex_to_rgb(hex_color):
     return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
 
 def wrap_text(text, font, max_width, draw):
-    """
-    Splits text into lines that fit within max_width.
-    Handles Thai strings better by splitting long strings if needed.
-    """
     lines = []
     if not text: return lines
     
@@ -77,10 +73,8 @@ def wrap_text(text, font, max_width, draw):
         if w <= max_width:
             current_line = test_line
         else:
-            # Check if word itself is too long
             word_bbox = draw.textbbox((0, 0), word, font=font)
             if (word_bbox[2] - word_bbox[0]) > max_width:
-                # Force split char by char if word is massive
                 if current_line:
                     lines.append(current_line)
                     current_line = ""
@@ -124,7 +118,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     img = Image.new('RGBA', (width, height), get_theme_color(latest_pm25))
     draw = ImageDraw.Draw(img)
 
-    # --- Load Fonts (Sarabun) ---
+    # Fonts
     font_bold_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
     font_med_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Medium.ttf"
     font_reg_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
@@ -137,11 +131,9 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     f_small = get_font(font_reg_url, 28)
     f_pill = get_font(font_med_url, 30)
     f_unit = get_font(font_med_url, 40)
+    f_action_val = get_font(font_bold_url, 34)
 
-    # ==========================
-    # 1. HEADER SECTION (Top)
-    # ==========================
-    # Logo
+    # 1. HEADER
     logo_img = get_image_from_url(ICON_URLS['logo'])
     if logo_img:
         logo_h = 60
@@ -149,17 +141,13 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         logo_w = int(logo_h * aspect)
         logo_img = logo_img.resize((logo_w, logo_h), Image.Resampling.LANCZOS)
         
-        # Pill Background
         pill_w, pill_h = logo_w + 60, logo_h + 30
         pill_x = (width - pill_w) // 2
         pill_y = 60
         draw.rounded_rectangle([pill_x, pill_y, pill_x+pill_w, pill_y+pill_h], radius=25, fill=(255, 255, 255, 240))
         img.paste(logo_img, (pill_x + 30, pill_y + 15), logo_img)
-        
-        # "Supported by"
         draw_text_centered(draw, "สนับสนุนข้อมูลโดย", f_small, width//2, pill_y - 25, (255,255,255, 220))
 
-    # Date Pill
     date_bbox = draw.textbbox((0, 0), date_str, font=f_pill)
     date_w = date_bbox[2] - date_bbox[0] + 80
     date_h = date_bbox[3] - date_bbox[1] + 30
@@ -172,101 +160,70 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     img.paste(date_bg, (int(date_x), int(date_y)), date_bg)
     draw_text_centered(draw, date_str, f_pill, width//2, date_y + date_h//2 - 4, (255,255,255,255))
 
-    # ==========================
-    # 2. GAUGE SECTION
-    # ==========================
+    # 2. GAUGE
     gauge_cy = 550
     gauge_r = 230
-    
-    # White Disc Background (Solid White for contrast)
     draw.ellipse([width//2 - gauge_r, gauge_cy - gauge_r, width//2 + gauge_r, gauge_cy + gauge_r], fill="white")
-    
-    # Track (Light Grey)
     draw.arc([width//2 - gauge_r, gauge_cy - gauge_r, width//2 + gauge_r, gauge_cy + gauge_r], 
              start=0, end=360, fill="#e2e8f0", width=25)
-    
-    # Progress (Theme Color)
     percent = min((latest_pm25 / 120) * 360, 360)
     draw.arc([width//2 - gauge_r, gauge_cy - gauge_r, width//2 + gauge_r, gauge_cy + gauge_r], 
              start=-90, end=-90+percent, fill=theme_rgb, width=25)
-
-    # Value & Unit (Theme Color)
-    # Using specific offsets to ensure vertical balance
     draw_text_centered(draw, f"{latest_pm25:.0f}", f_huge, width//2, gauge_cy - 20, theme_rgb)
     draw_text_centered(draw, "µg/m³", f_unit, width//2, gauge_cy + 100, theme_rgb)
-    
-    # Status Text (White on Theme Background)
     draw_text_centered(draw, level, f_header, width//2, gauge_cy + 290, "white")
 
-    # ==========================
-    # 3. WHITE SHEET (Body)
-    # ==========================
+    # 3. WHITE SHEET
     sheet_y = 920
-    # Extend way below canvas to ensure corners are only at top
     draw.rounded_rectangle([0, sheet_y, width, height + 200], radius=80, fill="white", corners=(True, True, False, False))
 
     content_y_start = sheet_y + 80
     margin_x = 70
     card_width = width - (margin_x * 2)
 
-    # Function to draw horizontal advice card
     def draw_advice_card(y_pos, title, desc, icon_key, is_risk=False):
-        card_h = 240 # Fixed generous height
-        
-        # Card BG
+        card_h = 240
         draw.rounded_rectangle([margin_x, y_pos, margin_x + card_width, y_pos + card_h], radius=40, fill="#f8fafc")
         
-        # Icon Circle
         icon_size = 100
         ic_x = margin_x + 40
         ic_y = y_pos + (card_h - icon_size) // 2
         draw.ellipse([ic_x, ic_y, ic_x+icon_size, ic_y+icon_size], fill=theme_rgb)
         
-        # Icon Image
         icon_url = ICON_URLS[icon_key] if not is_risk else ICON_URLS['heart']
         icon_img = get_image_from_url(icon_url)
         if icon_img:
             icon_img = icon_img.resize((55, 55), Image.Resampling.LANCZOS)
             img.paste(icon_img, (ic_x+22, ic_y+22), icon_img)
             
-        # Text Content
         text_x = ic_x + icon_size + 40
         text_w = card_width - (text_x - margin_x) - 40
         
-        # Title (Top aligned relative to icon center)
         draw_text_left(draw, title, f_title, text_x, y_pos + 40, "#1e293b")
-        
-        # Description (Wrapped)
         desc_lines = wrap_text(desc, f_body, text_w, draw)
-        line_height = 45 # Generous line height for Thai
-        
-        for i, line in enumerate(desc_lines[:3]): # Max 3 lines
-            draw_text_left(draw, line, f_body, text_x, y_pos + 100 + (i * line_height), "#64748b")
+        for i, line in enumerate(desc_lines[:3]):
+            draw_text_left(draw, line, f_body, text_x, y_pos + 100 + (i * 45), "#64748b")
             
-        return y_pos + card_h + 40 # Return next Y position
+        return y_pos + card_h + 40
 
-    # Logic for advice text
     gen_desc = t[lang]['advice']['advice_1']['summary']
-    if latest_pm25 > 25: gen_desc = t[lang]['advice']['advice_2']['summary'] # Simplified mapping logic
+    if latest_pm25 > 25: gen_desc = t[lang]['advice']['advice_2']['summary']
     if latest_pm25 > 37.5: gen_desc = t[lang]['advice']['advice_3']['summary']
     if latest_pm25 > 75: gen_desc = t[lang]['advice']['advice_4']['summary']
     
-    # Draw Cards
     current_y = draw_advice_card(content_y_start, t[lang]['general_public'], gen_desc, 'user')
     current_y = draw_advice_card(current_y, t[lang]['risk_group'], advice_details['risk_group'], 'heart', is_risk=True)
 
-    # ==========================
-    # 4. ACTION GRID (Bottom)
-    # ==========================
-    
-    # Header
+    # 4. ACTION GRID
     current_y += 40
     draw_text_left(draw, t[lang]['advice_header'], f_subtitle, margin_x + 10, current_y, "#94a3b8")
     
     grid_y = current_y + 60
     grid_gap = 30
+    
+    # Calculate column width here! (Moved from inside loop)
     col_w = (width - (margin_x * 2) - (grid_gap * 2)) / 3
-    col_h = 450 # Huge height for bottom cards
+    col_h = 450
     
     actions = [
         {'label': t[lang]['advice_cat_mask'], 'val': advice_details['mask'], 'icon': 'mask'},
@@ -274,53 +231,41 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         {'label': t[lang]['advice_cat_indoors'], 'val': advice_details['indoors'], 'icon': 'indoors'}
     ]
     
-    tint_color = theme_rgb + (20,) # Very light tint
+    tint_color = theme_rgb + (20,)
     
     for i, act in enumerate(actions):
         bx = margin_x + i * (col_w + grid_gap)
         by = grid_y
         
-        # Tinted BG
         tint_layer = Image.new('RGBA', (int(col_w), int(col_h)), (0,0,0,0))
         tint_draw = ImageDraw.Draw(tint_layer)
         tint_draw.rounded_rectangle([0, 0, col_w, col_h], radius=35, fill=tint_color)
         img.paste(tint_layer, (int(bx), int(by)), tint_layer)
         
-        # Center X of column
         cx = bx + col_w / 2
         
-        # Icon Circle
         ic_size = 90
         ic_y_local = 50
         draw.ellipse([cx - ic_size/2, by + ic_y_local, cx + ic_size/2, by + ic_y_local + ic_size], fill=theme_rgb)
         
-        # Icon Image
         act_icon = get_image_from_url(ICON_URLS[act['icon']])
         if act_icon:
             act_icon = act_icon.resize((50, 50), Image.Resampling.LANCZOS)
             img.paste(act_icon, (int(cx - 25), int(by + ic_y_local + 20)), act_icon)
             
-        # Label (Topic)
         label_y = by + ic_y_local + ic_size + 30
         draw_text_centered(draw, act['label'], f_pill, cx, label_y, "#64748b")
         
-        # Value (Detail) - Multi-line supported
         val_y_start = label_y + 50
         v_lines = wrap_text(act['val'], f_action_val, col_w - 30, draw)
-        line_height_val = 45
         
-        for k, vl in enumerate(v_lines[:4]): # Allow up to 4 lines
-            draw_text_centered(draw, vl, f_action_val, cx, val_y_start + (k * line_height_val), theme_rgb)
+        for k, vl in enumerate(v_lines[:4]):
+            draw_text_centered(draw, vl, f_action_val, cx, val_y_start + (k * 45), theme_rgb)
 
-    # ==========================
     # 5. FOOTER
-    # ==========================
-    # Pin to very bottom with padding
     draw_text_centered(draw, t[lang]['report_card_footer'], f_small, width//2, height - 80, "#cbd5e1")
 
-    # Final Polish
     final_img = round_corners(img, 60)
-    
     buf = BytesIO()
     final_img.save(buf, format='PNG', quality=95)
     return buf.getvalue()
