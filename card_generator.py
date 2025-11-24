@@ -114,21 +114,25 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     # Draw arc for bottom curve
     draw.pieslice([-100, header_h - 200, width + 100, header_h], 0, 180, fill=bg_color)
     
-    # Date Pill (Top Center)
+    # Date Pill (Top Center) - FIXED TRANSPARENCY
     date_padding_x = 40
     date_padding_y = 15
     bbox_date = draw.textbbox((0, 0), date_str, font=f_pill)
-    date_w = bbox_date[2] - bbox_date[0] + (date_padding_x * 2)
-    date_h = bbox_date[3] - bbox_date[1] + (date_padding_y * 2)
-    date_x = (width - date_w) // 2
+    date_w = int(bbox_date[2] - bbox_date[0] + (date_padding_x * 2))
+    date_h = int(bbox_date[3] - bbox_date[1] + (date_padding_y * 2))
+    date_x = int((width - date_w) // 2)
     date_y = 60
     
-    draw.rounded_rectangle(
-        [date_x, date_y, date_x + date_w, date_y + date_h], 
-        radius=30, 
-        fill="rgba(255, 255, 255, 0.25)", 
-        outline=None
-    )
+    # Create a separate RGBA image for the transparent pill
+    pill_img = Image.new('RGBA', (date_w, date_h), (0, 0, 0, 0))
+    pill_draw = ImageDraw.Draw(pill_img)
+    # Fill with white having alpha 64 (approx 25%) -> (255, 255, 255, 64)
+    pill_draw.rounded_rectangle([0, 0, date_w, date_h], radius=30, fill=(255, 255, 255, 64))
+    
+    # Paste onto main image using the pill itself as a mask (for alpha blending)
+    img.paste(pill_img, (date_x, date_y), pill_img)
+    
+    # Draw text on top (Solid White)
     draw.text((width//2, date_y + date_h//2 - 2), date_str, font=f_pill, fill="white", anchor="mm")
 
     # PM2.5 Value
@@ -215,26 +219,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         return start_y + row_h + 40 # Return next Y position
 
     # Get General Advice Text
-    # Re-fetch advice object locally to ensure we have the summary
-    # In a real scenario, advice_details is passed, but summary might be in a parent object. 
-    # The current code structure passes 'advice_details' which is just the dict of actions.
-    # We need the summary text. Let's try to get it from 't' using logic or generic text if missing.
-    # Fallback logic:
     gen_desc = "ปฏิบัติตามคำแนะนำเพื่อสุขภาพ" # Default
-    # Try to find the matching summary from t based on level string match is risky, 
-    # instead, let's look at advice_details content or passed level. 
-    # Ideally, the caller should pass the summary. 
-    # Workaround: Use the 'advice' structure from translations if possible.
-    # Since we can't easily access the full advice object from params, we reconstruct logic or use a generic placeholder 
-    # that encourages looking at the details below.
-    # ACTUALLY: Let's use the 'risk_group' text for risk, and for general, 
-    # we can try to infer or just use a standard label like "คำแนะนำทั่วไป".
-    # BUT wait, the original code used logic to fetch it.
-    # Let's check 'advice_details'. It has 'risk_group' string.
-    # It does NOT have general public summary string.
-    # Let's use the 'risk_group' text for the risk card.
-    # For General Public, we will use a text based on the level color/severity conceptually.
-    
     if latest_pm25 <= 25:
         gen_desc = t[lang]['advice']['advice_1']['summary']
     elif latest_pm25 <= 37.5:
