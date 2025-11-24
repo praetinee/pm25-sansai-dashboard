@@ -38,7 +38,7 @@ def inject_custom_css():
                 flex-direction: column;
                 justify-content: center;
                 align-items: center;
-                min-height: 350px;
+                min-height: 420px; /* Increased min-height to match double cards */
             }
             
             .date-pill {
@@ -96,60 +96,25 @@ def inject_custom_css():
                 opacity: 0.9;
             }
 
-            /* --- Right Side: Tabs --- */
-            div[role="radiogroup"] {
-                background: var(--secondary-background-color);
-                padding: 4px;
-                border-radius: 1rem;
-                display: flex;
-                margin-bottom: 1.5rem;
-                width: 100%;
-                justify-content: space-between;
-            }
-            div[role="radiogroup"] label {
-                flex: 1;
-                text-align: center;
-                cursor: pointer;
-                border: none;
-                margin: 0;
-                padding: 0;
-                background: transparent;
-            }
-            div[role="radiogroup"] label > div {
-                padding: 10px 0;
-                border-radius: 0.8rem;
-                font-weight: 600;
-                font-size: 0.9rem;
-                color: var(--text-color);
-                opacity: 0.7;
-                transition: all 0.2s;
-                border: none !important;
-                width: 100%;
-                display: block;
-            }
-            div[role="radiogroup"] label input[type="radio"]:checked + div {
-                background: var(--background-color);
-                color: var(--text-color);
-                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-                opacity: 1;
-            }
-            div[data-testid="stRadio"] label > div:first-child { display: none; }
-
             /* --- Right Side: Advice Card --- */
             .advice-section-card {
                 background: var(--secondary-background-color);
                 border-radius: 1.5rem;
-                padding: 1.5rem;
+                padding: 1.25rem;
                 display: flex;
                 align-items: center;
-                gap: 1.25rem;
-                margin-bottom: 1.5rem;
+                gap: 1rem;
+                margin-bottom: 1rem;
                 border: 2px solid transparent; /* Dynamic border color inline */
+                transition: transform 0.2s;
+            }
+            .advice-section-card:hover {
+                transform: translateX(5px);
             }
             .advice-icon-wrapper {
-                min-width: 56px;
-                height: 56px;
-                border-radius: 16px;
+                min-width: 48px;
+                height: 48px;
+                border-radius: 14px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -158,12 +123,12 @@ def inject_custom_css():
             }
             .advice-text-content h4 {
                 margin: 0 0 4px 0;
-                font-size: 1.2rem;
+                font-size: 1rem;
                 font-weight: 700;
             }
             .advice-text-content p {
                 margin: 0;
-                font-size: 0.95rem;
+                font-size: 0.9rem;
                 opacity: 0.8;
                 line-height: 1.4;
             }
@@ -172,13 +137,13 @@ def inject_custom_css():
             .action-grid {
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
-                gap: 12px;
+                gap: 10px;
             }
             .action-item {
                 background: transparent;
                 border: 2px solid; /* Color set inline */
                 border-radius: 1.2rem;
-                padding: 1.25rem 0.5rem;
+                padding: 1rem 0.5rem;
                 text-align: center;
                 display: flex;
                 flex-direction: column;
@@ -186,22 +151,22 @@ def inject_custom_css():
                 justify-content: center;
                 height: 100%;
                 transition: transform 0.2s;
-                min-height: 120px;
+                min-height: 110px;
             }
             .action-item:hover {
                 transform: translateY(-3px);
             }
             .action-icon-svg {
-                margin-bottom: 10px;
+                margin-bottom: 8px;
             }
             .action-label {
-                font-size: 0.7rem;
+                font-size: 0.65rem;
                 font-weight: 600;
                 opacity: 0.7;
                 margin-bottom: 4px;
             }
             .action-val {
-                font-size: 0.9rem;
+                font-size: 0.85rem;
                 font-weight: 700;
             }
 
@@ -279,62 +244,69 @@ def display_realtime_pm(df, lang, t, date_str):
 
     # --- RIGHT COLUMN: Advice & Actions ---
     with col_right:
-        # 1. Tabs
-        tab_options = [t[lang]['general_public'], t[lang]['risk_group']]
-        selected_tab = st.radio("Target Group", tab_options, label_visibility="collapsed")
-        
-        # 2. Prepare Content
-        is_general = (selected_tab == t[lang]['general_public'])
-        if is_general:
-            title = t[lang]['general_public']
-            desc = advice['summary']
-            icon_svg = """<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>"""
-        else:
-            title = t[lang]['risk_group']
-            desc = advice_details['risk_group']
-            icon_svg = """<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>"""
+        # Define Content
+        title_gen = t[lang]['general_public']
+        desc_gen = advice['summary']
+        icon_gen = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>"""
+
+        title_risk = t[lang]['risk_group']
+        desc_risk = advice_details['risk_group']
+        icon_risk = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 1 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 1 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>"""
 
         act_mask = advice_details['mask']
         act_activity = advice_details['activity']
         act_home = advice_details['indoors']
 
         # Icons
-        icon_mask = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>"""
+        icon_mask = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>"""
         icon_activity_s = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>"""
         icon_home_s = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>"""
 
-        # 3. Render Advice + Grid
+        # 3. Render Two Advice Cards Stacked + Action Grid
         st.markdown(f"""
-        <!-- Advice Card -->
-        <div class="advice-section-card" style="border-left: 6px solid {accent_color};">
-            <div class="advice-icon-wrapper" style="background-color: {accent_color};">
-                {icon_svg}
+        <div class="main-container">
+            <!-- General Public Card -->
+            <div class="advice-section-card" style="border-left: 4px solid {accent_color};">
+                <div class="advice-icon-wrapper" style="background-color: {accent_color};">
+                    {icon_gen}
+                </div>
+                <div class="advice-text-content">
+                    <h4>{title_gen}</h4>
+                    <p>{desc_gen}</p>
+                </div>
             </div>
-            <div class="advice-text-content">
-                <h4>{title}</h4>
-                <p>{desc}</p>
-            </div>
-        </div>
 
-        <!-- Action Grid Header -->
-        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 12px; opacity: 0.7;">{t[lang]['advice_header']}</div>
-        
-        <!-- Action Grid -->
-        <div class="action-grid">
-            <div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
-                <div class="action-icon-svg">{icon_mask}</div>
-                <div class="action-label">{t[lang]['advice_cat_mask']}</div>
-                <div class="action-val">{act_mask}</div>
+            <!-- Risk Group Card -->
+            <div class="advice-section-card" style="border-left: 4px solid {accent_color};">
+                <div class="advice-icon-wrapper" style="background-color: {accent_color};">
+                    {icon_risk}
+                </div>
+                <div class="advice-text-content">
+                    <h4>{title_risk}</h4>
+                    <p>{desc_risk}</p>
+                </div>
             </div>
-            <div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
-                <div class="action-icon-svg">{icon_activity_s}</div>
-                <div class="action-label">{t[lang]['advice_cat_activity']}</div>
-                <div class="action-val">{act_activity}</div>
-            </div>
-            <div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
-                <div class="action-icon-svg">{icon_home_s}</div>
-                <div class="action-label">{t[lang]['advice_cat_indoors']}</div>
-                <div class="action-val">{act_home}</div>
+
+            <!-- Action Grid Header -->
+            <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 12px; opacity: 0.7; margin-top: 1.5rem;">{t[lang]['advice_header']}</div>
+            
+            <!-- Action Grid -->
+            <div class="action-grid">
+                <div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
+                    <div class="action-icon-svg">{icon_mask}</div>
+                    <div class="action-label">{t[lang]['advice_cat_mask']}</div>
+                    <div class="action-val">{act_mask}</div>
+                </div>
+                <div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
+                    <div class="action-icon-svg">{icon_activity_s}</div>
+                    <div class="action-label">{t[lang]['advice_cat_activity']}</div>
+                    <div class="action-val">{act_activity}</div>
+                </div>
+                <div class="action-item" style="border-color: {accent_color}; color: {accent_color};">
+                    <div class="action-icon-svg">{icon_home_s}</div>
+                    <div class="action-label">{t[lang]['advice_cat_indoors']}</div>
+                    <div class="action-val">{act_home}</div>
+                </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
