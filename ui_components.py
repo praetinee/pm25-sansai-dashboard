@@ -36,9 +36,9 @@ def inject_custom_css():
                 height: 100%;
                 display: flex;
                 flex-direction: column;
-                justify-content: center;
+                justify-content: space-between; /* Space out content */
                 align-items: center;
-                min-height: 400px;
+                min-height: 450px; /* Increased height for logo */
             }
             
             .date-pill {
@@ -49,7 +49,7 @@ def inject_custom_css():
                 border-radius: 30px;
                 font-size: 0.9rem;
                 font-weight: 500;
-                margin-bottom: 2rem;
+                margin-bottom: 1.5rem;
             }
 
             /* --- Gauge Area --- */
@@ -238,23 +238,32 @@ def display_realtime_pm(df, lang, t, date_str):
     # Create 2 Columns Layout: Left (Gauge) | Right (Info)
     col_left, col_right = st.columns([4, 6], gap="large")
 
-    # --- LEFT COLUMN: Status Card ---
+    # --- LEFT COLUMN: Status Card with Supporter Logo ---
     with col_left:
         # Using flush-left string to prevent code block rendering
         st.markdown(f"""
 <div class="status-card" style="background-color: {bg_color};">
-<div class="date-pill">{date_str}</div>
-<div class="gauge-container">
-<svg class="gauge-svg" viewBox="0 0 200 200">
-<circle cx="100" cy="100" r="{radius}" class="gauge-track"></circle>
-<circle cx="100" cy="100" r="{radius}" class="gauge-fill" 
-style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset};"></circle>
-</svg>
-<div class="gauge-content">
-<div class="gauge-number">{latest_pm25:.0f}</div>
-<div class="gauge-unit">μg/m³</div>
-</div>
-</div>
+    <div class="date-pill">{date_str}</div>
+    
+    <div class="gauge-container">
+        <svg class="gauge-svg" viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="{radius}" class="gauge-track"></circle>
+            <circle cx="100" cy="100" r="{radius}" class="gauge-fill" 
+                style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset};"></circle>
+        </svg>
+        <div class="gauge-content">
+            <div class="gauge-number">{latest_pm25:.0f}</div>
+            <div class="gauge-unit">μg/m³</div>
+        </div>
+    </div>
+
+    <!-- Supporter Logo Section -->
+    <div style="margin-top: 2rem; width: 100%;">
+        <div style="font-size: 0.75rem; opacity: 0.9; margin-bottom: 0.5rem; color: rgba(255,255,255,0.95);">สนับสนุนเครื่องตรวจวัดโดย</div>
+        <div style="background: white; padding: 10px 20px; border-radius: 16px; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <img src="https://www.cmuccdc.org/template/image/logo_ccdc.png" style="height: 40px; width: auto; display: block;">
+        </div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
