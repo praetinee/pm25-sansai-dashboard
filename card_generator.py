@@ -120,8 +120,8 @@ def round_corners(im, radius):
 
 # --- 3. Main Generator ---
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
-    # Canvas
-    width, height = 1200, 1600
+    # Canvas - INCREASED HEIGHT from 1600 to 1900 to fix overlapping footer
+    width, height = 1200, 1900 
     bg_color_hex = get_theme_color(latest_pm25)
     bg_rgb = hex_to_rgb(bg_color_hex)
     
@@ -141,7 +141,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     f_body = get_font(font_reg_url, 30)
     f_small = get_font(font_reg_url, 26)
     f_pill = get_font(font_med_url, 28)
-    f_action_val = get_font(font_bold_url, 34) # Reduced slightly to fit better
+    f_action_val = get_font(font_bold_url, 34) 
 
     # ==========================================
     # 1. TOP SECTION (Status)
@@ -206,8 +206,8 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     sheet_y = 820
     
     # Draw Sheet (Rounded Top)
-    # We draw slightly taller to cover bottom corners properly for rounding later
-    draw.rounded_rectangle([0, sheet_y, width, height+100], radius=60, fill="white", corners=(True, True, False, False))
+    # We draw much taller to cover bottom area
+    draw.rounded_rectangle([0, sheet_y, width, height+200], radius=60, fill="white", corners=(True, True, False, False))
     
     # Content Start
     content_y = sheet_y + 60
@@ -270,7 +270,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     grid_gap = 30
     col_w = (width - (margin*2) - (grid_gap*2)) / 3
     
-    # Increased Height to prevent overlap: 320 -> 350
+    # Increased Height to prevent overlap: 350
     col_h = 350
     
     actions = [
@@ -314,8 +314,8 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         for k, vl in enumerate(v_lines[:3]): # Allow up to 3 lines
              draw.text((cx, vy + (k*42)), vl, font=f_action_val, fill=bg_rgb, anchor="ms")
 
-    # Footer
-    draw.text((width//2, height - 50), t[lang]['report_card_footer'], font=f_small, fill="#cbd5e1", anchor="mm")
+    # Footer - Adjusted Y position to be at the very bottom
+    draw.text((width//2, height - 60), t[lang]['report_card_footer'], font=f_small, fill="#cbd5e1", anchor="mm")
 
     # Final Rounding of the Whole Card
     final_img = round_corners(img, 40)
