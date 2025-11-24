@@ -1,268 +1,244 @@
-from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageOps, ImageChops
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageOps
 import requests
 from io import BytesIO
 import streamlit as st
 import math
-import random
 
-# --- 1. Assets (Modern 3D Icons Only) ---
+# --- 1. Assets (Modern Icons - Reusing similar logic/style) ---
+# Using placeholder URLs for icons, ideally these should be local files or reliable URLs
+# For this generator, we will draw simple shapes or text if icons fail, or use these URLs
 ICON_URLS = {
-    'mask': "https://i.postimg.cc/wB0w9rd9/Gemini-Generated-Image-rkwajtrkwajtrkwa.png",
-    'activity': "https://i.postimg.cc/FFdXnyj1/Gemini-Generated-Image-16wol216wol216wo.png",
-    'indoors': "https://i.postimg.cc/RVw5vvpJ/Gemini-Generated-Image-8gbf4e8gbf4e8gbf.png",
-    'risk_group': "https://i.postimg.cc/8CKxZccL/Gemini-Generated-Image-4oj4z84oj4z84oj4.png"
+    'mask': "https://img.icons8.com/ios-filled/100/ffffff/protection-mask.png",
+    'activity': "https://img.icons8.com/ios-filled/100/ffffff/running.png",
+    'indoors': "https://img.icons8.com/ios-filled/100/ffffff/home.png",
+    'user': "https://img.icons8.com/ios-filled/100/ffffff/user.png",
+    'heart': "https://img.icons8.com/ios-filled/100/ffffff/like.png", # Heart icon for sensitive group
+    'logo': "https://www.cmuccdc.org/template/image/logo_ccdc.png"
 }
 
 @st.cache_data
-def get_font(url):
+def get_font(url, size):
     try:
         response = requests.get(url)
         response.raise_for_status()
-        return BytesIO(response.content)
-    except requests.exceptions.RequestException as e:
+        return ImageFont.truetype(BytesIO(response.content), size)
+    except Exception as e:
         print(f"Font download failed: {e}")
-        return None
+        return ImageFont.load_default()
 
 @st.cache_data
-def get_image_from_url(url, size=None):
+def get_image_from_url(url):
     try:
         response = requests.get(url)
         response.raise_for_status()
         img = Image.open(BytesIO(response.content))
-        img = img.convert("RGBA")
-        if size:
-            img = img.resize(size, Image.Resampling.LANCZOS)
-        return img
+        return img.convert("RGBA")
     except Exception as e:
         print(f"Image download failed for {url}: {e}")
         return None
 
-# --- 2. Modern Theme Engine (Mesh Gradients) ---
+# --- 2. Color Themes (Consistent with Web) ---
+def get_theme_color(pm):
+    if pm <= 15: return '#10b981' # Emerald (Excellent)
+    elif pm <= 25: return '#10b981' # Green (Good)
+    elif pm <= 37.5: return '#fbbf24' # Amber (Moderate)
+    elif pm <= 75: return '#f97316' # Orange (Unhealthy)
+    else: return '#ef4444' # Red (Hazardous)
 
-def get_theme_config(pm):
-    """คืนค่าสีสำหรับสร้าง Mesh Gradient ตามระดับฝุ่น"""
-    if pm <= 25: # Teal/Mint/Cyan
-        return {
-            'base': '#ccfbf1', # Teal 100
-            'orb1': '#2dd4bf', # Teal 400
-            'orb2': '#3b82f6', # Blue 500
-            'orb3': '#a7f3d0', # Emerald 200
-            'text': '#0f766e', # Teal 700
-            'pill_bg': '#0d9488',
-            'pill_text': '#ffffff'
-        }
-    elif pm <= 37.5: # Yellow/Orange/Cream
-        return {
-            'base': '#fefce8', # Yellow 50
-            'orb1': '#facc15', # Yellow 400
-            'orb2': '#fb923c', # Orange 400
-            'orb3': '#fef08a', # Yellow 200
-            'text': '#a16207', # Yellow 700
-            'pill_bg': '#ca8a04',
-            'pill_text': '#ffffff'
-        }
-    elif pm <= 75: # Orange/Red/Peach
-        return {
-            'base': '#fff7ed', # Orange 50
-            'orb1': '#fb923c', # Orange 400
-            'orb2': '#f87171', # Red 400
-            'orb3': '#ffedd5', # Orange 100
-            'text': '#c2410c', # Orange 700
-            'pill_bg': '#ea580c',
-            'pill_text': '#ffffff'
-        }
-    else: # Red/Purple/Dark
-        return {
-            'base': '#fef2f2', # Red 50
-            'orb1': '#f87171', # Red 400
-            'orb2': '#c084fc', # Purple 400
-            'orb3': '#fecaca', # Red 200
-            'text': '#be123c', # Rose 700
-            'pill_bg': '#e11d48',
-            'pill_text': '#ffffff'
-        }
-
-# --- 3. Graphics Generators ---
-
-def create_mesh_gradient_bg(width, height, theme):
-    """Creates a trendy mesh gradient background with noise."""
-    # Base Layer
-    base = Image.new('RGB', (width, height), theme['base'])
-    
-    # Create Orbs Layer
-    orbs = Image.new('RGBA', (width, height), (0,0,0,0))
-    draw = ImageDraw.Draw(orbs)
-    
-    # Helper to draw soft orb
-    def draw_orb(hex_color, bbox):
-        r, g, b = tuple(int(hex_color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
-        draw.ellipse(bbox, fill=(r, g, b, 180)) # Semi-transparent
-
-    # Draw random-ish orbs
-    draw_orb(theme['orb1'], [-200, -200, 600, 600]) # Top Left
-    draw_orb(theme['orb2'], [width-600, height-600, width+200, height+200]) # Bottom Right
-    draw_orb(theme['orb3'], [width//2-300, height//2-300, width//2+300, height//2+300]) # Center
-    
-    # Blur heavily to create mesh effect
-    orbs = orbs.filter(ImageFilter.GaussianBlur(120))
-    
-    # Composite
-    bg = Image.alpha_composite(base.convert('RGBA'), orbs).convert('RGB')
-    
-    # Add Noise (Film Grain) - Key for modern look
-    noise = Image.effect_noise((width, height), 15).convert('RGB')
-    bg = Image.blend(bg, noise, 0.03) # 3% Noise
-    
-    return bg
-
-def draw_bento_card(draw, x, y, w, h, radius=35, fill=(255,255,255,180)):
-    """Draws a glass-like bento card."""
-    draw.rounded_rectangle([x, y, x+w, y+h], radius=radius, fill=fill)
-    # Subtle border
-    draw.rounded_rectangle([x, y, x+w, y+h], radius=radius, outline=(255,255,255,200), width=2)
-
-# --- 4. Main Generator ---
-
+# --- 3. Main Generator ---
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
-    """Generates 'The Air Bento' report card."""
+    """Generates a modern, premium PM2.5 report card image."""
     
-    width, height = 1000, 1600
-    theme = get_theme_config(latest_pm25)
+    # Canvas Settings
+    width, height = 1200, 1600 # High resolution for print
+    bg_color = get_theme_color(latest_pm25)
     
-    # 1. Background
-    # Create Mesh Gradient (RGB)
-    img = create_mesh_gradient_bg(width, height, theme)
-    
-    # Convert to RGBA to allow alpha pasting of icons
-    img = img.convert("RGBA")
+    # Create base image
+    img = Image.new('RGB', (width, height), '#f8fafc') # Light gray background for card body
     draw = ImageDraw.Draw(img)
 
-    # Fonts
-    font_url_bold = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
-    font_url_reg = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
-    font_url_med = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Medium.ttf"
+    # Fonts (Sarabun from Google Fonts)
+    font_bold_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
+    font_reg_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
     
-    font_bold = get_font(font_url_bold)
-    font_reg = get_font(font_url_reg)
-    font_med = get_font(font_url_med)
+    f_header = get_font(font_bold_url, 50)
+    f_date = get_font(font_reg_url, 36)
+    f_pm_val = get_font(font_bold_url, 220)
+    f_pm_unit = get_font(font_reg_url, 50)
+    f_status = get_font(font_bold_url, 70)
+    f_card_title = get_font(font_bold_url, 42)
+    f_card_desc = get_font(font_reg_url, 34)
+    f_action_label = get_font(font_bold_url, 28)
+    f_action_val = get_font(font_bold_url, 32)
+    f_footer = get_font(font_reg_url, 24)
 
-    if not all([font_bold, font_reg, font_med]): return None
+    # --- Top Section (Status Card) ---
+    # Draw a large colored rectangle at the top with rounded bottom corners logic (simulated by drawing full rect then pasting body over bottom if needed, or just a big rect)
+    # Let's make the top section take 45% of height
+    top_h = int(height * 0.45)
+    draw.rectangle([0, 0, width, top_h], fill=bg_color)
     
-    def create_font(font_bytes, size):
-        font_bytes.seek(0)
-        return ImageFont.truetype(font_bytes, size)
+    # Add Gradient-like overlay (Subtle shine)
+    overlay = Image.new('RGBA', (width, top_h), (255,255,255,0))
+    draw_overlay = ImageDraw.Draw(overlay)
+    draw_overlay.ellipse([-width*0.2, -top_h*0.5, width*0.8, top_h*0.8], fill=(255,255,255,40))
+    img.paste(Image.alpha_composite(img.crop((0,0,width,top_h)).convert('RGBA'), overlay), (0,0))
 
-    # Typography
-    f_hero_num = create_font(font_bold, 280)
-    f_hero_unit = create_font(font_med, 40)
-    f_status = create_font(font_bold, 48)
-    f_header = create_font(font_bold, 32)
-    f_date = create_font(font_med, 22)
-    f_card_title = create_font(font_bold, 26)
-    f_card_desc = create_font(font_med, 22)
-    f_footer = create_font(font_med, 18)
-
-    margin = 50
-
-    # --- Header Row ---
-    # Hospital & Date Pill
-    header_y = 60
-    # Left: Hospital
-    draw.text((margin, header_y), "San Sai Hospital", font=f_header, fill="#1e293b")
-    
-    # Right: Date Pill
-    date_w = draw.textlength(date_str, font=f_date) + 40
-    draw.rounded_rectangle([width-margin-date_w, header_y-5, width-margin, header_y+45], radius=25, fill="white")
-    draw.text((width-margin-date_w/2, header_y+20), date_str, font=f_date, anchor="mm", fill="#64748b")
-
-    # --- Hero Section (Big Number) ---
-    hero_y = 200
-    
-    # PM2.5 Value (Massive)
-    # Draw text with blend mode simulation (Darker theme text)
-    draw.text((margin, hero_y), f"{latest_pm25:.0f}", font=f_hero_num, fill=theme['text'])
-    
-    # Unit (Next to number bottom)
-    val_w = draw.textlength(f"{latest_pm25:.0f}", font=f_hero_num)
-    draw.text((margin + val_w + 20, hero_y + 230), "μg/m³", font=f_hero_unit, fill="#64748b")
-    
-    # Status Pill (Next to number top)
-    status_y = hero_y + 40
-    label_text = level
-    l_w = draw.textlength(label_text, font=f_status) + 60
-    
-    draw.rounded_rectangle([margin + val_w + 20, status_y, margin + val_w + 20 + l_w, status_y + 80], radius=40, fill=theme['pill_bg'])
-    draw.text((margin + val_w + 20 + l_w/2, status_y + 40), label_text, font=f_status, anchor="mm", fill=theme['pill_text'])
-
-    # --- Bento Grid (Advice) ---
-    grid_start_y = 650
-    col_gap = 30
-    row_gap = 30
-    
-    card_w = (width - (margin * 2) - col_gap) / 2
-    card_h = 360 # Tall cards
-    
-    cards_data = [
-        {'title': t[lang]['advice_cat_mask'], 'desc': advice_details['mask'], 'icon_key': 'mask'},
-        {'title': t[lang]['advice_cat_activity'], 'desc': advice_details['activity'], 'icon_key': 'activity'},
-        {'title': t[lang]['advice_cat_indoors'], 'desc': advice_details['indoors'], 'icon_key': 'indoors'},
-        {'title': t[lang]['advice_cat_risk_group'] if 'advice_cat_risk_group' in t[lang] else t[lang]['risk_group'], 'desc': advice_details['risk_group'], 'icon_key': 'risk_group'},
-    ]
-
-    for i, item in enumerate(cards_data):
-        col = i % 2
-        row = i // 2
-        x = margin + col * (card_w + col_gap)
-        y = grid_start_y + row * (card_h + row_gap)
+    # Supporter Logo (Top Center)
+    logo_img = get_image_from_url(ICON_URLS['logo'])
+    if logo_img:
+        # Resize logo
+        logo_h = 70
+        aspect = logo_img.width / logo_img.height
+        logo_w = int(logo_h * aspect)
+        logo_img = logo_img.resize((logo_w, logo_h), Image.Resampling.LANCZOS)
         
-        # Draw Bento Card
-        draw_bento_card(draw, x, y, card_w, card_h, fill=(255,255,255, 200)) # White Glass
+        # Draw white pill background for logo
+        pill_w = logo_w + 60
+        pill_h = logo_h + 30
+        pill_x = (width - pill_w) // 2
+        pill_y = 60
+        draw.rounded_rectangle([pill_x, pill_y, pill_x+pill_w, pill_y+pill_h], radius=20, fill="white")
         
-        # Icon Area
-        icon_size = 140
-        icon_x = int(x + (card_w - icon_size) // 2)
-        icon_y = int(y + 40)
+        # Paste logo
+        img.paste(logo_img, (pill_x + 30, pill_y + 15), logo_img)
         
-        # Soft Glow behind icon
-        glow_r = 60
-        cx, cy = icon_x + icon_size//2, icon_y + icon_size//2
-        draw.ellipse([cx-glow_r, cy-glow_r, cx+glow_r, cy+glow_r], fill=(255,255,255, 150))
+        # Label "Supported by"
+        draw.text((width//2, pill_y - 25), "สนับสนุนข้อมูลโดย", font=get_font(font_reg_url, 24), fill="rgba(255,255,255,0.9)", anchor="ms")
+
+    # Date Pill
+    date_pill_y = 220
+    date_text_w = draw.textlength(date_str, font=f_date)
+    dp_w = date_text_w + 60
+    dp_h = 60
+    dp_x = (width - dp_w) // 2
+    draw.rounded_rectangle([dp_x, date_pill_y, dp_x+dp_w, date_pill_y+dp_h], radius=30, fill=(0,0,0,40)) # Semi-transparent black
+    draw.text((width//2, date_pill_y + dp_h//2), date_str, font=f_date, fill="white", anchor="mm")
+
+    # PM2.5 Value (Center)
+    pm_y = 400
+    draw.text((width//2, pm_y), f"{latest_pm25:.0f}", font=f_pm_val, fill="white", anchor="mm")
+    
+    # Unit & Status
+    unit_y = pm_y + 110
+    draw.text((width//2, unit_y), "µg/m³", font=f_pm_unit, fill="rgba(255,255,255,0.9)", anchor="mm")
+    
+    status_y = unit_y + 80
+    draw.text((width//2, status_y), level, font=f_status, fill="white", anchor="mm")
+
+    # --- Bottom Section (Advice) ---
+    content_start_y = top_h + 50
+    margin_side = 60
+    card_gap = 30
+    
+    # General Public Card
+    card_h = 220
+    draw.rounded_rectangle([margin_side, content_start_y, width-margin_side, content_start_y+card_h], radius=30, fill="white", outline="#e2e8f0", width=2)
+    # Left Color Bar
+    draw.rounded_rectangle([margin_side, content_start_y, margin_side+15, content_start_y+card_h], radius=0, fill=bg_color, corners=(True, False, False, True)) # Left border trick needs adjustment for rounded corners, simplistic rect is fine for now or custom polygon
+    # Icon Box
+    icon_box_size = 100
+    ib_x = margin_side + 50
+    ib_y = content_start_y + (card_h - icon_box_size)//2
+    draw.rounded_rectangle([ib_x, ib_y, ib_x+icon_box_size, ib_y+icon_box_size], radius=25, fill=bg_color)
+    
+    user_icon = get_image_from_url(ICON_URLS['user'])
+    if user_icon:
+        user_icon = user_icon.resize((60, 60))
+        img.paste(user_icon, (ib_x+20, ib_y+20), user_icon)
         
-        icon_img = get_image_from_url(ICON_URLS.get(item['icon_key']), size=(icon_size, icon_size))
-        if icon_img:
-            # FIX: Use the alpha channel of icon_img as mask
-            img.paste(icon_img, (icon_x, icon_y), icon_img)
+    # Text
+    text_x = ib_x + icon_box_size + 40
+    draw.text((text_x, ib_y + 20), t[lang]['general_public'], font=f_card_title, fill="#1e293b", anchor="ls")
+    
+    # Wrap text logic for description
+    desc = t[lang]['advice']['advice_1']['summary'] if 'advice_1' in t[lang]['advice'] else "ปฏิบัติตามคำแนะนำ" # Fallback logic needed to match realtime value
+    # Re-fetch advice logic simply
+    _, _, _, advice_obj = get_aqi_level(latest_pm25, lang, t)
+    desc_gen = advice_obj['summary']
+    
+    # Simple text wrap
+    words = desc_gen.split()
+    line1 = ""
+    line2 = ""
+    for w in words:
+        if draw.textlength(line1 + w, font=f_card_desc) < (width - text_x - margin_side - 20):
+            line1 += w + " "
+        else:
+            line2 += w + " "
             
-        # Text Content
-        text_y = icon_y + icon_size + 30
-        draw.text((x + card_w/2, text_y), item['title'], font=f_card_title, anchor="ms", fill="#1e293b")
-        
-        # Desc (Wrap)
-        desc = item['desc']
-        words = desc.split()
-        line1, line2, curr = [], [], []
-        curr = line1
-        for w in words:
-            curr.append(w)
-            if draw.textlength(" ".join(curr), font=f_card_desc) > (card_w - 60):
-                curr.pop()
-                if curr == line1:
-                    line1.append(w)
-                    curr = line2
-                    curr.append(w)
-                else:
-                    break
-        
-        draw.text((x + card_w/2, text_y + 40), " ".join(line1), font=f_card_desc, anchor="ms", fill="#64748b")
-        if line2:
-            draw.text((x + card_w/2, text_y + 75), " ".join(line2), font=f_card_desc, anchor="ms", fill="#64748b")
+    draw.text((text_x, ib_y + 60), line1, font=f_card_desc, fill="#64748b", anchor="ls")
+    draw.text((text_x, ib_y + 100), line2, font=f_card_desc, fill="#64748b", anchor="ls")
 
-    # --- Footer ---
-    footer_y = height - 60
-    draw.text((width/2, footer_y), t[lang]['report_card_footer'], font=f_footer, anchor="ms", fill="#94a3b8")
 
-    # Output
+    # Risk Group Card
+    risk_y = content_start_y + card_h + card_gap
+    draw.rounded_rectangle([margin_side, risk_y, width-margin_side, risk_y+card_h], radius=30, fill="white", outline="#e2e8f0", width=2)
+    draw.rounded_rectangle([margin_side, risk_y, margin_side+15, risk_y+card_h], fill=bg_color) # Left bar
+    
+    ib_y_risk = risk_y + (card_h - icon_box_size)//2
+    draw.rounded_rectangle([ib_x, ib_y_risk, ib_x+icon_box_size, ib_y_risk+icon_box_size], radius=25, fill=bg_color)
+    
+    heart_icon = get_image_from_url(ICON_URLS['heart'])
+    if heart_icon:
+        heart_icon = heart_icon.resize((60, 60))
+        img.paste(heart_icon, (ib_x+20, ib_y_risk+22), heart_icon) # Nudge down slightly
+        
+    draw.text((text_x, ib_y_risk + 20), t[lang]['risk_group'], font=f_card_title, fill="#1e293b", anchor="ls")
+    
+    desc_risk = advice_details['risk_group']
+    # Simple text wrap for risk
+    words_r = desc_risk.split()
+    r_line1, r_line2 = "", ""
+    for w in words_r:
+        if draw.textlength(r_line1 + w, font=f_card_desc) < (width - text_x - margin_side - 20):
+            r_line1 += w + " "
+        else:
+            r_line2 += w + " "
+    draw.text((text_x, ib_y_risk + 60), r_line1, font=f_card_desc, fill="#64748b", anchor="ls")
+    draw.text((text_x, ib_y_risk + 100), r_line2, font=f_card_desc, fill="#64748b", anchor="ls")
+
+
+    # --- Action Grid (Footer) ---
+    action_y = risk_y + card_h + 50
+    draw.text((margin_side, action_y), t[lang]['advice_header'], font=get_font(font_bold_url, 30), fill="#94a3b8")
+    
+    grid_y = action_y + 50
+    grid_h = 200
+    col_w = (width - (margin_side*2) - (card_gap*2)) / 3
+    
+    actions_data = [
+        {'label': t[lang]['advice_cat_mask'], 'val': advice_details['mask'], 'icon': ICON_URLS['mask']},
+        {'label': t[lang]['advice_cat_activity'], 'val': advice_details['activity'], 'icon': ICON_URLS['activity']},
+        {'label': t[lang]['advice_cat_indoors'], 'val': advice_details['indoors'], 'icon': ICON_URLS['indoors']}
+    ]
+    
+    for i, action in enumerate(actions_data):
+        ax = margin_side + i * (col_w + card_gap)
+        # Card bg
+        draw.rounded_rectangle([ax, grid_y, ax+col_w, grid_y+grid_h], radius=30, fill="white", outline=bg_color, width=3)
+        
+        # Icon (colored by theme) - For simplicity in PIL without complex masking, we use gray or black, or colorize if possible.
+        # Here we just paste the white icon on a colored circle
+        a_icon_size = 70
+        ic_cx = ax + col_w//2
+        ic_cy = grid_y + 60
+        draw.ellipse([ic_cx-35, ic_cy-35, ic_cx+35, ic_cy+35], fill=bg_color)
+        
+        act_icon = get_image_from_url(action['icon'])
+        if act_icon:
+            act_icon = act_icon.resize((40, 40))
+            img.paste(act_icon, (int(ic_cx-20), int(ic_cy-20)), act_icon)
+            
+        # Label
+        draw.text((ic_cx, ic_cy + 55), action['label'], font=f_action_label, fill="#64748b", anchor="ms")
+        # Value
+        draw.text((ic_cx, ic_cy + 95), action['val'], font=f_action_val, fill=bg_color, anchor="ms")
+
+    # Footer Text
+    draw.text((width//2, height - 40), "Generated by PM2.5 Sansai Dashboard", font=f_footer, fill="#cbd5e1", anchor="ms")
+
+    # Save to bytes
     buf = BytesIO()
-    # Save as PNG (Convert back to RGB for saving if transparency not needed, but PNG handles RGBA fine)
-    img.save(buf, format='PNG', quality=95)
+    img.save(buf, format='PNG', quality=100)
     return buf.getvalue()
