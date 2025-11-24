@@ -334,41 +334,12 @@ def display_realtime_pm(df, lang, t, date_str):
                         <div class="gauge-unit">μg/m³</div>
                     </div>
                 </div>
-
-                <!-- Status -->
-                <div class="status-label">{level_text}</div>
-                <!-- Optional: Sublabel could be added here if available in translations -->
             </div>
             
             <div class="modern-content-section">
         """, unsafe_allow_html=True)
 
         # --- 4. Interactive Tabs (Streamlit Widget) ---
-        # This sits "inside" the visual card because we closed the header div but kept the container open logically
-        # (Actually, we can't keep HTML tags open across st.markdown calls effectively in all cases, 
-        # so we close the container in the previous block? No, that breaks the visual.
-        # FIX: We will rely on the fact that Streamlit renders widgets in order.
-        # To make it look like one card, we simply won't close the main div in the top block? 
-        # Streamlit doesn't support unclosed tags well.
-        # BETTER APPROACH: Render Top Card. Render Tabs. Render Bottom Card. 
-        # And use CSS to make them LOOK connected or just separate nice blocks.
-        # Let's go with "Separate nice blocks" which is safer for Streamlit.
-        # Update: The CSS class .modern-card-container is applied to the wrapper.
-        # We will split the design into two: A Header Card and a Body Card, or just put the tabs outside.
-        # Let's put the tabs *inside* visually by hacking the container end.
-        
-        # Actually, let's close the container div in the first markdown, 
-        # but style the bottom of it to be flat, and the next container to be flat on top?
-        # Too complex. Let's just put the Tabs *below* the header image inside the content section.
-        # Since we can't inject `st.radio` inside the HTML string, we must break the HTML.
-        
-        # Revised Plan:
-        # 1. HTML: Header Section (Ends with closing div)
-        # 2. Streamlit: Radio Buttons
-        # 3. HTML: Content Section (Advice + Grid)
-        
-        # We will wrap 1, 2, 3 in a container if possible, but st.container() doesn't allow custom CSS class easily on wrapper.
-        # Let's just make the Header a nice rounded card, and the Content another nice rounded card.
         
         # Closing the header section from above:
         st.markdown("</div></div>", unsafe_allow_html=True) 
