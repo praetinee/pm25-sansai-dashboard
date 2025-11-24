@@ -31,7 +31,7 @@ def inject_custom_css():
             }
 
             .modern-header-section {
-                padding: 2.5rem 1.5rem 2rem 1.5rem;
+                padding: 2.5rem 1.5rem 3.5rem 1.5rem; /* Increased bottom padding */
                 text-align: center;
                 position: relative;
                 color: white;
@@ -40,24 +40,28 @@ def inject_custom_css():
             .modern-content-section {
                 padding: 1.5rem;
                 background: #fff;
+                border-radius: 2.5rem 2.5rem 0 0; /* Rounded top to overlay header */
+                margin-top: -2rem; /* Pull up to overlap header */
+                position: relative;
+                z-index: 10;
             }
 
             /* --- Circular Gauge --- */
             .gauge-wrapper {
                 position: relative;
-                width: 180px;
-                height: 180px;
+                width: 200px;
+                height: 200px;
                 margin: 0 auto;
             }
             .gauge-bg {
                 fill: none;
                 stroke: rgba(255,255,255,0.25);
-                stroke-width: 12;
+                stroke-width: 15;
             }
             .gauge-progress {
                 fill: none;
                 stroke: white;
-                stroke-width: 12;
+                stroke-width: 15;
                 stroke-linecap: round;
                 transform: rotate(-90deg);
                 transform-origin: 50% 50%;
@@ -73,34 +77,19 @@ def inject_custom_css():
                 line-height: 1;
             }
             .gauge-value {
-                font-size: 3.5rem;
+                font-size: 4.5rem;
                 font-weight: 700;
                 letter-spacing: -2px;
+                text-shadow: 0 4px 8px rgba(0,0,0,0.15);
             }
             .gauge-unit {
-                font-size: 0.8rem;
+                font-size: 1rem;
                 opacity: 0.9;
                 margin-top: 4px;
                 font-weight: 500;
             }
 
-            /* --- Status Text --- */
-            .status-label {
-                font-size: 2rem;
-                font-weight: 700;
-                margin-top: 1rem;
-                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            }
-            .status-sublabel {
-                font-size: 0.9rem;
-                opacity: 0.95;
-                letter-spacing: 0.05em;
-                text-transform: uppercase;
-                margin-top: 0.25rem;
-            }
-
             /* --- Tab Styling (Custom Radio) --- */
-            /* Container for the radio group */
             div[role="radiogroup"] {
                 display: flex;
                 flex-direction: row;
@@ -112,7 +101,6 @@ def inject_custom_css():
                 border-bottom: none !important;
                 width: 100%;
             }
-            /* Each option label */
             div[role="radiogroup"] label {
                 flex: 1;
                 margin: 0;
@@ -121,7 +109,6 @@ def inject_custom_css():
                 border: none;
                 cursor: pointer;
             }
-            /* The inner div text of the label */
             div[role="radiogroup"] label > div {
                 width: 100%;
                 text-align: center;
@@ -133,14 +120,12 @@ def inject_custom_css():
                 color: #64748b;
                 transition: all 0.2s ease;
             }
-            /* Active State - The selected tab */
             div[role="radiogroup"] label input[type="radio"]:checked + div {
                 background: white;
                 color: #0f172a;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
                 opacity: 1 !important;
             }
-            /* Hide default radio circle */
             div[data-testid="stRadio"] label > div:first-child { display: none; }
 
             /* --- Advice Main Card --- */
@@ -155,10 +140,6 @@ def inject_custom_css():
                 box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
                 margin-bottom: 1.5rem;
                 transition: transform 0.2s;
-            }
-            .main-advice-card:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
             }
             .advice-icon-box {
                 width: 48px;
@@ -216,7 +197,7 @@ def inject_custom_css():
             .action-label { font-size: 0.65rem; opacity: 0.7; text-transform: uppercase; font-weight: 600; }
             .action-value { font-size: 0.8rem; font-weight: 700; white-space: nowrap; line-height: 1.2; }
 
-            /* --- Previous CSS for other components --- */
+            /* Calendar & Other CSS */
             .calendar-day {
                 background-color: var(--secondary-background-color);
                 border-radius: 10px;
@@ -255,137 +236,96 @@ def display_realtime_pm(df, lang, t, date_str):
     advice_details = advice['details']
     
     # --- 1. Determine Color Theme & Status ---
-    # Color logic based on PM2.5 ranges (matching the Modern UI design)
     if latest_pm25 <= 15:
-        # Excellent (Teal/Sky)
         theme_gradient = "linear-gradient(135deg, #2dd4bf 0%, #0ea5e9 100%)" # Teal to Sky
-        theme_shadow = "rgba(14, 165, 233, 0.3)"
-        text_color_class = "text-sky-700"
-        bg_light_class = "#f0f9ff" # sky-50
-        border_class = "#e0f2fe" # sky-100
         status_key = "safe"
+        act_bg, act_color, act_border = "#ecfdf5", "#047857", "#d1fae5"
     elif latest_pm25 <= 25:
-        # Good (Green)
         theme_gradient = "linear-gradient(135deg, #34d399 0%, #10b981 100%)" # Emerald
-        theme_shadow = "rgba(16, 185, 129, 0.3)"
-        text_color_class = "text-emerald-700"
-        bg_light_class = "#ecfdf5" # emerald-50
-        border_class = "#d1fae5" # emerald-100
         status_key = "safe"
+        act_bg, act_color, act_border = "#ecfdf5", "#047857", "#d1fae5"
     elif latest_pm25 <= 37.5:
-        # Moderate (Yellow)
         theme_gradient = "linear-gradient(135deg, #facc15 0%, #eab308 100%)" # Yellow
-        theme_shadow = "rgba(234, 179, 8, 0.3)"
-        text_color_class = "text-yellow-700"
-        bg_light_class = "#fefce8" # yellow-50
-        border_class = "#fef9c3" # yellow-100
         status_key = "warning"
+        act_bg, act_color, act_border = "#fefce8", "#a16207", "#fef9c3"
     elif latest_pm25 <= 75:
-        # Unhealthy (Orange)
         theme_gradient = "linear-gradient(135deg, #fb923c 0%, #ea580c 100%)" # Orange
-        theme_shadow = "rgba(234, 88, 12, 0.3)"
-        text_color_class = "text-orange-700"
-        bg_light_class = "#fff7ed" # orange-50
-        border_class = "#ffedd5" # orange-100
         status_key = "danger"
+        act_bg, act_color, act_border = "#fff7ed", "#c2410c", "#ffedd5"
     else:
-        # Hazardous (Red)
         theme_gradient = "linear-gradient(135deg, #f87171 0%, #dc2626 100%)" # Red
-        theme_shadow = "rgba(220, 38, 38, 0.3)"
-        text_color_class = "text-rose-700"
-        bg_light_class = "#fff1f2" # rose-50
-        border_class = "#ffe4e6" # rose-100
         status_key = "critical"
+        act_bg, act_color, act_border = "#fff1f2", "#be123c", "#ffe4e6"
 
     # --- 2. Calculate Gauge ---
-    # Max value for gauge visual is 120 (for scale)
     percent = min((latest_pm25 / 120) * 100, 100)
     radius = 40
     circumference = 2 * math.pi * radius
     stroke_dashoffset = circumference - (percent / 100) * circumference
 
     # --- 3. Render Top Section (HTML) ---
-    # Note: We split this into top and bottom to inject the Streamlit radio button in between
+    # IMPORTANT: HTML strings must be flush left to avoid being interpreted as code blocks
     
-    col_center, = st.columns([1]) # Use full width but contained by CSS max-width
+    col_center, = st.columns([1])
     
     with col_center:
         st.markdown(f"""
-        <div class="modern-card-container">
-            <div class="modern-header-section" style="background: {theme_gradient};">
-                <!-- Background decoration -->
-                <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: white; opacity: 0.1; border-radius: 50%; filter: blur(40px);"></div>
-                <div style="position: absolute; bottom: 0; left: 0; width: 100px; height: 100px; background: black; opacity: 0.05; border-radius: 50%; filter: blur(30px);"></div>
-                
-                <!-- Date Pill -->
-                <div style="background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); padding: 4px 12px; border-radius: 20px; display: inline-block; margin-bottom: 20px;">
-                    <span style="font-size: 0.8rem; font-weight: 500; opacity: 0.95;">{date_str}</span>
-                </div>
-
-                <!-- Gauge -->
-                <div class="gauge-wrapper">
-                    <svg viewBox="0 0 100 100" class="gauge-svg" style="transform: rotate(0deg);">
-                        <circle cx="50" cy="50" r="{radius}" class="gauge-bg"></circle>
-                        <circle cx="50" cy="50" r="{radius}" class="gauge-progress" 
-                                style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset};"></circle>
-                    </svg>
-                    <div class="gauge-text">
-                        <div class="gauge-value">{latest_pm25:.0f}</div>
-                        <div class="gauge-unit">μg/m³</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="modern-content-section">
-        """, unsafe_allow_html=True)
-
-        # --- 4. Interactive Tabs (Streamlit Widget) ---
+<div class="modern-card-container">
+    <div class="modern-header-section" style="background: {theme_gradient};">
+        <!-- Background decoration -->
+        <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: white; opacity: 0.1; border-radius: 50%; filter: blur(40px);"></div>
+        <div style="position: absolute; bottom: 0; left: 0; width: 100px; height: 100px; background: black; opacity: 0.05; border-radius: 50%; filter: blur(30px);"></div>
         
-        # Closing the header section from above:
-        st.markdown("</div></div>", unsafe_allow_html=True) 
+        <!-- Date Pill -->
+        <div style="background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); padding: 4px 12px; border-radius: 20px; display: inline-block; margin-bottom: 20px;">
+            <span style="font-size: 0.8rem; font-weight: 500; opacity: 0.95;">{date_str}</span>
+        </div>
 
-        # --- 5. Tabs Selection ---
+        <!-- Gauge -->
+        <div class="gauge-wrapper">
+            <svg viewBox="0 0 100 100" class="gauge-svg" style="transform: rotate(0deg);">
+                <circle cx="50" cy="50" r="{radius}" class="gauge-bg"></circle>
+                <circle cx="50" cy="50" r="{radius}" class="gauge-progress" 
+                        style="stroke-dasharray: {circumference}; stroke-dashoffset: {stroke_dashoffset};"></circle>
+            </svg>
+            <div class="gauge-text">
+                <div class="gauge-value">{latest_pm25:.0f}</div>
+                <div class="gauge-unit">μg/m³</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modern-content-section">
+""", unsafe_allow_html=True)
+
+        # --- 4. Tabs Selection (Interactive) ---
+        # Note: This sits technically "between" the HTML blocks visually
+        
         tab_options = [t[lang]['general_public'], t[lang]['risk_group']]
         selected_tab = st.radio("Target Group", tab_options, label_visibility="collapsed")
         
         is_general = (selected_tab == t[lang]['general_public'])
         
-        # Prepare Advice Content based on tab
         if is_general:
             main_title = t[lang]['general_public']
             main_desc = advice['summary']
-            main_icon = "User" # Placeholder logic
-            # Action logic for General (Simulated mapping based on PM level)
+            # Icons for General
+            main_icon_svg = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>"""
             act_mask = advice_details['mask']
             act_activity = advice_details['activity']
             act_home = advice_details['indoors']
         else:
             main_title = t[lang]['risk_group']
             main_desc = advice_details['risk_group']
-            main_icon = "Heart"
-            # Action logic for Risk (Usually stricter, but sticking to logic provided in utils)
+            # Icons for Risk
+            main_icon_svg = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 1 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 1 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>"""
             act_mask = advice_details['mask']
             act_activity = advice_details['activity']
             act_home = advice_details['indoors']
 
-        # Determine colors for Action Cards based on status_key
-        if status_key == 'safe':
-            act_bg, act_color, act_border = "#ecfdf5", "#047857", "#d1fae5" # Green-ish
-        elif status_key == 'warning':
-            act_bg, act_color, act_border = "#fefce8", "#a16207", "#fef9c3" # Yellow-ish
-        elif status_key == 'danger':
-            act_bg, act_color, act_border = "#fff7ed", "#c2410c", "#ffedd5" # Orange-ish
-        else:
-            act_bg, act_color, act_border = "#fff1f2", "#be123c", "#ffe4e6" # Red-ish
-
-        # Icons (SVG Strings)
         icon_mask = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>"""
         icon_activity = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>"""
         icon_home = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>"""
-        icon_user = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>"""
-        icon_heart = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 1 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 1 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>"""
-
-        main_icon_svg = icon_user if is_general else icon_heart
 
         # --- 6. Render Bottom Content ---
         st.markdown(f"""
@@ -424,7 +364,9 @@ def display_realtime_pm(df, lang, t, date_str):
                 </div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+    </div> <!-- Closing modern-content-section -->
+</div> <!-- Closing modern-card-container -->
+""", unsafe_allow_html=True)
         
         st.write("") # Spacer
 
@@ -436,7 +378,6 @@ def display_realtime_pm(df, lang, t, date_str):
                 st.rerun()
         with b_col2:
             from card_generator import generate_report_card
-            # Note: generate_report_card logic stays the same, generating the image for download
             report_card_bytes = generate_report_card(latest_pm25, level_text, color, emoji, advice_details, date_str, lang, t)
             if report_card_bytes:
                 st.download_button(
