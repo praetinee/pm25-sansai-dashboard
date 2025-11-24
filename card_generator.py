@@ -102,30 +102,6 @@ def wrap_text(text, font, max_width, draw):
     if current_line: lines.append(current_line)
     return lines
 
-def draw_shadow(img, box, radius, blur=15, opacity=50):
-    """Draws a blurred shadow on the image."""
-    x0, y0, x1, y1 = box
-    w, h = x1 - x0, y1 - y0
-    
-    # Create larger buffer for blur
-    shadow_w = w + blur * 4
-    shadow_h = h + blur * 4
-    shadow = Image.new('RGBA', (shadow_w, shadow_h), (0, 0, 0, 0))
-    s_draw = ImageDraw.Draw(shadow)
-    
-    # Draw black rectangle centered
-    s_draw.rounded_rectangle(
-        [blur*2, blur*2, blur*2 + w, blur*2 + h], 
-        radius=radius, 
-        fill=(0, 0, 0, opacity)
-    )
-    
-    # Blur
-    shadow = shadow.filter(ImageFilter.GaussianBlur(blur))
-    
-    # Paste (offset slightly downwards for natural light)
-    img.paste(shadow, (x0 - blur*2, y0 - blur*2 + 5), shadow)
-
 # --- 3. Main Generator ---
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
     # Canvas
@@ -148,6 +124,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     f_body = get_font(font_reg_url, 30)
     f_small = get_font(font_reg_url, 26)
     f_pill = get_font(font_med_url, 28)
+    f_action_val = get_font(font_bold_url, 36) # New font size for action values (smaller than 42)
 
     # ==========================================
     # 1. TOP SECTION (Status)
@@ -199,7 +176,10 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     # Value & Unit
     draw.text((width//2, gauge_cy - 20), f"{latest_pm25:.0f}", font=f_huge, fill="white", anchor="mm")
     draw.text((width//2, gauge_cy + 100), "µg/m³", font=f_title, fill=(255,255,255,220), anchor="mm")
-    draw.text((width//2, gauge_cy + 230), f"{emoji} {level}", font=f_header, fill="white", anchor="mm")
+    
+    # Status Text (REMOVED EMOJI to fix rectangle issue)
+    # Using f"{level}" instead of f"{emoji} {level}"
+    draw.text((width//2, gauge_cy + 230), f"{level}", font=f_header, fill="white", anchor="mm")
 
     # ==========================================
     # 2. BOTTOM SHEET (White Card Layout)
@@ -220,7 +200,6 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         
         # Background (Very Light Grey)
         box = [margin, start_y, margin+card_w, start_y+c_h]
-        # draw_shadow(img, box, radius=30, blur=15, opacity=20) # Optional: Shadow for cards
         draw.rounded_rectangle(box, radius=30, fill="#f8fafc")
         
         # Icon Circle
@@ -264,13 +243,15 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     # ==========================================
     
     # Header
-    action_y = curr_y + 20
+    action_y = curr_y + 30
     draw.text((margin + 10, action_y), t[lang]['advice_header'], font=f_subtitle, fill="#94a3b8", anchor="ls")
     
-    grid_y = action_y + 20
+    grid_y = action_y + 25
     grid_gap = 30
     col_w = (width - (margin*2) - (grid_gap*2)) / 3
-    col_h = 260
+    
+    # INCREASED HEIGHT: 260 -> 320 to prevent overlap and floating text
+    col_h = 320
     
     actions = [
         {'label': t[lang]['advice_cat_mask'], 'val': advice_details['mask'], 'icon': 'mask'},
@@ -280,7 +261,6 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     
     # Tint Color (Theme color with low opacity)
     tint_color = bg_rgb + (20,) # 20/255 opacity ~ 8%
-    border_color = bg_rgb + (255,)
 
     for i, act in enumerate(actions):
         bx = margin + i * (col_w + grid_gap)
@@ -292,18 +272,11 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         t_draw.rounded_rectangle([0, 0, col_w, col_h], radius=30, fill=tint_color, outline=None)
         img.paste(tint_img, (int(bx), int(by)), tint_img)
         
-        # Border (Optional, keep it clean without or very thin)
-        # draw.rounded_rectangle([bx, by, bx+col_w, by+col_h], radius=30, outline=border_color, width=2)
-
-        # Icon Circle (White BG)
+        # Icon Circle
         cx = bx + col_w/2
         ic_bg_size = 80
         ic_y = by + 40
-        draw.ellipse([cx-ic_bg_size/2, ic_y, cx+ic_bg_size/2, ic_y+ic_bg_size], fill="white")
         
-        # Colored Icon inside (Use Theme Color for icon pixels if possible, or just grey)
-        # Simplest modern look: White Circle with colored icon.
-        # But we only have white icons. So let's use Theme Color Circle with White Icon (revert)
         draw.ellipse([cx-ic_bg_size/2, ic_y, cx+ic_bg_size/2, ic_y+ic_bg_size], fill=bg_rgb)
         
         act_icon = get_image_from_url(ICON_URLS[act['icon']])
@@ -311,14 +284,17 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
             act_icon = act_icon.resize((45, 45), Image.Resampling.LANCZOS)
             img.paste(act_icon, (int(cx-22), int(ic_y+17)), act_icon)
         
-        # Label
-        draw.text((cx, ic_y + 100), act['label'], font=f_pill, fill="#64748b", anchor="ms")
+        # Label Text (Topic) - Adjusted position
+        # Moved down slightly to center better with new height
+        draw.text((cx, ic_y + 110), act['label'], font=f_pill, fill="#64748b", anchor="ms")
         
-        # Value
-        v_lines = wrap_text(act['val'], f_title, col_w-20, draw)
-        vy = ic_y + 140
+        # Value Text (Action)
+        # INCREASED GAP: moved from +140 to +165 to clear the label text
+        # Using f_action_val (size 36) instead of f_title (size 42) to save space
+        v_lines = wrap_text(act['val'], f_action_val, col_w-20, draw)
+        vy = ic_y + 165 
         for k, vl in enumerate(v_lines[:2]):
-             draw.text((cx, vy + (k*45)), vl, font=f_title, fill=bg_rgb, anchor="ms")
+             draw.text((cx, vy + (k*45)), vl, font=f_action_val, fill=bg_rgb, anchor="ms")
 
     # Footer
     draw.text((width//2, height - 50), t[lang]['report_card_footer'], font=f_small, fill="#cbd5e1", anchor="mm")
