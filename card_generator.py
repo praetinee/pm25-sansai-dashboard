@@ -69,22 +69,17 @@ def wrap_text(text, font, max_width, draw):
     lines = []
     if not text: return lines
     
-    # Simple strategy: If space exists, split by space.
-    # If not (Thai), we have to be careful.
     words = text.split(' ')
     current_line = ""
     
     for word in words:
-        # Calculate width if we add this word
         test_line = current_line + " " + word if current_line else word
-        # Using language='th' in measurement might fail if libraqm is missing, so we revert to default
         bbox = draw.textbbox((0, 0), test_line, font=font)
         w = bbox[2] - bbox[0]
         
         if w <= max_width:
             current_line = test_line
         else:
-            # Word itself is too long, need to split char by char (Thai style)
             word_bbox = draw.textbbox((0, 0), word, font=font)
             if (word_bbox[2] - word_bbox[0]) > max_width:
                 if current_line:
@@ -93,22 +88,16 @@ def wrap_text(text, font, max_width, draw):
                 
                 temp = ""
                 for i, char in enumerate(word):
-                    # Check width with new char
                     check_str = temp + char
                     if (draw.textbbox((0,0), check_str, font=font)[2]) <= max_width:
                         temp += char
                     else:
-                        # Prevent breaking before a Thai combining character
-                        # If 'char' is a tone mark, we MUST NOT start a new line with it.
-                        # We should backtrack and pull the previous char down if possible.
                         if is_thai_combining_char(char) and len(temp) > 0:
-                            # Move the last char from temp to the new line along with this combining char
                             last_char = temp[-1]
-                            temp = temp[:-1] # Remove last char from current line
-                            lines.append(temp) # Flush current line
-                            temp = last_char + char # Start new line with [consonant + tone]
+                            temp = temp[:-1]
+                            lines.append(temp)
+                            temp = last_char + char
                         else:
-                            # Normal break
                             lines.append(temp)
                             temp = char
                 current_line = temp
@@ -130,11 +119,9 @@ def round_corners(im, radius):
 
 # --- Drawing Helpers ---
 def draw_text_centered(draw, text, font, x, y, color):
-    # Removed language='th' to prevent crash on systems without libraqm
     draw.text((x, y), text, font=font, fill=color, anchor="mm")
 
 def draw_text_left(draw, text, font, x, y, color):
-    # Removed language='th'
     draw.text((x, y), text, font=font, fill=color, anchor="lt")
 
 # --- MAIN GENERATOR ---
@@ -146,11 +133,10 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     img = Image.new('RGBA', (width, height), get_theme_color(latest_pm25))
     draw = ImageDraw.Draw(img)
 
-    # Fonts - CHANGED TO NOTO SANS THAI for better rendering support
-    # Sarabun sometimes has issues with tone marks in PIL default engine
-    font_bold_url = "https://github.com/google/fonts/raw/main/ofl/notosansthai/NotoSansThai-Bold.ttf"
-    font_med_url = "https://github.com/google/fonts/raw/main/ofl/notosansthai/NotoSansThai-Medium.ttf"
-    font_reg_url = "https://github.com/google/fonts/raw/main/ofl/notosansthai/NotoSansThai-Regular.ttf"
+    # Fonts - REVERTED TO SARABUN (proven to work)
+    font_bold_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
+    font_med_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Medium.ttf"
+    font_reg_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
 
     f_huge = get_font(font_bold_url, 200)
     f_header = get_font(font_bold_url, 90)
@@ -160,7 +146,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     f_small = get_font(font_reg_url, 28)
     f_pill = get_font(font_med_url, 30)
     f_unit = get_font(font_med_url, 40)
-    f_action_val = get_font(font_bold_url, 30) # Reduced font size further (32->30) for better wrapping
+    f_action_val = get_font(font_bold_url, 30)
 
     # ==========================================
     # 1. HEADER SECTION (Logo & Date)
