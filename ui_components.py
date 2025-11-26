@@ -382,20 +382,41 @@ def display_external_assessment(lang, t):
     st.markdown(f"""
 <style>
 .assessment-card {{
-background-color: #F0F8FF;
+/* Use CSS variables for theme awareness */
+background-color: var(--secondary-background-color);
+color: var(--text-color);
 border-left: 6px solid #1E90FF;
 padding: 24px;
-border-radius: 10px;
+border-radius: 16px; /* Matches other cards */
 margin: 20px 0px;
 box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+border: 1px solid rgba(128, 128, 128, 0.1); /* Subtle border for dark mode */
 }}
-.assessment-card p {{ font-size: 1.05rem; line-height: 1.6; margin-bottom: 20px; }}
+.assessment-card p {{ 
+font-size: 1.05rem; 
+line-height: 1.6; 
+margin-bottom: 20px; 
+opacity: 0.9;
+}}
 a.assessment-button {{
-display: inline-block; width: 100%; background-color: #1E90FF; color: white; padding: 16px;
-border-radius: 8px; text-align: center; font-weight: 600; font-size: 1.1rem; text-decoration: none;
-transition: background-color 0.3s ease, transform 0.2s ease;
+display: inline-block; 
+width: 100%; 
+background-color: #1E90FF; 
+color: white !important; /* Force white text on blue button */
+padding: 16px;
+border-radius: 12px; 
+text-align: center; 
+font-weight: 600; 
+font-size: 1.1rem; 
+text-decoration: none;
+transition: all 0.2s ease;
+box-shadow: 0 4px 10px rgba(30, 144, 255, 0.2);
 }}
-a.assessment-button:hover {{ background-color: #1C86EE; transform: translateY(-2px); }}
+a.assessment-button:hover {{ 
+background-color: #1C86EE; 
+transform: translateY(-2px); 
+box-shadow: 0 6px 14px rgba(30, 144, 255, 0.3);
+}}
 </style>
 <div class="assessment-card">
 <p>{t[lang]['external_assessment_intro']}</p>
