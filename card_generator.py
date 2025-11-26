@@ -277,14 +277,16 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         
         cx = bx + col_w / 2
         
-        ic_size = 90
-        ic_y_local = 35 # Adjusted up slightly
+        ic_size = 100 # Increased circle size from 90 to 100
+        ic_y_local = 30 # Adjusted up slightly (from 35)
         draw.ellipse([cx - ic_size/2, by + ic_y_local, cx + ic_size/2, by + ic_y_local + ic_size], fill=theme_rgb)
         
         act_icon = get_image_from_url(ICON_URLS[act['icon']])
         if act_icon:
-            act_icon = act_icon.resize((50, 50), Image.Resampling.LANCZOS)
-            img.paste(act_icon, (int(cx - 25), int(by + ic_y_local + 20)), act_icon)
+            # Increased icon size from 50x50 to 65x65
+            act_icon = act_icon.resize((65, 65), Image.Resampling.LANCZOS)
+            # Re-center icon within the slightly larger circle
+            img.paste(act_icon, (int(cx - 32), int(by + ic_y_local + 18)), act_icon)
             
         label_y = by + ic_y_local + ic_size + 20 # Reduced gap
         draw_text_centered(draw, act['label'], f_pill, cx, label_y, "#64748b")
