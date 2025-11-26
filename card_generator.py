@@ -58,14 +58,24 @@ def hex_to_rgb(hex_color):
     hex_color = hex_color.lstrip('#')
     return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
 
+def is_thai_combining_char(char):
+    """Check if the character is a Thai combining vowel or tone mark."""
+    code = ord(char)
+    # Range covering Thai vowels (upper/lower) and tone marks
+    # 0x0E31 (Mai Han-Akat) to 0x0E4E (Yamakkan) roughly
+    return 0x0E31 <= code <= 0x0E4E or code == 0x0E30 # Include Sara A for safety in some contexts
+
 def wrap_text(text, font, max_width, draw):
     lines = []
     if not text: return lines
     
+    # Simple strategy: If space exists, split by space.
+    # If not (Thai), we have to be careful.
     words = text.split(' ')
     current_line = ""
     
     for word in words:
+        # Calculate width if we add this word
         test_line = current_line + " " + word if current_line else word
         bbox = draw.textbbox((0, 0), test_line, font=font)
         w = bbox[2] - bbox[0]
@@ -73,18 +83,33 @@ def wrap_text(text, font, max_width, draw):
         if w <= max_width:
             current_line = test_line
         else:
+            # Word itself is too long, need to split char by char (Thai style)
             word_bbox = draw.textbbox((0, 0), word, font=font)
             if (word_bbox[2] - word_bbox[0]) > max_width:
                 if current_line:
                     lines.append(current_line)
                     current_line = ""
+                
                 temp = ""
-                for char in word:
-                    if (draw.textbbox((0,0), temp + char, font=font)[2]) <= max_width:
+                for i, char in enumerate(word):
+                    # Check width with new char
+                    check_str = temp + char
+                    if (draw.textbbox((0,0), check_str, font=font)[2]) <= max_width:
                         temp += char
                     else:
-                        lines.append(temp)
-                        temp = char
+                        # Prevent breaking before a Thai combining character
+                        # If 'char' is a tone mark, we MUST NOT start a new line with it.
+                        # We should backtrack and pull the previous char down if possible.
+                        if is_thai_combining_char(char) and len(temp) > 0:
+                            # Move the last char from temp to the new line along with this combining char
+                            last_char = temp[-1]
+                            temp = temp[:-1] # Remove last char from current line
+                            lines.append(temp) # Flush current line
+                            temp = last_char + char # Start new line with [consonant + tone]
+                        else:
+                            # Normal break
+                            lines.append(temp)
+                            temp = char
                 current_line = temp
             else:
                 if current_line: lines.append(current_line)
@@ -131,7 +156,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     f_small = get_font(font_reg_url, 28)
     f_pill = get_font(font_med_url, 30)
     f_unit = get_font(font_med_url, 40)
-    f_action_val = get_font(font_bold_url, 32) # Reduced from 34 to help wrapping
+    f_action_val = get_font(font_bold_url, 30) # Reduced font size further (32->30) for better wrapping
 
     # ==========================================
     # 1. HEADER SECTION (Logo & Date)
@@ -140,26 +165,22 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     # --- LOGO (Top Left, EXTRA LARGE, No Background) ---
     logo_img = get_image_from_url(ICON_URLS['logo'])
     if logo_img:
-        logo_h = 220 # Increased from 150 -> 220 for better visibility
+        logo_h = 220
         aspect = logo_img.width / logo_img.height
         logo_w = int(logo_h * aspect)
         logo_img = logo_img.resize((logo_w, logo_h), Image.Resampling.LANCZOS)
         
-        # Position: Top Left with padding
         logo_x = 50
-        logo_y = 40 # Adjusted Y slightly
-        
-        # Paste directly (No pill background)
+        logo_y = 40
         img.paste(logo_img, (logo_x, logo_y), logo_img)
 
-    # --- DATE PILL (Moved to Top Right for Balance) ---
+    # --- DATE PILL ---
     date_bbox = draw.textbbox((0, 0), date_str, font=f_pill)
     date_w = date_bbox[2] - date_bbox[0] + 80
     date_h = date_bbox[3] - date_bbox[1] + 30
     
-    # Align Top Right (Aligned with center of new big logo)
     date_x = width - date_w - 60 
-    date_y = 110 # Lowered to match the visual center of the bigger logo
+    date_y = 110
     
     date_bg = Image.new('RGBA', (int(date_w), int(date_h)), (0,0,0,0))
     date_draw = ImageDraw.Draw(date_bg)
@@ -232,11 +253,10 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     draw_text_left(draw, t[lang]['advice_header'], f_subtitle, margin_x + 10, current_y, "#94a3b8")
     
     grid_y = current_y + 60
-    grid_gap = 24 # Reduced gap from 30
+    grid_gap = 18 # Reduced gap to 18 (was 24) to maximize column width
     
-    # Calculate column width here!
     col_w = (width - (margin_x * 2) - (grid_gap * 2)) / 3
-    col_h = 380 # Reduced from 450 to fix ratio
+    col_h = 360 # Reduced height to 360 (was 380) for better aspect ratio
     
     actions = [
         {'label': t[lang]['advice_cat_mask'], 'val': advice_details['mask'], 'icon': 'mask'},
@@ -258,7 +278,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         cx = bx + col_w / 2
         
         ic_size = 90
-        ic_y_local = 40 # Moved up from 50
+        ic_y_local = 35 # Adjusted up slightly
         draw.ellipse([cx - ic_size/2, by + ic_y_local, cx + ic_size/2, by + ic_y_local + ic_size], fill=theme_rgb)
         
         act_icon = get_image_from_url(ICON_URLS[act['icon']])
@@ -266,14 +286,16 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
             act_icon = act_icon.resize((50, 50), Image.Resampling.LANCZOS)
             img.paste(act_icon, (int(cx - 25), int(by + ic_y_local + 20)), act_icon)
             
-        label_y = by + ic_y_local + ic_size + 25 # Reduced gap
+        label_y = by + ic_y_local + ic_size + 20 # Reduced gap
         draw_text_centered(draw, act['label'], f_pill, cx, label_y, "#64748b")
         
-        val_y_start = label_y + 45 # Reduced gap
-        v_lines = wrap_text(act['val'], f_action_val, col_w - 20, draw) # Increase width for text
+        val_y_start = label_y + 40 # Reduced gap
+        v_lines = wrap_text(act['val'], f_action_val, col_w - 15, draw) # Slightly larger max width
         
+        # Draw lines closer together
+        line_height = 36 
         for k, vl in enumerate(v_lines[:4]):
-            draw_text_centered(draw, vl, f_action_val, cx, val_y_start + (k * 40), theme_rgb)
+            draw_text_centered(draw, vl, f_action_val, cx, val_y_start + (k * line_height), theme_rgb)
 
     # ==========================================
     # 5. FOOTER
