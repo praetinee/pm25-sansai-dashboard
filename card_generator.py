@@ -66,23 +66,31 @@ def has_thai_characters(text):
 
 def draw_thai_text(draw, text, font, x, y, color, anchor='lt'):
     """
-    Custom renderer for Thai text to fix floating vowel/tone overlap issues.
-    Only used when Thai characters are detected.
+    Advanced Custom renderer for Thai text to fix floating vowel/tone overlap issues.
+    Manually positions tone marks when they follow upper or lower vowels.
     """
     if not text: return
 
     # Thai characters that cause stacking issues
+    # Upper vowels: Mai Han-Akat, Sara I, Sara Ii, Sara Ue, Sara Uee, Mai Tai Khu, Nikkahit
     upper_vowels = set(['\u0E31', '\u0E34', '\u0E35', '\u0E36', '\u0E37', '\u0E47', '\u0E4D'])
+    # Lower vowels: Sara U, Sara Uu, Phinthu
+    lower_vowels = set(['\u0E38', '\u0E39', '\u0E3A'])
+    # Tones: Mai Ek, Mai Tho, Mai Tri, Mai Jattawa, Thantakhat
     tones = set(['\u0E48', '\u0E49', '\u0E4A', '\u0E4B', '\u0E4C'])
     
+    # Combined set of problematic predecessors
+    problem_vowels = upper_vowels.union(lower_vowels)
+
     # 1. Separate base text and problematic tones
     base_text_chars = []
     adjustments = [] 
 
     for i, char in enumerate(text):
-        # Check for Tone atop Upper Vowel collision
-        if i > 0 and char in tones and text[i-1] in upper_vowels:
+        # Check for Tone atop Vowel (Upper or Lower) collision
+        if i > 0 and char in tones and text[i-1] in problem_vowels:
             # Record this tone to draw manually later
+            # Store (tone_char, index_of_vowel_in_base_text)
             adjustments.append((char, len(base_text_chars) - 1))
         else:
             base_text_chars.append(char)
@@ -101,27 +109,38 @@ def draw_thai_text(draw, text, font, x, y, color, anchor='lt'):
     
     # 4. Manual Tone Surgery (Draw stripped tones in correct position)
     for char, vowel_idx in adjustments:
-        # Measure width up to the vowel
-        prefix = base_text[:vowel_idx]
-        prefix_w = font.getlength(prefix)
-        
-        # Get width of the vowel itself to center the tone
-        vowel_char = base_text[vowel_idx]
-        vowel_w = font.getlength(vowel_char)
-        
-        # Get width of the tone itself
-        tone_w = font.getlength(char)
-        
-        # X Calculation: Start + Prefix + Center over vowel
-        tone_x = start_x + prefix_w + (vowel_w - tone_w) / 2
-        
-        # Y Calculation: Lift it up!
-        # Lift by ~25% of font size relative to the line top
-        shift_amount = font.size * 0.25
-        tone_y = start_y - shift_amount
-        
-        # Draw the tone
-        draw.text((tone_x, tone_y), char, font=font, fill=color)
+        # Identify the Consonant (The character BEFORE the vowel)
+        # Since the vowel is at vowel_idx, the consonant is at vowel_idx - 1
+        if vowel_idx > 0:
+            consonant_idx = vowel_idx - 1
+            
+            # Measure width up to the consonant (Prefix)
+            prefix = base_text[:consonant_idx]
+            prefix_w = font.getlength(prefix)
+            
+            # Measure width of the consonant itself
+            consonant_char = base_text[consonant_idx]
+            consonant_w = font.getlength(consonant_char)
+            
+            # Measure width of the tone
+            tone_w = font.getlength(char)
+            
+            # X Calculation: Start + Prefix + Center over Consonant
+            tone_x = start_x + prefix_w + (consonant_w - tone_w) / 2
+            
+            # Y Calculation: Lift it up!
+            # Lift by ~25% of font size relative to the line top
+            shift_amount = font.size * 0.25
+            tone_y = start_y - shift_amount
+            
+            # Draw the tone
+            draw.text((tone_x, tone_y), char, font=font, fill=color)
+        else:
+            # Fallback (Shouldn't happen in valid Thai): Draw relative to vowel if no consonant
+            prefix = base_text[:vowel_idx]
+            tone_x = start_x + font.getlength(prefix)
+            tone_y = start_y - (font.size * 0.25)
+            draw.text((tone_x, tone_y), char, font=font, fill=color)
 
 def is_thai_combining_char(char):
     """Check if the character is a Thai combining vowel or tone mark."""
