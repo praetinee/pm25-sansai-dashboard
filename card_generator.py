@@ -131,7 +131,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     f_small = get_font(font_reg_url, 28)
     f_pill = get_font(font_med_url, 30)
     f_unit = get_font(font_med_url, 40)
-    f_action_val = get_font(font_bold_url, 34)
+    f_action_val = get_font(font_bold_url, 32) # Reduced from 34 to help wrapping
 
     # ==========================================
     # 1. HEADER SECTION (Logo & Date)
@@ -232,11 +232,11 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     draw_text_left(draw, t[lang]['advice_header'], f_subtitle, margin_x + 10, current_y, "#94a3b8")
     
     grid_y = current_y + 60
-    grid_gap = 30
+    grid_gap = 24 # Reduced gap from 30
     
     # Calculate column width here!
     col_w = (width - (margin_x * 2) - (grid_gap * 2)) / 3
-    col_h = 450
+    col_h = 380 # Reduced from 450 to fix ratio
     
     actions = [
         {'label': t[lang]['advice_cat_mask'], 'val': advice_details['mask'], 'icon': 'mask'},
@@ -258,7 +258,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         cx = bx + col_w / 2
         
         ic_size = 90
-        ic_y_local = 50
+        ic_y_local = 40 # Moved up from 50
         draw.ellipse([cx - ic_size/2, by + ic_y_local, cx + ic_size/2, by + ic_y_local + ic_size], fill=theme_rgb)
         
         act_icon = get_image_from_url(ICON_URLS[act['icon']])
@@ -266,14 +266,14 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
             act_icon = act_icon.resize((50, 50), Image.Resampling.LANCZOS)
             img.paste(act_icon, (int(cx - 25), int(by + ic_y_local + 20)), act_icon)
             
-        label_y = by + ic_y_local + ic_size + 30
+        label_y = by + ic_y_local + ic_size + 25 # Reduced gap
         draw_text_centered(draw, act['label'], f_pill, cx, label_y, "#64748b")
         
-        val_y_start = label_y + 50
-        v_lines = wrap_text(act['val'], f_action_val, col_w - 30, draw)
+        val_y_start = label_y + 45 # Reduced gap
+        v_lines = wrap_text(act['val'], f_action_val, col_w - 20, draw) # Increase width for text
         
         for k, vl in enumerate(v_lines[:4]):
-            draw_text_centered(draw, vl, f_action_val, cx, val_y_start + (k * 45), theme_rgb)
+            draw_text_centered(draw, vl, f_action_val, cx, val_y_start + (k * 40), theme_rgb)
 
     # ==========================================
     # 5. FOOTER
