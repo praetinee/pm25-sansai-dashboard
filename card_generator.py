@@ -66,17 +66,13 @@ def has_thai_characters(text):
 
 def draw_thai_text(draw, text, font, x, y, color, anchor='lt'):
     """
-    Advanced Custom renderer for Thai text to fix floating vowel/tone overlap issues.
-    Manually positions tone marks ONLY when they follow UPPER vowels.
-    Let PIL handle lower vowels normally as they don't clash.
+    Custom renderer for Thai text to fix floating vowel/tone overlap issues.
+    Only used when Thai characters are detected.
     """
     if not text: return
 
-    # Upper vowels: Mai Han-Akat, Sara I, Sara Ii, Sara Ue, Sara Uee, Mai Tai Khu, Nikkahit
-    # These sit on top and can clash with tone marks.
+    # Thai characters that cause stacking issues
     upper_vowels = set(['\u0E31', '\u0E34', '\u0E35', '\u0E36', '\u0E37', '\u0E47', '\u0E4D'])
-    
-    # Tones: Mai Ek, Mai Tho, Mai Tri, Mai Jattawa, Thantakhat
     tones = set(['\u0E48', '\u0E49', '\u0E4A', '\u0E4B', '\u0E4C'])
     
     # 1. Separate base text and problematic tones
@@ -84,8 +80,7 @@ def draw_thai_text(draw, text, font, x, y, color, anchor='lt'):
     adjustments = [] 
 
     for i, char in enumerate(text):
-        # Check for Tone atop UPPER Vowel collision ONLY
-        # We intentionally ignore lower vowels (Sara U, Uu) because they don't cause vertical overlap.
+        # Check for Tone atop Upper Vowel collision
         if i > 0 and char in tones and text[i-1] in upper_vowels:
             # Record this tone to draw manually later
             adjustments.append((char, len(base_text_chars) - 1))
@@ -101,36 +96,32 @@ def draw_thai_text(draw, text, font, x, y, color, anchor='lt'):
     else: # 'lt'
         start_x, start_y = x, y
 
-    # 3. Draw Base Text (Problematic Tones stripped)
+    # 3. Draw Base Text (Tones stripped)
     draw.text((start_x, start_y), base_text, font=font, fill=color)
     
     # 4. Manual Tone Surgery (Draw stripped tones in correct position)
     for char, vowel_idx in adjustments:
-        # Identify the Consonant (The character BEFORE the vowel)
-        if vowel_idx > 0:
-            consonant_idx = vowel_idx - 1
-            
-            # Measure width up to the consonant (Prefix)
-            prefix = base_text[:consonant_idx]
-            prefix_w = font.getlength(prefix)
-            
-            # Measure width of the consonant itself
-            consonant_char = base_text[consonant_idx]
-            consonant_w = font.getlength(consonant_char)
-            
-            # Measure width of the tone
-            tone_w = font.getlength(char)
-            
-            # X Calculation: Start + Prefix + Center over Consonant
-            # This works well for upper vowels because they are usually centered on the consonant too.
-            tone_x = start_x + prefix_w + (consonant_w - tone_w) / 2
-            
-            # Y Calculation: Lift it up!
-            shift_amount = font.size * 0.25
-            tone_y = start_y - shift_amount
-            
-            # Draw the tone
-            draw.text((tone_x, tone_y), char, font=font, fill=color)
+        # Measure width up to the vowel
+        prefix = base_text[:vowel_idx]
+        prefix_w = font.getlength(prefix)
+        
+        # Get width of the vowel itself to center the tone
+        vowel_char = base_text[vowel_idx]
+        vowel_w = font.getlength(vowel_char)
+        
+        # Get width of the tone itself
+        tone_w = font.getlength(char)
+        
+        # X Calculation: Start + Prefix + Center over vowel
+        tone_x = start_x + prefix_w + (vowel_w - tone_w) / 2
+        
+        # Y Calculation: Lift it up!
+        # Lift by ~25% of font size relative to the line top
+        shift_amount = font.size * 0.25
+        tone_y = start_y - shift_amount
+        
+        # Draw the tone
+        draw.text((tone_x, tone_y), char, font=font, fill=color)
 
 def is_thai_combining_char(char):
     """Check if the character is a Thai combining vowel or tone mark."""
@@ -192,6 +183,8 @@ def round_corners(im, radius):
 # --- Drawing Helpers ---
 def draw_text_centered(draw, text, font, x, y, color):
     # INTELLIGENT SWITCH: 
+    # Use custom Thai renderer ONLY if Thai characters are present.
+    # Otherwise (Numbers, English) use standard PIL renderer to avoid layout breakage.
     if has_thai_characters(text):
         draw_thai_text(draw, text, font, x, y, color, anchor='mm')
     else:
@@ -306,18 +299,27 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         text_w = card_width - (text_x - margin_x) - 40
         
         # --- VERTICAL CENTERING LOGIC ---
+        # 1. Wrap description text to see how many lines we have
         desc_lines = wrap_text(desc, f_body, text_w, draw)
         desc_lines = desc_lines[:3] # Limit to 3 lines max
         
+        # 2. Calculate height of the text block
+        # Title height approx (font size 44) + gap + Body height (lines * line height)
         title_h = 50 
         line_h = 45
         gap = 10
         
         total_text_h = title_h + gap + (len(desc_lines) * line_h)
+        
+        # 3. Calculate Starting Y to center vertically in the card
+        # Center of card = y_pos + (card_h / 2)
+        # Start Y = Center - (Total Height / 2)
         text_start_y = y_pos + (card_h - total_text_h) / 2
         
+        # Draw Title
         draw_text_left(draw, title, f_title, text_x, text_start_y, "#1e293b")
         
+        # Draw Description Lines
         current_y = text_start_y + title_h + gap
         for i, line in enumerate(desc_lines):
             draw_text_left(draw, line, f_body, text_x, current_y, "#64748b")
