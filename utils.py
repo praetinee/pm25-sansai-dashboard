@@ -18,19 +18,19 @@ def get_aqi_level(pm25, lang, t):
         advice_key = 'advice_2'
         color = "#2ECC71"
         emoji = "🙂"
-    # 25.1-37.5: Yellow (Moderate)
+    # 25.1-37.5: Yellow (Moderate -> เริ่มมีฝุ่นสะสม)
     elif 25 < pm25 <= 37.5:
         level_key = 'aqi_level_3'
         advice_key = 'advice_3'
         color = "#F1C40F"
         emoji = "😐"
-    # 37.6-75.0: Orange (Unhealthy for Sensitive Groups)
+    # 37.6-75.0: Orange (Unhealthy -> ฝุ่นสูง)
     elif 37.5 < pm25 <= 75:
         level_key = 'aqi_level_4'
         advice_key = 'advice_4'
         color = "#E67E22"
         emoji = "😷"
-    # >75.0: Red (Unhealthy)
+    # >75.0: Red (Hazardous -> อันตรายมาก)
     else: 
         level_key = 'aqi_level_5'
         advice_key = 'advice_5'
@@ -41,4 +41,3 @@ def get_aqi_level(pm25, lang, t):
     advice = advice_dict[advice_key]
     
     return level, color, emoji, advice
-
