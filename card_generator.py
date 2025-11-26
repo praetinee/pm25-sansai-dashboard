@@ -49,11 +49,12 @@ def get_image_from_url(url):
     return None
 
 def get_theme_color(pm):
-    if pm <= 15: return '#10b981' # Emerald
-    elif pm <= 25: return '#22c55e' # Green
-    elif pm <= 37.5: return '#fbbf24' # Yellow
-    elif pm <= 75: return '#f97316' # Orange
-    else: return '#ef4444' # Red
+    # Updated thresholds to match the new standards
+    if pm <= 15: return '#0099FF' # Blue (Excellent) - Updated color code
+    elif pm <= 25: return '#2ECC71' # Green (Good) - Updated color code
+    elif pm <= 37.5: return '#F1C40F' # Yellow (Moderate/Starting to affect) - Updated color code
+    elif pm <= 75: return '#E67E22' # Orange (Unhealthy/High Dust) - Updated color code
+    else: return '#E74C3C' # Red (Hazardous) - Updated color code
 
 def hex_to_rgb(hex_color):
     hex_color = hex_color.lstrip('#')
