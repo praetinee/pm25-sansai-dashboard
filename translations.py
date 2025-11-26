@@ -50,7 +50,7 @@ TRANSLATIONS = {
         'advice': {
             'advice_1': {'summary': "คุณภาพอากาศดีมาก สามารถทำกิจกรรมกลางแจ้งได้ตามปกติ", 'details': {'mask': 'ไม่จำเป็น', 'activity': 'ทำได้ตามปกติ', 'indoors': 'เปิดระบายอากาศได้', 'risk_group': 'ทำกิจกรรมได้ปกติ'}},
             'advice_2': {'summary': "คุณภาพอากาศดี ทำกิจกรรมกลางแจ้งได้ตามปกติ", 'details': {'mask': 'ไม่จำเป็น', 'activity': 'ทำได้ตามปกติ', 'indoors': 'เปิดระบายอากาศได้', 'risk_group': 'ควรสังเกตอาการ'}},
-            'advice_3': {'summary': "คนทั่วไปควรลดการออกกำลังกายกลางแจ้ง กลุ่มเสี่ยงควรลดเวลาทำกิจกรรม", 'details': {'mask': 'พิจารณาตามความเสี่ยง', 'activity': 'ลดการออกกำลังกายหนัก', 'indoors': 'ปิดหน้าต่างเป็นพักๆ', 'risk_group': 'สวมหน้ากากอนามัย'}},
+            'advice_3': {'summary': "คนทั่วไปควรลดการออกกำลังกายกลางแจ้ง กลุ่มเสี่ยงควรลดเวลาทำกิจกรรม", 'details': {'mask': 'พิจารณาตามความเสี่ยง', 'activity': 'ลดการออกกำลังกายหนัก', 'indoors': 'เลี่ยงการเปิดหน้าต่าง', 'risk_group': 'สวมหน้ากากอนามัย'}},
             'advice_4': {'summary': "ควรลดระยะเวลาทำกิจกรรมกลางแจ้งและสวมหน้ากากป้องกัน", 'details': {'mask': 'สวมหน้ากาก N95', 'activity': 'ควรงดออกกำลังกาย', 'indoors': 'ปิดบ้านให้สนิท', 'risk_group': 'งดกิจกรรมกลางแจ้ง'}},
             'advice_5': {'summary': "ควรงดกิจกรรมกลางแจ้งโดยเด็ดขาดและอยู่ในห้องปลอดฝุ่น", 'details': {'mask': 'N95 เมื่อจำเป็น', 'activity': 'งดโดยเด็ดขาด', 'indoors': 'เปิดเครื่องฟอกอากาศ', 'risk_group': 'อยู่ในห้องปลอดฝุ่น'}}
         },
@@ -108,7 +108,7 @@ TRANSLATIONS = {
         'advice': {
             'advice_1': {'summary': "Air quality is excellent. Outdoor activities can be enjoyed normally.",'details': {'mask': 'Not needed', 'activity': 'Normal', 'indoors': 'Ventilate freely', 'risk_group': 'Normal activity'}},
             'advice_2': {'summary': "Air quality is good. Outdoor activities can be enjoyed normally.",'details': {'mask': 'Not needed', 'activity': 'Normal', 'indoors': 'Ventilate freely', 'risk_group': 'Monitor symptoms'}},
-            'advice_3': {'summary': "General public should reduce outdoor exercise. Sensitive groups should limit time outdoors.",'details': {'mask': 'Consider based on risk', 'activity': 'Reduce strenuous exercise', 'indoors': 'Close windows periodically', 'risk_group': 'Wear a mask'}},
+            'advice_3': {'summary': "General public should reduce outdoor exercise. Sensitive groups should limit time outdoors.",'details': {'mask': 'Consider based on risk', 'activity': 'Reduce strenuous exercise', 'indoors': 'Avoid opening windows', 'risk_group': 'Wear a mask'}},
             'advice_4': {'summary': "Reduce time outdoors and wear a protective mask.",'details': {'mask': 'Wear an N95 mask', 'activity': 'Avoid exercise', 'indoors': 'Keep house sealed', 'risk_group': 'Avoid outdoor activities'}},
             'advice_5': {'summary': "Avoid all outdoor activities and stay in a clean-air room.",'details': {'mask': 'N95 when necessary', 'activity': 'Avoid completely', 'indoors': 'Use air purifier', 'risk_group': 'Stay in a clean-air room'}}
         },
@@ -116,4 +116,3 @@ TRANSLATIONS = {
         'days_header_short': ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
     }
 }
-
