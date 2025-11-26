@@ -297,10 +297,32 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         text_x = ic_x + icon_size + 40
         text_w = card_width - (text_x - margin_x) - 40
         
-        draw_text_left(draw, title, f_title, text_x, y_pos + 40, "#1e293b")
+        # --- VERTICAL CENTERING LOGIC ---
+        # 1. Wrap description text to see how many lines we have
         desc_lines = wrap_text(desc, f_body, text_w, draw)
-        for i, line in enumerate(desc_lines[:3]):
-            draw_text_left(draw, line, f_body, text_x, y_pos + 100 + (i * 45), "#64748b")
+        desc_lines = desc_lines[:3] # Limit to 3 lines max
+        
+        # 2. Calculate height of the text block
+        # Title height approx (font size 44) + gap + Body height (lines * line height)
+        title_h = 50 
+        line_h = 45
+        gap = 10
+        
+        total_text_h = title_h + gap + (len(desc_lines) * line_h)
+        
+        # 3. Calculate Starting Y to center vertically in the card
+        # Center of card = y_pos + (card_h / 2)
+        # Start Y = Center - (Total Height / 2)
+        text_start_y = y_pos + (card_h - total_text_h) / 2
+        
+        # Draw Title
+        draw_text_left(draw, title, f_title, text_x, text_start_y, "#1e293b")
+        
+        # Draw Description Lines
+        current_y = text_start_y + title_h + gap
+        for i, line in enumerate(desc_lines):
+            draw_text_left(draw, line, f_body, text_x, current_y, "#64748b")
+            current_y += line_h
             
         return y_pos + card_h + 40
 
