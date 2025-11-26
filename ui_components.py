@@ -382,15 +382,14 @@ def display_external_assessment(lang, t):
     st.markdown(f"""
 <style>
 .assessment-card {{
-/* Use CSS variables for theme awareness */
-background-color: var(--secondary-background-color);
-color: var(--text-color);
-border-left: 6px solid #1E90FF;
-padding: 24px;
-border-radius: 16px; /* Matches other cards */
-margin: 20px 0px;
-box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-border: 1px solid rgba(128, 128, 128, 0.1); /* Subtle border for dark mode */
+    /* Use semi-transparent background for theme adaptability */
+    background-color: rgba(30, 144, 255, 0.1); /* Light blue tint */
+    color: inherit; /* Inherit text color from theme (Black/White) */
+    border-left: 6px solid #1E90FF;
+    padding: 24px;
+    border-radius: 16px;
+    margin: 20px 0px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
 }}
 .assessment-card p {{ 
 font-size: 1.05rem; 
