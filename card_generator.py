@@ -77,14 +77,15 @@ def wrap_text(text, font, max_width, draw):
     for word in words:
         # Calculate width if we add this word
         test_line = current_line + " " + word if current_line else word
-        bbox = draw.textbbox((0, 0), test_line, font=font)
+        # Using language='th' in measurement as well to be consistent
+        bbox = draw.textbbox((0, 0), test_line, font=font, language='th')
         w = bbox[2] - bbox[0]
         
         if w <= max_width:
             current_line = test_line
         else:
             # Word itself is too long, need to split char by char (Thai style)
-            word_bbox = draw.textbbox((0, 0), word, font=font)
+            word_bbox = draw.textbbox((0, 0), word, font=font, language='th')
             if (word_bbox[2] - word_bbox[0]) > max_width:
                 if current_line:
                     lines.append(current_line)
@@ -94,7 +95,7 @@ def wrap_text(text, font, max_width, draw):
                 for i, char in enumerate(word):
                     # Check width with new char
                     check_str = temp + char
-                    if (draw.textbbox((0,0), check_str, font=font)[2]) <= max_width:
+                    if (draw.textbbox((0,0), check_str, font=font, language='th')[2]) <= max_width:
                         temp += char
                     else:
                         # Prevent breaking before a Thai combining character
@@ -129,10 +130,12 @@ def round_corners(im, radius):
 
 # --- Drawing Helpers ---
 def draw_text_centered(draw, text, font, x, y, color):
-    draw.text((x, y), text, font=font, fill=color, anchor="mm")
+    # Added language='th' to assist text shaping engines (like Raqm) for correct Thai tone placement
+    draw.text((x, y), text, font=font, fill=color, anchor="mm", language='th')
 
 def draw_text_left(draw, text, font, x, y, color):
-    draw.text((x, y), text, font=font, fill=color, anchor="lt")
+    # Added language='th'
+    draw.text((x, y), text, font=font, fill=color, anchor="lt", language='th')
 
 # --- MAIN GENERATOR ---
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
@@ -175,7 +178,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         img.paste(logo_img, (logo_x, logo_y), logo_img)
 
     # --- DATE PILL ---
-    date_bbox = draw.textbbox((0, 0), date_str, font=f_pill)
+    date_bbox = draw.textbbox((0, 0), date_str, font=f_pill, language='th')
     date_w = date_bbox[2] - date_bbox[0] + 80
     date_h = date_bbox[3] - date_bbox[1] + 30
     
