@@ -74,6 +74,7 @@ def wrap_text(text, font, max_width, draw):
     
     for word in words:
         test_line = current_line + " " + word if current_line else word
+        # Note: language='th' removed to prevent crash, Kanit handles glyphs better
         bbox = draw.textbbox((0, 0), test_line, font=font)
         w = bbox[2] - bbox[0]
         
@@ -133,10 +134,11 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     img = Image.new('RGBA', (width, height), get_theme_color(latest_pm25))
     draw = ImageDraw.Draw(img)
 
-    # Fonts - REVERTED TO SARABUN (proven to work)
-    font_bold_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
-    font_med_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Medium.ttf"
-    font_reg_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
+    # Fonts - SWITCHING TO KANIT (Better Thai glyph support in basic renderers)
+    # Using raw GitHub URLs for Google Fonts (TTF)
+    font_bold_url = "https://github.com/google/fonts/raw/main/ofl/kanit/Kanit-Bold.ttf"
+    font_med_url = "https://github.com/google/fonts/raw/main/ofl/kanit/Kanit-Medium.ttf"
+    font_reg_url = "https://github.com/google/fonts/raw/main/ofl/kanit/Kanit-Regular.ttf"
 
     f_huge = get_font(font_bold_url, 200)
     f_header = get_font(font_bold_url, 90)
