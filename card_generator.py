@@ -3,6 +3,7 @@ import requests
 from io import BytesIO
 import streamlit as st
 import math
+import re
 
 # --- 1. Assets & Configurations ---
 ICON_URLS = {
@@ -58,59 +59,67 @@ def hex_to_rgb(hex_color):
     hex_color = hex_color.lstrip('#')
     return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
 
+def has_thai_characters(text):
+    """Checks if the text contains Thai characters."""
+    return bool(re.search(r'[\u0E00-\u0E7F]', text))
+
 def draw_thai_text(draw, text, font, x, y, color, anchor='lt'):
     """
-    Advanced Thai text renderer that manually composites tone marks
-    to prevent overlapping with upper vowels (Sarabun Fix).
+    Custom renderer for Thai text to fix floating vowel/tone overlap issues.
+    Only used when Thai characters are detected.
     """
     if not text: return
 
-    # Define characters that cause overlapping
+    # Thai characters that cause stacking issues
     upper_vowels = set(['\u0E31', '\u0E34', '\u0E35', '\u0E36', '\u0E37', '\u0E47', '\u0E4D'])
     tones = set(['\u0E48', '\u0E49', '\u0E4A', '\u0E4B', '\u0E4C'])
     
     # 1. Separate base text and problematic tones
     base_text_chars = []
-    adjustments = [] # List of (tone_char, index_of_previous_vowel_in_base)
+    adjustments = [] 
 
     for i, char in enumerate(text):
+        # Check for Tone atop Upper Vowel collision
         if i > 0 and char in tones and text[i-1] in upper_vowels:
-            # Found a collision! (e.g., Sara Ii + Mai Ek)
-            # Don't add this tone to base text (it would overlap)
-            # Instead, record it to draw later relative to the previous char
+            # Record this tone to draw manually later
             adjustments.append((char, len(base_text_chars) - 1))
         else:
             base_text_chars.append(char)
             
     base_text = "".join(base_text_chars)
     
-    # 2. Determine Layout Reference
-    # We let PIL calculate the position of the base text first
+    # 2. Calculate Base Position
     if anchor == 'mm':
         bbox = draw.textbbox((x, y), base_text, font=font, anchor='mm')
         start_x, start_y = bbox[0], bbox[1]
     else: # 'lt'
         start_x, start_y = x, y
 
-    # 3. Draw Base Text
+    # 3. Draw Base Text (Tones stripped)
     draw.text((start_x, start_y), base_text, font=font, fill=color)
     
-    # 4. Draw Floating Tones (The Surgery)
+    # 4. Manual Tone Surgery (Draw stripped tones in correct position)
     for char, vowel_idx in adjustments:
-        # Calculate X position: Start + Width of text up to the vowel
+        # Measure width up to the vowel
         prefix = base_text[:vowel_idx]
         prefix_w = font.getlength(prefix)
-        vowel_w = font.getlength(base_text[vowel_idx])
         
-        # Position the tone roughly centered on the vowel
-        # (Shifted slightly right usually looks better for Thai tones)
-        tone_x = start_x + prefix_w + (vowel_w * 0.1)
+        # Get width of the vowel itself to center the tone
+        vowel_char = base_text[vowel_idx]
+        vowel_w = font.getlength(vowel_char)
         
-        # Calculate Y position: Shift UP relative to the line top
-        # Shift amount depends on font size. 20% of size is usually a good "lift"
-        shift_amount = font.size * 0.20
+        # Get width of the tone itself
+        tone_w = font.getlength(char)
+        
+        # X Calculation: Start + Prefix + Center over vowel
+        tone_x = start_x + prefix_w + (vowel_w - tone_w) / 2
+        
+        # Y Calculation: Lift it up!
+        # Lift by ~25% of font size relative to the line top
+        shift_amount = font.size * 0.25
         tone_y = start_y - shift_amount
         
+        # Draw the tone
         draw.text((tone_x, tone_y), char, font=font, fill=color)
 
 def is_thai_combining_char(char):
@@ -119,7 +128,6 @@ def is_thai_combining_char(char):
     return 0x0E31 <= code <= 0x0E4E or code == 0x0E30
 
 def wrap_text(text, font, max_width, draw):
-    # Standard logic, remove the PUA fix since we handle rendering manually now
     lines = []
     if not text: return lines
     
@@ -173,12 +181,19 @@ def round_corners(im, radius):
 
 # --- Drawing Helpers ---
 def draw_text_centered(draw, text, font, x, y, color):
-    # Use our custom renderer
-    draw_thai_text(draw, text, font, x, y, color, anchor='mm')
+    # INTELLIGENT SWITCH: 
+    # Use custom Thai renderer ONLY if Thai characters are present.
+    # Otherwise (Numbers, English) use standard PIL renderer to avoid layout breakage.
+    if has_thai_characters(text):
+        draw_thai_text(draw, text, font, x, y, color, anchor='mm')
+    else:
+        draw.text((x, y), text, font=font, fill=color, anchor="mm")
 
 def draw_text_left(draw, text, font, x, y, color):
-    # Use our custom renderer
-    draw_thai_text(draw, text, font, x, y, color, anchor='lt')
+    if has_thai_characters(text):
+        draw_thai_text(draw, text, font, x, y, color, anchor='lt')
+    else:
+        draw.text((x, y), text, font=font, fill=color, anchor="lt")
 
 # --- MAIN GENERATOR ---
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
@@ -189,7 +204,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     img = Image.new('RGBA', (width, height), get_theme_color(latest_pm25))
     draw = ImageDraw.Draw(img)
 
-    # Fonts - Using Sarabun again, but with MANUAL FIX
+    # Fonts - Using Sarabun (Proven Safe & Stable)
     font_bold_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
     font_med_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Medium.ttf"
     font_reg_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
@@ -208,7 +223,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     # 1. HEADER SECTION (Logo & Date)
     # ==========================================
     
-    # --- LOGO (Top Left, EXTRA LARGE, No Background) ---
+    # --- LOGO ---
     logo_img = get_image_from_url(ICON_URLS['logo'])
     if logo_img:
         logo_h = 220
@@ -221,12 +236,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         img.paste(logo_img, (logo_x, logo_y), logo_img)
 
     # --- DATE PILL ---
-    # Using draw_thai_text manually here isn't strictly necessary if date doesn't have overlapping vowels
-    # but safe to use standard wrap logic or just draw normally. 
-    # Let's keep date simple or use custom if it has complex thai.
-    # Date usually has "พฤศจิกายน" (Sara Ue + Mai Ek) -> might need fix!
-    
-    date_bbox = draw.textbbox((0, 0), date_str, font=f_pill) # Roughly measure base
+    date_bbox = draw.textbbox((0, 0), date_str, font=f_pill)
     date_w = date_bbox[2] - date_bbox[0] + 80
     date_h = date_bbox[3] - date_bbox[1] + 30
     
@@ -238,7 +248,6 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     date_draw.rounded_rectangle([0, 0, date_w, date_h], radius=30, fill=(255, 255, 255, 50))
     img.paste(date_bg, (int(date_x), int(date_y)), date_bg)
     
-    # Use custom drawer for date text
     draw_text_centered(draw, date_str, f_pill, date_x + date_w//2, date_y + date_h//2 - 4, (255,255,255,255))
 
     # ==========================================
@@ -252,8 +261,12 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     percent = min((latest_pm25 / 120) * 360, 360)
     draw.arc([width//2 - gauge_r, gauge_cy - gauge_r, width//2 + gauge_r, gauge_cy + gauge_r], 
              start=-90, end=-90+percent, fill=theme_rgb, width=25)
+    
+    # Numbers and English units go through standard PIL drawing (via the check in draw_text_centered)
     draw_text_centered(draw, f"{latest_pm25:.0f}", f_huge, width//2, gauge_cy - 20, theme_rgb)
     draw_text_centered(draw, "µg/m³", f_unit, width//2, gauge_cy + 100, theme_rgb)
+    
+    # Thai level text goes through custom renderer
     draw_text_centered(draw, level, f_header, width//2, gauge_cy + 290, "white")
 
     # ==========================================
