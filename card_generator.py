@@ -146,10 +146,11 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     img = Image.new('RGBA', (width, height), get_theme_color(latest_pm25))
     draw = ImageDraw.Draw(img)
 
-    # Fonts
-    font_bold_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
-    font_med_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Medium.ttf"
-    font_reg_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
+    # Fonts - CHANGED TO NOTO SANS THAI for better rendering support
+    # Sarabun sometimes has issues with tone marks in PIL default engine
+    font_bold_url = "https://github.com/google/fonts/raw/main/ofl/notosansthai/NotoSansThai-Bold.ttf"
+    font_med_url = "https://github.com/google/fonts/raw/main/ofl/notosansthai/NotoSansThai-Medium.ttf"
+    font_reg_url = "https://github.com/google/fonts/raw/main/ofl/notosansthai/NotoSansThai-Regular.ttf"
 
     f_huge = get_font(font_bold_url, 200)
     f_header = get_font(font_bold_url, 90)
