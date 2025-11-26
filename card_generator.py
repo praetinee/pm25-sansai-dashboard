@@ -277,30 +277,54 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         
         cx = bx + col_w / 2
         
-        ic_size = 110 # Increased circle size from 100 to 110
-        ic_y_local = 30 # Adjusted up slightly (from 35)
-        draw.ellipse([cx - ic_size/2, by + ic_y_local, cx + ic_size/2, by + ic_y_local + ic_size], fill=theme_rgb)
+        # --- Pre-calculate Height for Centering ---
+        # 1. Wrap value text first
+        v_lines = wrap_text(act['val'], f_action_val, col_w - 20, draw)
+        num_lines = min(len(v_lines), 4) # Limit lines
+        
+        # 2. Define Dimensions
+        ic_size = 110 # Circle size
+        gap_icon_label = 25 # Visual gap between circle bottom and label top (Increased from ~5px to 25px)
+        h_label = 30 # Approx label height (pill font is 30)
+        gap_label_val = 15 # Gap between label bottom and value top
+        line_height = 36 # Line height for value text
+        h_val_block = num_lines * line_height
+        
+        # Total content height
+        total_content_h = ic_size + gap_icon_label + h_label + gap_label_val + h_val_block
+        
+        # 3. Calculate Start Y (Top of the icon circle) to center vertically
+        content_start_y = by + (col_h - total_content_h) / 2
+        
+        # --- Draw Elements relative to content_start_y ---
+        
+        # Draw Icon Circle
+        draw.ellipse([cx - ic_size/2, content_start_y, cx + ic_size/2, content_start_y + ic_size], fill=theme_rgb)
         
         act_icon = get_image_from_url(ICON_URLS[act['icon']])
         if act_icon:
-            # Increased icon size from 65x65 to 75x75
+            # Icon size 75x75
             act_icon = act_icon.resize((75, 75), Image.Resampling.LANCZOS)
-            # Re-center icon within the slightly larger circle
-            # Centering offset: half of (110 - 75) is about 17.5.
-            # Y pos: circle starts at ic_y_local (30). Center is 30+55=85. Icon top = 85 - 37.5 = 47.5.
-            # So offset from 'by' is approx 47.
-            img.paste(act_icon, (int(cx - 37), int(by + ic_y_local + 17)), act_icon)
+            # Center icon inside circle
+            # Icon Top Y relative to Circle Top = (CircleH - IconH) / 2 = (110 - 75)/2 = 17.5
+            icon_y = content_start_y + (ic_size - 75) / 2
+            img.paste(act_icon, (int(cx - 37), int(icon_y)), act_icon)
             
-        label_y = by + ic_y_local + ic_size + 20 # Reduced gap
-        draw_text_centered(draw, act['label'], f_pill, cx, label_y, "#64748b")
+        # Draw Label (Title)
+        # Label Center Y calculation:
+        # Top of label = content_start_y + ic_size + gap_icon_label
+        # Center of label = Top + h_label/2
+        label_cy = content_start_y + ic_size + gap_icon_label + (h_label / 2)
+        draw_text_centered(draw, act['label'], f_pill, cx, label_cy, "#64748b")
         
-        val_y_start = label_y + 40 # Reduced gap
-        v_lines = wrap_text(act['val'], f_action_val, col_w - 15, draw) # Slightly larger max width
+        # Draw Value Text
+        # Value block top = Label Top + h_label + gap_label_val
+        val_block_top = content_start_y + ic_size + gap_icon_label + h_label + gap_label_val
         
-        # Draw lines closer together
-        line_height = 36 
         for k, vl in enumerate(v_lines[:4]):
-            draw_text_centered(draw, vl, f_action_val, cx, val_y_start + (k * line_height), theme_rgb)
+            # Line Center Y = Block Top + (k * line_height) + (line_height/2)
+            line_cy = val_block_top + (k * line_height) + (line_height / 2)
+            draw_text_centered(draw, vl, f_action_val, cx, line_cy, theme_rgb)
 
     # ==========================================
     # 5. FOOTER
