@@ -58,14 +58,49 @@ def hex_to_rgb(hex_color):
     hex_color = hex_color.lstrip('#')
     return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
 
+def fix_thai_positions(text):
+    """
+    Manually shifts Thai tone marks up when they appear above upper vowels
+    by replacing them with PUA (Private Use Area) glyphs if available.
+    This fixes the 'Sarabun' floating/overlapping vowel issue in PIL.
+    """
+    if not text:
+        return text
+        
+    # Upper vowels that push tone marks higher
+    upper_vowels = set(['\u0E31', '\u0E34', '\u0E35', '\u0E36', '\u0E37', '\u0E47', '\u0E4D'])
+    
+    # Tone marks range: \u0E48 - \u0E4C
+    # PUA Shifted Tones (Common in Thai fonts like Sarabun/Noto)
+    # 0E48 (Mai Ek) -> F70A
+    # 0E49 (Mai Tho) -> F70B
+    # 0E4A (Mai Tri) -> F70C
+    # 0E4B (Mai Jattawa) -> F70D
+    # 0E4C (Thantakhat) -> F70E
+
+    chars = list(text)
+    for i in range(1, len(chars)):
+        c = chars[i]
+        prev = chars[i-1]
+        
+        # Check if current char is a tone mark and previous is an upper vowel
+        if '\u0E48' <= c <= '\u0E4C' and prev in upper_vowels:
+            # Shift the tone mark up by using PUA codepoint
+            base_pua = 0xF70A
+            offset = ord(c) - 0x0E48
+            chars[i] = chr(base_pua + offset)
+            
+    return "".join(chars)
+
 def is_thai_combining_char(char):
     """Check if the character is a Thai combining vowel or tone mark."""
     code = ord(char)
-    # Range covering Thai vowels (upper/lower) and tone marks
-    # 0x0E31 (Mai Han-Akat) to 0x0E4E (Yamakkan) roughly
-    return 0x0E31 <= code <= 0x0E4E or code == 0x0E30 # Include Sara A for safety in some contexts
+    return 0x0E31 <= code <= 0x0E4E or code == 0x0E30
 
 def wrap_text(text, font, max_width, draw):
+    # First, apply the Thai rendering fix
+    text = fix_thai_positions(text)
+    
     lines = []
     if not text: return lines
     
@@ -74,7 +109,6 @@ def wrap_text(text, font, max_width, draw):
     
     for word in words:
         test_line = current_line + " " + word if current_line else word
-        # Note: language='th' removed to prevent crash, Kanit handles glyphs better
         bbox = draw.textbbox((0, 0), test_line, font=font)
         w = bbox[2] - bbox[0]
         
@@ -120,9 +154,13 @@ def round_corners(im, radius):
 
 # --- Drawing Helpers ---
 def draw_text_centered(draw, text, font, x, y, color):
+    # Apply fix before drawing
+    text = fix_thai_positions(text)
     draw.text((x, y), text, font=font, fill=color, anchor="mm")
 
 def draw_text_left(draw, text, font, x, y, color):
+    # Apply fix before drawing
+    text = fix_thai_positions(text)
     draw.text((x, y), text, font=font, fill=color, anchor="lt")
 
 # --- MAIN GENERATOR ---
@@ -134,11 +172,10 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     img = Image.new('RGBA', (width, height), get_theme_color(latest_pm25))
     draw = ImageDraw.Draw(img)
 
-    # Fonts - SWITCHING TO KANIT (Better Thai glyph support in basic renderers)
-    # Using raw GitHub URLs for Google Fonts (TTF)
-    font_bold_url = "https://github.com/google/fonts/raw/main/ofl/kanit/Kanit-Bold.ttf"
-    font_med_url = "https://github.com/google/fonts/raw/main/ofl/kanit/Kanit-Medium.ttf"
-    font_reg_url = "https://github.com/google/fonts/raw/main/ofl/kanit/Kanit-Regular.ttf"
+    # Fonts - Reverted to Sarabun (Safe choice that downloads reliably)
+    font_bold_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
+    font_med_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Medium.ttf"
+    font_reg_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
 
     f_huge = get_font(font_bold_url, 200)
     f_header = get_font(font_bold_url, 90)
@@ -167,7 +204,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         img.paste(logo_img, (logo_x, logo_y), logo_img)
 
     # --- DATE PILL ---
-    date_bbox = draw.textbbox((0, 0), date_str, font=f_pill)
+    date_bbox = draw.textbbox((0, 0), fix_thai_positions(date_str), font=f_pill)
     date_w = date_bbox[2] - date_bbox[0] + 80
     date_h = date_bbox[3] - date_bbox[1] + 30
     
@@ -270,13 +307,13 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         cx = bx + col_w / 2
         
         # --- Pre-calculate Height for Centering ---
-        # 1. Wrap value text first
+        # 1. Wrap value text first (now includes Thai fix)
         v_lines = wrap_text(act['val'], f_action_val, col_w - 20, draw)
         num_lines = min(len(v_lines), 4) # Limit lines
         
         # 2. Define Dimensions
         ic_size = 110 # Circle size
-        gap_icon_label = 25 # Visual gap between circle bottom and label top (Increased from ~5px to 25px)
+        gap_icon_label = 25 # Visual gap between circle bottom and label top
         h_label = 30 # Approx label height (pill font is 30)
         gap_label_val = 15 # Gap between label bottom and value top
         line_height = 36 # Line height for value text
@@ -298,23 +335,17 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
             # Icon size 75x75
             act_icon = act_icon.resize((75, 75), Image.Resampling.LANCZOS)
             # Center icon inside circle
-            # Icon Top Y relative to Circle Top = (CircleH - IconH) / 2 = (110 - 75)/2 = 17.5
             icon_y = content_start_y + (ic_size - 75) / 2
             img.paste(act_icon, (int(cx - 37), int(icon_y)), act_icon)
             
         # Draw Label (Title)
-        # Label Center Y calculation:
-        # Top of label = content_start_y + ic_size + gap_icon_label
-        # Center of label = Top + h_label/2
         label_cy = content_start_y + ic_size + gap_icon_label + (h_label / 2)
         draw_text_centered(draw, act['label'], f_pill, cx, label_cy, "#64748b")
         
         # Draw Value Text
-        # Value block top = Label Top + h_label + gap_label_val
         val_block_top = content_start_y + ic_size + gap_icon_label + h_label + gap_label_val
         
         for k, vl in enumerate(v_lines[:4]):
-            # Line Center Y = Block Top + (k * line_height) + (line_height/2)
             line_cy = val_block_top + (k * line_height) + (line_height / 2)
             draw_text_centered(draw, vl, f_action_val, cx, line_cy, theme_rgb)
 
