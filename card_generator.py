@@ -58,39 +58,60 @@ def hex_to_rgb(hex_color):
     hex_color = hex_color.lstrip('#')
     return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
 
-def fix_thai_positions(text):
+def draw_thai_text(draw, text, font, x, y, color, anchor='lt'):
     """
-    Manually shifts Thai tone marks up when they appear above upper vowels
-    by replacing them with PUA (Private Use Area) glyphs if available.
-    This fixes the 'Sarabun' floating/overlapping vowel issue in PIL.
+    Advanced Thai text renderer that manually composites tone marks
+    to prevent overlapping with upper vowels (Sarabun Fix).
     """
-    if not text:
-        return text
-        
-    # Upper vowels that push tone marks higher
-    upper_vowels = set(['\u0E31', '\u0E34', '\u0E35', '\u0E36', '\u0E37', '\u0E47', '\u0E4D'])
-    
-    # Tone marks range: \u0E48 - \u0E4C
-    # PUA Shifted Tones (Common in Thai fonts like Sarabun/Noto)
-    # 0E48 (Mai Ek) -> F70A
-    # 0E49 (Mai Tho) -> F70B
-    # 0E4A (Mai Tri) -> F70C
-    # 0E4B (Mai Jattawa) -> F70D
-    # 0E4C (Thantakhat) -> F70E
+    if not text: return
 
-    chars = list(text)
-    for i in range(1, len(chars)):
-        c = chars[i]
-        prev = chars[i-1]
-        
-        # Check if current char is a tone mark and previous is an upper vowel
-        if '\u0E48' <= c <= '\u0E4C' and prev in upper_vowels:
-            # Shift the tone mark up by using PUA codepoint
-            base_pua = 0xF70A
-            offset = ord(c) - 0x0E48
-            chars[i] = chr(base_pua + offset)
+    # Define characters that cause overlapping
+    upper_vowels = set(['\u0E31', '\u0E34', '\u0E35', '\u0E36', '\u0E37', '\u0E47', '\u0E4D'])
+    tones = set(['\u0E48', '\u0E49', '\u0E4A', '\u0E4B', '\u0E4C'])
+    
+    # 1. Separate base text and problematic tones
+    base_text_chars = []
+    adjustments = [] # List of (tone_char, index_of_previous_vowel_in_base)
+
+    for i, char in enumerate(text):
+        if i > 0 and char in tones and text[i-1] in upper_vowels:
+            # Found a collision! (e.g., Sara Ii + Mai Ek)
+            # Don't add this tone to base text (it would overlap)
+            # Instead, record it to draw later relative to the previous char
+            adjustments.append((char, len(base_text_chars) - 1))
+        else:
+            base_text_chars.append(char)
             
-    return "".join(chars)
+    base_text = "".join(base_text_chars)
+    
+    # 2. Determine Layout Reference
+    # We let PIL calculate the position of the base text first
+    if anchor == 'mm':
+        bbox = draw.textbbox((x, y), base_text, font=font, anchor='mm')
+        start_x, start_y = bbox[0], bbox[1]
+    else: # 'lt'
+        start_x, start_y = x, y
+
+    # 3. Draw Base Text
+    draw.text((start_x, start_y), base_text, font=font, fill=color)
+    
+    # 4. Draw Floating Tones (The Surgery)
+    for char, vowel_idx in adjustments:
+        # Calculate X position: Start + Width of text up to the vowel
+        prefix = base_text[:vowel_idx]
+        prefix_w = font.getlength(prefix)
+        vowel_w = font.getlength(base_text[vowel_idx])
+        
+        # Position the tone roughly centered on the vowel
+        # (Shifted slightly right usually looks better for Thai tones)
+        tone_x = start_x + prefix_w + (vowel_w * 0.1)
+        
+        # Calculate Y position: Shift UP relative to the line top
+        # Shift amount depends on font size. 20% of size is usually a good "lift"
+        shift_amount = font.size * 0.20
+        tone_y = start_y - shift_amount
+        
+        draw.text((tone_x, tone_y), char, font=font, fill=color)
 
 def is_thai_combining_char(char):
     """Check if the character is a Thai combining vowel or tone mark."""
@@ -98,9 +119,7 @@ def is_thai_combining_char(char):
     return 0x0E31 <= code <= 0x0E4E or code == 0x0E30
 
 def wrap_text(text, font, max_width, draw):
-    # First, apply the Thai rendering fix
-    text = fix_thai_positions(text)
-    
+    # Standard logic, remove the PUA fix since we handle rendering manually now
     lines = []
     if not text: return lines
     
@@ -154,14 +173,12 @@ def round_corners(im, radius):
 
 # --- Drawing Helpers ---
 def draw_text_centered(draw, text, font, x, y, color):
-    # Apply fix before drawing
-    text = fix_thai_positions(text)
-    draw.text((x, y), text, font=font, fill=color, anchor="mm")
+    # Use our custom renderer
+    draw_thai_text(draw, text, font, x, y, color, anchor='mm')
 
 def draw_text_left(draw, text, font, x, y, color):
-    # Apply fix before drawing
-    text = fix_thai_positions(text)
-    draw.text((x, y), text, font=font, fill=color, anchor="lt")
+    # Use our custom renderer
+    draw_thai_text(draw, text, font, x, y, color, anchor='lt')
 
 # --- MAIN GENERATOR ---
 def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, date_str, lang, t):
@@ -172,7 +189,7 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     img = Image.new('RGBA', (width, height), get_theme_color(latest_pm25))
     draw = ImageDraw.Draw(img)
 
-    # Fonts - Reverted to Sarabun (Safe choice that downloads reliably)
+    # Fonts - Using Sarabun again, but with MANUAL FIX
     font_bold_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf"
     font_med_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Medium.ttf"
     font_reg_url = "https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf"
@@ -204,7 +221,12 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         img.paste(logo_img, (logo_x, logo_y), logo_img)
 
     # --- DATE PILL ---
-    date_bbox = draw.textbbox((0, 0), fix_thai_positions(date_str), font=f_pill)
+    # Using draw_thai_text manually here isn't strictly necessary if date doesn't have overlapping vowels
+    # but safe to use standard wrap logic or just draw normally. 
+    # Let's keep date simple or use custom if it has complex thai.
+    # Date usually has "พฤศจิกายน" (Sara Ue + Mai Ek) -> might need fix!
+    
+    date_bbox = draw.textbbox((0, 0), date_str, font=f_pill) # Roughly measure base
     date_w = date_bbox[2] - date_bbox[0] + 80
     date_h = date_bbox[3] - date_bbox[1] + 30
     
@@ -215,6 +237,8 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     date_draw = ImageDraw.Draw(date_bg)
     date_draw.rounded_rectangle([0, 0, date_w, date_h], radius=30, fill=(255, 255, 255, 50))
     img.paste(date_bg, (int(date_x), int(date_y)), date_bg)
+    
+    # Use custom drawer for date text
     draw_text_centered(draw, date_str, f_pill, date_x + date_w//2, date_y + date_h//2 - 4, (255,255,255,255))
 
     # ==========================================
@@ -282,10 +306,10 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     draw_text_left(draw, t[lang]['advice_header'], f_subtitle, margin_x + 10, current_y, "#94a3b8")
     
     grid_y = current_y + 60
-    grid_gap = 18 # Reduced gap to 18 (was 24) to maximize column width
+    grid_gap = 18 
     
     col_w = (width - (margin_x * 2) - (grid_gap * 2)) / 3
-    col_h = 360 # Reduced height to 360 (was 380) for better aspect ratio
+    col_h = 360 
     
     actions = [
         {'label': t[lang]['advice_cat_mask'], 'val': advice_details['mask'], 'icon': 'mask'},
@@ -307,34 +331,26 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         cx = bx + col_w / 2
         
         # --- Pre-calculate Height for Centering ---
-        # 1. Wrap value text first (now includes Thai fix)
         v_lines = wrap_text(act['val'], f_action_val, col_w - 20, draw)
-        num_lines = min(len(v_lines), 4) # Limit lines
+        num_lines = min(len(v_lines), 4) 
         
-        # 2. Define Dimensions
-        ic_size = 110 # Circle size
-        gap_icon_label = 25 # Visual gap between circle bottom and label top
-        h_label = 30 # Approx label height (pill font is 30)
-        gap_label_val = 15 # Gap between label bottom and value top
-        line_height = 36 # Line height for value text
+        ic_size = 110 
+        gap_icon_label = 25 
+        h_label = 30 
+        gap_label_val = 15 
+        line_height = 36 
         h_val_block = num_lines * line_height
         
-        # Total content height
         total_content_h = ic_size + gap_icon_label + h_label + gap_label_val + h_val_block
         
-        # 3. Calculate Start Y (Top of the icon circle) to center vertically
         content_start_y = by + (col_h - total_content_h) / 2
-        
-        # --- Draw Elements relative to content_start_y ---
         
         # Draw Icon Circle
         draw.ellipse([cx - ic_size/2, content_start_y, cx + ic_size/2, content_start_y + ic_size], fill=theme_rgb)
         
         act_icon = get_image_from_url(ICON_URLS[act['icon']])
         if act_icon:
-            # Icon size 75x75
             act_icon = act_icon.resize((75, 75), Image.Resampling.LANCZOS)
-            # Center icon inside circle
             icon_y = content_start_y + (ic_size - 75) / 2
             img.paste(act_icon, (int(cx - 37), int(icon_y)), act_icon)
             
