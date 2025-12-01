@@ -339,7 +339,8 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     # 4. ACTION GRID (Bottom)
     # ==========================================
     current_y += 40
-    draw_text_left(draw, t[lang]['advice_header'], f_subtitle, margin_x + 10, current_y, "#94a3b8")
+    # Changed color to #000000 (Black)
+    draw_text_left(draw, t[lang]['advice_header'], f_subtitle, margin_x + 10, current_y, "#000000")
     
     grid_y = current_y + 60
     grid_gap = 18 
@@ -409,7 +410,8 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     grid_bottom = grid_y + col_h
     footer_y = grid_bottom + 80 # Reduced gap (Previously effectively ~300px+)
     
-    draw_text_centered(draw, t[lang]['report_card_footer'], f_small, width//2, footer_y, "#cbd5e1")
+    # Changed color to #000000 (Black)
+    draw_text_centered(draw, t[lang]['report_card_footer'], f_small, width//2, footer_y, "#000000")
     
     # Crop the image to fit content
     new_height = int(footer_y + 80) # Add padding below footer
