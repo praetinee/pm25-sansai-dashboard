@@ -246,20 +246,20 @@ def display_realtime_pm(df, lang, t, date_str):
     
     # --- Color & Theme Logic ---
     if latest_pm25 <= 15: # Excellent
-        bg_color = "#10b981"
-        accent_color = "#10b981"
+        bg_color = "#0099FF" # Updated Blue
+        accent_color = "#0099FF"
     elif latest_pm25 <= 25: # Good
-        bg_color = "#10b981" 
-        accent_color = "#10b981"
+        bg_color = "#2ECC71" # Updated Green
+        accent_color = "#2ECC71"
     elif latest_pm25 <= 37.5: # Moderate
-        bg_color = "#fbbf24"
-        accent_color = "#fbbf24"
+        bg_color = "#F1C40F" # Updated Yellow
+        accent_color = "#F1C40F"
     elif latest_pm25 <= 75: # Unhealthy
-        bg_color = "#f97316"
-        accent_color = "#f97316"
+        bg_color = "#E67E22" # Updated Orange
+        accent_color = "#E67E22"
     else: # Hazardous
-        bg_color = "#ef4444"
-        accent_color = "#ef4444"
+        bg_color = "#E74C3C" # Updated Red
+        accent_color = "#E74C3C"
 
     # Gauge Calculation
     percent = min((latest_pm25 / 120) * 100, 100)
@@ -305,12 +305,19 @@ def display_realtime_pm(df, lang, t, date_str):
         title_risk = t[lang]['risk_group']
         desc_risk = advice_details['risk_group']
         
-        # 2. Heart Icon (Risk Group) - แก้ไขใหม่เป็นรูปหัวใจชัดเจน
+        # 2. Heart Icon (Risk Group)
         icon_risk = """<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>"""
 
         act_mask = advice_details['mask']
         act_activity = advice_details['activity']
         act_home = advice_details['indoors']
+
+        # --- Logic Override for Indoors advice to match Card Generator (Thai only) ---
+        if lang == 'th':
+            if 25 < latest_pm25 <= 37.5:
+                act_home = "เลี่ยงเปิดหน้าต่าง / เปิดเครื่องฟอก"
+            elif latest_pm25 > 37.5:
+                act_home = "ปิดบ้านสนิท / เปิดเครื่องฟอก"
 
         icon_mask = """<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>"""
         icon_activity_s = """<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>"""
