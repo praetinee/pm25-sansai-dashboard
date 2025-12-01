@@ -16,7 +16,7 @@ ICON_URLS = {
 }
 
 CANVAS_WIDTH = 1200
-CANVAS_HEIGHT = 2400 # High res vertical canvas
+CANVAS_HEIGHT = 2400 # High res vertical canvas (Initial size, will be cropped)
 
 # --- Cache & Utils ---
 @st.cache_data
@@ -402,9 +402,18 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
             draw_text_centered(draw, vl, f_action_val, cx, line_cy, theme_rgb)
 
     # ==========================================
-    # 5. FOOTER
+    # 5. FOOTER & RESIZE
     # ==========================================
-    draw_text_centered(draw, t[lang]['report_card_footer'], f_small, width//2, height - 80, "#cbd5e1")
+    
+    # Calculate position relative to the grid bottom
+    grid_bottom = grid_y + col_h
+    footer_y = grid_bottom + 80 # Reduced gap (Previously effectively ~300px+)
+    
+    draw_text_centered(draw, t[lang]['report_card_footer'], f_small, width//2, footer_y, "#cbd5e1")
+    
+    # Crop the image to fit content
+    new_height = int(footer_y + 80) # Add padding below footer
+    img = img.crop((0, 0, width, new_height))
 
     final_img = round_corners(img, 60)
     buf = BytesIO()
