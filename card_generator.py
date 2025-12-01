@@ -246,10 +246,12 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     
     date_bg = Image.new('RGBA', (int(date_w), int(date_h)), (0,0,0,0))
     date_draw = ImageDraw.Draw(date_bg)
-    date_draw.rounded_rectangle([0, 0, date_w, date_h], radius=30, fill=(255, 255, 255, 50))
+    # Changed fill to more opaque white (220) to ensure black text contrast against dark themes
+    date_draw.rounded_rectangle([0, 0, date_w, date_h], radius=30, fill=(255, 255, 255, 220))
     img.paste(date_bg, (int(date_x), int(date_y)), date_bg)
     
-    draw_text_centered(draw, date_str, f_pill, date_x + date_w//2, date_y + date_h//2 - 4, (255,255,255,255))
+    # Changed text color to Black (#000000)
+    draw_text_centered(draw, date_str, f_pill, date_x + date_w//2, date_y + date_h//2 - 4, "#000000")
 
     # ==========================================
     # 2. GAUGE SECTION
