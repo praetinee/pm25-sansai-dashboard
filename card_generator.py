@@ -350,10 +350,17 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
     col_w = (width - (margin_x * 2) - (grid_gap * 2)) / 3
     col_h = 360 
     
+    # --- Custom Logic: Override Indoors text based on PM2.5 Level ---
+    indoors_val = advice_details['indoors']
+    if 25 < latest_pm25 <= 37.5:
+        indoors_val = "เลี่ยงเปิดหน้าต่าง / เปิดเครื่องฟอก"
+    elif latest_pm25 > 37.5:
+        indoors_val = "ปิดบ้านสนิท / เปิดเครื่องฟอก"
+        
     actions = [
         {'label': t[lang]['advice_cat_mask'], 'val': advice_details['mask'], 'icon': 'mask'},
         {'label': t[lang]['advice_cat_activity'], 'val': advice_details['activity'], 'icon': 'activity'},
-        {'label': t[lang]['advice_cat_indoors'], 'val': advice_details['indoors'], 'icon': 'indoors'}
+        {'label': t[lang]['advice_cat_indoors'], 'val': indoors_val, 'icon': 'indoors'}
     ]
     
     tint_color = theme_rgb + (20,)
@@ -369,39 +376,38 @@ def generate_report_card(latest_pm25, level, color_hex, emoji, advice_details, d
         
         cx = bx + col_w / 2
         
-        # --- Pre-calculate Height for Centering ---
-        v_lines = wrap_text(act['val'], f_action_val, col_w - 20, draw)
-        num_lines = min(len(v_lines), 4) 
+        # --- NEW LAYOUT: Fixed Top Alignment ---
+        # Instead of centering everything vertically, we lock the top position
+        # so icons and titles always line up perfectly.
+        
+        padding_top = 40 
         
         ic_size = 110 
         gap_icon_label = 25 
         h_label = 30 
         gap_label_val = 15 
         line_height = 36 
-        h_val_block = num_lines * line_height
         
-        total_content_h = ic_size + gap_icon_label + h_label + gap_label_val + h_val_block
-        
-        content_start_y = by + (col_h - total_content_h) / 2
-        
-        # Draw Icon Circle
-        draw.ellipse([cx - ic_size/2, content_start_y, cx + ic_size/2, content_start_y + ic_size], fill=theme_rgb)
+        # 1. Icon Position (Fixed Top)
+        icon_cy = by + padding_top + (ic_size / 2)
+        draw.ellipse([cx - ic_size/2, icon_cy - ic_size/2, cx + ic_size/2, icon_cy + ic_size/2], fill=theme_rgb)
         
         act_icon = get_image_from_url(ICON_URLS[act['icon']])
         if act_icon:
             act_icon = act_icon.resize((75, 75), Image.Resampling.LANCZOS)
-            icon_y = content_start_y + (ic_size - 75) / 2
-            img.paste(act_icon, (int(cx - 37), int(icon_y)), act_icon)
+            icon_img_y = icon_cy - (75 / 2)
+            img.paste(act_icon, (int(cx - 37), int(icon_img_y)), act_icon)
             
-        # Draw Label (Title)
-        label_cy = content_start_y + ic_size + gap_icon_label + (h_label / 2)
+        # 2. Label Position (Fixed distance from Icon)
+        label_cy = by + padding_top + ic_size + gap_icon_label + (h_label / 2)
         draw_text_centered(draw, act['label'], f_pill, cx, label_cy, "#64748b")
         
-        # Draw Value Text
-        val_block_top = content_start_y + ic_size + gap_icon_label + h_label + gap_label_val
+        # 3. Value Position (Fixed distance from Label, flowing down)
+        val_start_y = by + padding_top + ic_size + gap_icon_label + h_label + gap_label_val
         
+        v_lines = wrap_text(act['val'], f_action_val, col_w - 20, draw)
         for k, vl in enumerate(v_lines[:4]):
-            line_cy = val_block_top + (k * line_height) + (line_height / 2)
+            line_cy = val_start_y + (k * line_height) + (line_height / 2)
             draw_text_centered(draw, vl, f_action_val, cx, line_cy, theme_rgb)
 
     # ==========================================
