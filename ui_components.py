@@ -575,18 +575,14 @@ def display_monthly_calendar(df, lang, t):
                 if not day_data.empty:
                     pm_value = day_data['PM2.5'].iloc[0]
                     _, color, _, _ = get_aqi_level(pm_value, lang, t)
-                    html_cal += f"""
-                    <div class='calendar-day' style='border-bottom-color: {color};'>
-                        <div class='calendar-day-header'>{day}</div>
-                        <div class='calendar-day-value'>{pm_value:.1f}</div>
-                    </div>
-                    """
+                    html_cal += f"<div class='calendar-day' style='border-bottom-color: {color};'>" \
+                                f"<div class='calendar-day-header'>{day}</div>" \
+                                f"<div class='calendar-day-value'>{pm_value:.1f}</div>" \
+                                "</div>"
                 else:
-                    html_cal += f"""
-                    <div class='calendar-day calendar-day-na'>
-                        <div class='calendar-day-header'>{day}</div>
-                    </div>
-                    """
+                    html_cal += f"<div class='calendar-day calendar-day-na'>" \
+                                f"<div class='calendar-day-header'>{day}</div>" \
+                                "</div>"
     
     html_cal += "</div>" # End grid
     st.markdown(html_cal, unsafe_allow_html=True)
