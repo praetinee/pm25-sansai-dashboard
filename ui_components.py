@@ -221,22 +221,64 @@ def inject_custom_css():
                 line-height: 1.2;
             }
 
-            /* --- Calendar --- */
+            /* --- Calendar (Updated for Mobile Grid) --- */
+            .calendar-grid-container {
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                gap: 8px;
+                margin-top: 10px;
+            }
+
             .calendar-day {
                 background-color: var(--secondary-background-color);
                 border-radius: 10px;
-                padding: 10px;
+                padding: 8px;
                 text-align: center;
-                min-height: 90px;
+                min-height: 80px;
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
                 box-shadow: 0 4px 6px rgba(0,0,0,0.07);
                 border-bottom: 5px solid transparent;
+                transition: transform 0.2s;
             }
-            .calendar-day-header { align-self: flex-start; font-size: 0.9rem; font-weight: 500; opacity: 0.8; }
-            .calendar-day-value { font-size: 1.5rem; font-weight: 700; line-height: 1; }
-            .calendar-day-na { background-color: var(--secondary-background-color); color: var(--text-color); opacity: 0.5; box-shadow: none; }
+            .calendar-day:hover {
+                transform: translateY(-2px);
+            }
+            .calendar-day-header { align-self: flex-start; font-size: 0.85rem; font-weight: 500; opacity: 0.8; }
+            .calendar-day-value { font-size: 1.3rem; font-weight: 700; line-height: 1; }
+            .calendar-day-na { background-color: var(--secondary-background-color); color: var(--text-color); opacity: 0.5; box-shadow: none; border-bottom: none; }
+            .calendar-day-empty { background: transparent; box-shadow: none; border: none; }
+            
+            .calendar-col-header {
+                text-align: center;
+                font-weight: 700;
+                opacity: 0.7;
+                font-size: 0.9rem;
+                padding-bottom: 5px;
+            }
+
+            /* Mobile Responsiveness for Calendar */
+            @media (max-width: 600px) {
+                .calendar-grid-container {
+                    gap: 4px;
+                }
+                .calendar-day {
+                    min-height: 60px;
+                    padding: 4px;
+                    border-radius: 6px;
+                    border-bottom-width: 3px;
+                }
+                .calendar-day-header {
+                    font-size: 0.7rem;
+                }
+                .calendar-day-value {
+                    font-size: 1rem;
+                }
+                .calendar-col-header {
+                    font-size: 0.75rem;
+                }
+            }
         </style>
     """, unsafe_allow_html=True)
     
@@ -515,22 +557,39 @@ def display_monthly_calendar(df, lang, t):
     month_data = daily_avg_pm25[(daily_avg_pm25['date'].dt.year == year) & (daily_avg_pm25['date'].dt.month == month)]
     cal = calendar.monthcalendar(year, month)
     days_header = t[lang]['days_header_short']
-    cols = st.columns(7)
-    for i, day_name in enumerate(days_header):
-        cols[i].markdown(f"<div style='text-align: center; font-weight: bold; opacity: 0.7;'>{day_name}</div>", unsafe_allow_html=True)
+    
+    # --- Generate Calendar HTML (Grid Layout) ---
+    html_cal = '<div class="calendar-grid-container">'
+    
+    # 1. Header Row
+    for day_name in days_header:
+        html_cal += f"<div class='calendar-col-header'>{day_name}</div>"
+    
+    # 2. Days
     for week in cal:
-        cols = st.columns(7)
-        for i, day in enumerate(week):
+        for day in week:
             if day == 0:
-                cols[i].markdown("")
+                html_cal += "<div class='calendar-day-empty'></div>"
             else:
                 day_data = month_data[month_data['date'].dt.day == day]
                 if not day_data.empty:
                     pm_value = day_data['PM2.5'].iloc[0]
                     _, color, _, _ = get_aqi_level(pm_value, lang, t)
-                    cols[i].markdown(f"<div class='calendar-day' style='border-bottom-color: {color};'><div class='calendar-day-header'>{day}</div><div class='calendar-day-value'>{pm_value:.1f}</div></div>", unsafe_allow_html=True)
+                    html_cal += f"""
+                    <div class='calendar-day' style='border-bottom-color: {color};'>
+                        <div class='calendar-day-header'>{day}</div>
+                        <div class='calendar-day-value'>{pm_value:.1f}</div>
+                    </div>
+                    """
                 else:
-                    cols[i].markdown(f"<div class='calendar-day calendar-day-na'><div class='calendar-day-header'>{day}</div></div>", unsafe_allow_html=True)
+                    html_cal += f"""
+                    <div class='calendar-day calendar-day-na'>
+                        <div class='calendar-day-header'>{day}</div>
+                    </div>
+                    """
+    
+    html_cal += "</div>" # End grid
+    st.markdown(html_cal, unsafe_allow_html=True)
 
 def display_historical_data(df, lang, t):
     st.subheader(t[lang]['historical_expander'])
