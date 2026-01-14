@@ -532,10 +532,11 @@ def display_24hr_chart(df, lang, t):
         yaxis_title=t[lang]['pm25_unit'],
         plot_bgcolor='rgba(0,0,0,0)', template="plotly_white",
         margin=dict(l=20, r=20, t=40, b=20),
-        xaxis=dict(gridcolor='var(--border-color, #e9e9e9)', showticklabels=True, tickformat='%H:%M', tickangle=-45),
-        yaxis=dict(gridcolor='var(--border-color, #e9e9e9)'),
-        showlegend=False, uniformtext_minsize=8, uniformtext_mode='hide')
-    st.plotly_chart(fig_24hr, use_container_width=True)
+        xaxis=dict(gridcolor='var(--border-color, #e9e9e9)', showticklabels=True, tickformat='%H:%M', tickangle=-45, fixedrange=True),
+        yaxis=dict(gridcolor='var(--border-color, #e9e9e9)', fixedrange=True),
+        showlegend=False, uniformtext_minsize=8, uniformtext_mode='hide',
+        dragmode=False)
+    st.plotly_chart(fig_24hr, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
 
 def display_monthly_calendar(df, lang, t):
     st.subheader(t[lang]['monthly_calendar_header'])
@@ -614,5 +615,5 @@ def display_historical_data(df, lang, t):
             else: start_date_str, end_date_str = start_date.strftime('%b %d, %Y'), end_date.strftime('%b %d, %Y')
             title_text = f"{t[lang]['daily_avg_chart_title']} ({start_date_str} - {end_date_str})"
             fig_hist = go.Figure(go.Bar(x=daily_avg_df['Date'], y=daily_avg_df['Avg PM2.5'], name=t[lang]['avg_pm25_unit'], marker_color=colors_hist, marker=dict(cornerradius=5)))
-            fig_hist.update_layout(title_text=title_text, font=dict(family="Sarabun"), yaxis_title=t[lang]['avg_pm25_unit'], template="plotly_white", plot_bgcolor='rgba(0,0,0,0)', showlegend=False)
-            st.plotly_chart(fig_hist, use_container_width=True)
+            fig_hist.update_layout(title_text=title_text, font=dict(family="Sarabun"), yaxis_title=t[lang]['avg_pm25_unit'], template="plotly_white", plot_bgcolor='rgba(0,0,0,0)', showlegend=False, xaxis=dict(fixedrange=True), yaxis=dict(fixedrange=True), dragmode=False)
+            st.plotly_chart(fig_hist, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
