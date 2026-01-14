@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import plotly.graph_objects as go
 from datetime import datetime
 import calendar
@@ -238,6 +239,21 @@ def inject_custom_css():
             .calendar-day-na { background-color: var(--secondary-background-color); color: var(--text-color); opacity: 0.5; box-shadow: none; }
         </style>
     """, unsafe_allow_html=True)
+    
+    # --- Auto Refresh Script to prevent sleeping ---
+    # Refresh every 9 minutes (540,000 ms)
+    # This keeps the websocket active and updates the data
+    components.html(
+        """
+        <script>
+            setTimeout(function(){
+                window.parent.location.reload();
+            }, 540000);
+        </script>
+        """,
+        height=0,
+        width=0
+    )
 
 def display_realtime_pm(df, lang, t, date_str):
     latest_pm25 = df['PM2.5'][0]
