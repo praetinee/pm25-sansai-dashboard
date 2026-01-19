@@ -25,30 +25,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- ANTI-SLEEP / KEEP ALIVE MECHANISM ---
-# ใส่ไว้ที่นี่ (app.py) เพื่อให้ทำงานตลอดเวลาที่เปิดแอป
-keep_alive_script = """
-<script>
-    // 1. ส่งสัญญาณ Ping ไปที่ Server ทุกๆ 5 นาที (300,000 ms)
-    // เพื่อหลอกให้ Server คิดว่ามีการใช้งานอยู่ตลอดเวลา ไม่ตัด Connection
-    setInterval(function(){
-        var xhr = new XMLHttpRequest();
-        // ยิงไปที่ endpoint health check ของ Streamlit เอง
-        xhr.open("GET", "/_stcore/health", true);
-        xhr.send();
-    }, 300000);
-    
-    // 2. ถ้าเผลอหลุดไปแล้ว (Connection closed) ให้รีเฟรชหน้าจอให้อัตโนมัติ
-    window.addEventListener('error', function(e) {
-        if (e.message && (e.message.includes('Connection') || e.message.includes('disconnected'))) {
-            window.location.reload();
-        }
-    });
-</script>
-"""
-# ความสูง 0 เพื่อซ่อน component นี้ไม่ให้เห็นบนหน้าจอ
-components.html(keep_alive_script, height=0, width=0)
-
 # --- Inject CSS globally ---
 inject_custom_css()
 
