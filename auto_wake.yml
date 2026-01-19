@@ -1,0 +1,20 @@
+name: Wake Up Streamlit App
+
+on:
+  schedule:
+    # ตั้งเวลาให้ทำงานทุกวัน ตอน 00:00 UTC (ซึ่งตรงกับ 07:00 โมงเช้าเวลาไทย)
+    # คุณสามารถปรับเวลาได้ตามต้องการ
+    - cron: '0 0 * * *'
+  workflow_dispatch: # อนุญาตให้กดปุ่ม Run workflow เองได้ด้วยมือ
+
+jobs:
+  wake_app:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake up App via Curl
+        run: |
+          # --- แก้ไขบรรทัดด้านล่างนี้ ---
+          # ใส่ URL หน้าเวป Streamlit ของคุณแทนที่ https://YOUR-APP-NAME.streamlit.app/
+          # คำสั่งนี้จะทำการยิง request ไปที่หน้าเวปเพื่อให้ Server ตื่นขึ้นมา
+          
+          curl -I https://pm25-sansai-dashboard-tuc6yczy4hhl8vbmxdyxcp.streamlit.app/
