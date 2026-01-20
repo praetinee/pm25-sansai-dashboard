@@ -609,7 +609,8 @@ def display_historical_data(df, lang, t):
             # 1. Calculate daily averages first
             daily_avg_df = filtered_df.groupby(filtered_df['Datetime'].dt.date)['PM2.5'].mean().reset_index()
             daily_avg_df.rename(columns={'Datetime': 'Date', 'PM2.5': 'Avg PM2.5'}, inplace=True)
-            
+            daily_avg_df = daily_avg_df.sort_values(by="Date")
+
             # 2. Calculate metrics based on these daily averages
             avg_pm = daily_avg_df['Avg PM2.5'].mean()
             max_pm = daily_avg_df['Avg PM2.5'].max()
@@ -622,36 +623,73 @@ def display_historical_data(df, lang, t):
             
             colors_hist = [get_aqi_level(pm, lang, t)[1] for pm in daily_avg_df['Avg PM2.5']]
             
-            # Prepare Title
+            # --- INTELLIGENT TICK SAMPLING (Thai Dates) ---
+            # Goal: Show about 6-8 ticks on the axis to prevent crowding
+            total_days = len(daily_avg_df)
+            step = max(1, total_days // 7) 
+            
+            # Select subset of indices to show ticks for
+            tick_indices = list(range(0, total_days, step))
+            
+            # Prepare tickvals (dates) and ticktext (formatted labels)
+            tickvals = [daily_avg_df['Date'].iloc[i] for i in tick_indices]
+            
+            ticktext = []
+            for i in tick_indices:
+                d = daily_avg_df['Date'].iloc[i]
+                if lang == 'th':
+                    month_name = t['th']['month_names'][d.month - 1]
+                    short_month = month_name # Use full name for clarity or create short map if needed
+                    # If total range is huge (> 60 days), show Month + Year
+                    if total_days > 60:
+                        thai_year_short = str(d.year + 543)[2:]
+                        label = f"{short_month} {thai_year_short}"
+                    else:
+                        # Normal range: Day + Month
+                        label = f"{d.day} {short_month}"
+                else:
+                    if total_days > 60:
+                        label = d.strftime("%b '%y")
+                    else:
+                        label = d.strftime("%d %b")
+                ticktext.append(label)
+
+            # --- PREPARE TITLE ---
             if lang == 'th':
                 start_date_str = f"{start_date.day} {t['th']['month_names'][start_date.month - 1]} {start_date.year + 543}"
                 end_date_str = f"{end_date.day} {t['th']['month_names'][end_date.month - 1]} {end_date.year + 543}"
-                
-                # Create a custom Hover label column for Thai dates
                 daily_avg_df['HoverDate'] = daily_avg_df['Date'].apply(
                     lambda d: f"{d.day} {t['th']['month_names'][d.month-1]} {d.year+543}"
                 )
             else: 
                 start_date_str, end_date_str = start_date.strftime('%b %d, %Y'), end_date.strftime('%b %d, %Y')
-                # English Hover
                 daily_avg_df['HoverDate'] = daily_avg_df['Date'].apply(lambda d: d.strftime('%b %d, %Y'))
             
             title_text = f"{t[lang]['daily_avg_chart_title']} ({start_date_str} - {end_date_str})"
             
-            # --- Updated Historical Chart to match Hourly Trend style ---
+            # --- DYNAMIC TEXT ON BARS ---
+            # Only show numbers on bars if there are few days (< 15)
+            if total_days < 15:
+                bar_text = daily_avg_df['Avg PM2.5'].apply(lambda x: f'{x:.0f}')
+                text_position = 'outside'
+            else:
+                bar_text = None
+                text_position = 'none'
+
+            # --- CHART ---
             fig_hist = go.Figure(go.Bar(
-                x=daily_avg_df['Date'], # Use Actual Date Objects for correct spacing
+                x=daily_avg_df['Date'],
                 y=daily_avg_df['Avg PM2.5'], 
                 name=t[lang]['avg_pm25_unit'], 
                 marker_color=colors_hist, 
                 marker=dict(cornerradius=5),
-                text=daily_avg_df['Avg PM2.5'].apply(lambda x: f'{x:.1f}'), # Add values on top
-                textposition='outside',
-                hovertext=daily_avg_df['HoverDate'], # Use Thai formatted dates for hover
-                hovertemplate="%{hovertext}<br>%{y} μg/m³<extra></extra>" # Custom hover template
+                text=bar_text,
+                textposition=text_position,
+                hovertext=daily_avg_df['HoverDate'], 
+                hovertemplate="%{hovertext}<br>%{y:.1f} μg/m³<extra></extra>"
             ))
             
-            # Add Reference Line for Standard (37.5) - Storytelling Element
+            # Add Reference Line for Standard (37.5)
             fig_hist.add_hline(
                 y=37.5, 
                 line_dash="dash", 
@@ -662,7 +700,7 @@ def display_historical_data(df, lang, t):
                 annotation_font_color="gray"
             )
             
-            # Updated Layout
+            # Updated Layout with Custom Ticks
             fig_hist.update_layout(
                 title_text=title_text, 
                 font=dict(family="Sarabun"), 
@@ -672,7 +710,9 @@ def display_historical_data(df, lang, t):
                 margin=dict(l=20, r=20, t=60, b=20),
                 showlegend=False, 
                 xaxis=dict(
-                    showticklabels=False, # HIDE AXIS LABELS AS REQUESTED
+                    tickmode='array',      # Use custom ticks
+                    tickvals=tickvals,     # Position of ticks
+                    ticktext=ticktext,     # Text of labels (Thai/Eng Smart)
                     gridcolor='var(--border-color, #e9e9e9)', 
                     fixedrange=True
                 ),
