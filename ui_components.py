@@ -639,32 +639,50 @@ def display_historical_data(df, lang, t):
             
             title_text = f"{t[lang]['daily_avg_chart_title']} ({start_date_str} - {end_date_str})"
             
+            # --- Updated Historical Chart to match Hourly Trend style ---
             fig_hist = go.Figure(go.Bar(
                 x=x_axis_data, 
                 y=daily_avg_df['Avg PM2.5'], 
                 name=t[lang]['avg_pm25_unit'], 
                 marker_color=colors_hist, 
-                marker=dict(cornerradius=5)
+                marker=dict(cornerradius=5),
+                text=daily_avg_df['Avg PM2.5'].apply(lambda x: f'{x:.1f}'), # Add values on top
+                textposition='outside'
             ))
             
-            # --- Y-Axis Fix: Limit tick count and remove decimals to reduce visual clutter ---
+            # Add Reference Line for Standard (37.5) - Storytelling Element
+            fig_hist.add_hline(
+                y=37.5, 
+                line_dash="dash", 
+                line_color="#9CA3AF", 
+                annotation_text="Standard (37.5)", 
+                annotation_position="bottom right",
+                annotation_font_size=10,
+                annotation_font_color="gray"
+            )
+            
+            # Updated Layout
             fig_hist.update_layout(
                 title_text=title_text, 
                 font=dict(family="Sarabun"), 
                 yaxis_title=t[lang]['avg_pm25_unit'], 
                 template="plotly_white", 
                 plot_bgcolor='rgba(0,0,0,0)', 
+                margin=dict(l=20, r=20, t=60, b=20),
                 showlegend=False, 
-                xaxis=dict(fixedrange=True), 
-                # FIX: nticks reduced to 5 and tickformat set to integer-only (.0f) for cleaner Y-axis
+                xaxis=dict(
+                    gridcolor='var(--border-color, #e9e9e9)', 
+                    showticklabels=True, 
+                    tickangle=-45, 
+                    fixedrange=True
+                ),
                 yaxis=dict(
-                    fixedrange=True, 
-                    nticks=5, 
-                    tickformat=".0f", 
-                    showgrid=True, 
-                    gridcolor='#eee', 
+                    gridcolor='var(--border-color, #e9e9e9)', 
+                    fixedrange=True,
                     zeroline=False
                 ),
+                uniformtext_minsize=8, 
+                uniformtext_mode='hide',
                 dragmode=False
             )
             st.plotly_chart(fig_hist, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
