@@ -647,7 +647,7 @@ def display_historical_data(df, lang, t):
                 marker=dict(cornerradius=5)
             ))
             
-            # --- Y-Axis Fix: Limit tick count (nticks) to make it less crowded ---
+            # --- Y-Axis Fix: Limit tick count and remove decimals to reduce visual clutter ---
             fig_hist.update_layout(
                 title_text=title_text, 
                 font=dict(family="Sarabun"), 
@@ -656,7 +656,15 @@ def display_historical_data(df, lang, t):
                 plot_bgcolor='rgba(0,0,0,0)', 
                 showlegend=False, 
                 xaxis=dict(fixedrange=True), 
-                yaxis=dict(fixedrange=True, nticks=6), # FIX: Reduce ticks to prevent overcrowding
+                # FIX: nticks reduced to 5 and tickformat set to integer-only (.0f) for cleaner Y-axis
+                yaxis=dict(
+                    fixedrange=True, 
+                    nticks=5, 
+                    tickformat=".0f", 
+                    showgrid=True, 
+                    gridcolor='#eee', 
+                    zeroline=False
+                ),
                 dragmode=False
             )
             st.plotly_chart(fig_hist, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
