@@ -622,32 +622,33 @@ def display_historical_data(df, lang, t):
             
             colors_hist = [get_aqi_level(pm, lang, t)[1] for pm in daily_avg_df['Avg PM2.5']]
             
-            # Prepare X-axis labels to support Thai Year
+            # Prepare Title
             if lang == 'th':
                 start_date_str = f"{start_date.day} {t['th']['month_names'][start_date.month - 1]} {start_date.year + 543}"
                 end_date_str = f"{end_date.day} {t['th']['month_names'][end_date.month - 1]} {end_date.year + 543}"
                 
-                # Create a custom label column for Thai dates on Axis
-                daily_avg_df['DateLabel'] = daily_avg_df['Date'].apply(
+                # Create a custom Hover label column for Thai dates
+                daily_avg_df['HoverDate'] = daily_avg_df['Date'].apply(
                     lambda d: f"{d.day} {t['th']['month_names'][d.month-1]} {d.year+543}"
                 )
-                x_axis_data = daily_avg_df['DateLabel']
             else: 
                 start_date_str, end_date_str = start_date.strftime('%b %d, %Y'), end_date.strftime('%b %d, %Y')
-                # For English, we can use the date objects directly
-                x_axis_data = daily_avg_df['Date']
+                # English Hover
+                daily_avg_df['HoverDate'] = daily_avg_df['Date'].apply(lambda d: d.strftime('%b %d, %Y'))
             
             title_text = f"{t[lang]['daily_avg_chart_title']} ({start_date_str} - {end_date_str})"
             
             # --- Updated Historical Chart to match Hourly Trend style ---
             fig_hist = go.Figure(go.Bar(
-                x=x_axis_data, 
+                x=daily_avg_df['Date'], # Use Actual Date Objects for correct spacing
                 y=daily_avg_df['Avg PM2.5'], 
                 name=t[lang]['avg_pm25_unit'], 
                 marker_color=colors_hist, 
                 marker=dict(cornerradius=5),
                 text=daily_avg_df['Avg PM2.5'].apply(lambda x: f'{x:.1f}'), # Add values on top
-                textposition='outside'
+                textposition='outside',
+                hovertext=daily_avg_df['HoverDate'], # Use Thai formatted dates for hover
+                hovertemplate="%{hovertext}<br>%{y} μg/m³<extra></extra>" # Custom hover template
             ))
             
             # Add Reference Line for Standard (37.5) - Storytelling Element
@@ -671,15 +672,16 @@ def display_historical_data(df, lang, t):
                 margin=dict(l=20, r=20, t=60, b=20),
                 showlegend=False, 
                 xaxis=dict(
+                    showticklabels=False, # HIDE AXIS LABELS AS REQUESTED
                     gridcolor='var(--border-color, #e9e9e9)', 
-                    showticklabels=True, 
-                    tickangle=-45, 
                     fixedrange=True
                 ),
                 yaxis=dict(
                     gridcolor='var(--border-color, #e9e9e9)', 
                     fixedrange=True,
-                    zeroline=False
+                    zeroline=False,
+                    nticks=5,
+                    tickformat=".0f"
                 ),
                 uniformtext_minsize=8, 
                 uniformtext_mode='hide',
