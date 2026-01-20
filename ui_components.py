@@ -601,13 +601,21 @@ def display_historical_data(df, lang, t):
         filtered_df = df.loc[mask]
         if filtered_df.empty: st.warning(t[lang]['no_data_in_range'])
         else:
+            # --- Calculation FIX: Use daily averages for metrics to match the graph ---
+            # 1. Calculate daily averages first
             daily_avg_df = filtered_df.groupby(filtered_df['Datetime'].dt.date)['PM2.5'].mean().reset_index()
             daily_avg_df.rename(columns={'Datetime': 'Date', 'PM2.5': 'Avg PM2.5'}, inplace=True)
-            avg_pm, max_pm, min_pm = filtered_df['PM2.5'].mean(), filtered_df['PM2.5'].max(), filtered_df['PM2.5'].min()
+            
+            # 2. Calculate metrics based on these daily averages
+            avg_pm = daily_avg_df['Avg PM2.5'].mean()
+            max_pm = daily_avg_df['Avg PM2.5'].max()
+            min_pm = daily_avg_df['Avg PM2.5'].min()
+            
             mcol1, mcol2, mcol3 = st.columns(3)
             mcol1.metric(t[lang]['metric_avg'], f"{avg_pm:.1f} μg/m³")
             mcol2.metric(t[lang]['metric_max'], f"{max_pm:.1f} μg/m³")
             mcol3.metric(t[lang]['metric_min'], f"{min_pm:.1f} μg/m³")
+            
             colors_hist = [get_aqi_level(pm, lang, t)[1] for pm in daily_avg_df['Avg PM2.5']]
             if lang == 'th':
                 start_date_str = f"{start_date.day} {t['th']['month_names'][start_date.month - 1]} {start_date.year + 543}"
