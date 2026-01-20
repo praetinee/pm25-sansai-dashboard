@@ -617,11 +617,31 @@ def display_historical_data(df, lang, t):
             mcol3.metric(t[lang]['metric_min'], f"{min_pm:.1f} μg/m³")
             
             colors_hist = [get_aqi_level(pm, lang, t)[1] for pm in daily_avg_df['Avg PM2.5']]
+            
+            # Prepare X-axis labels to support Thai Year
             if lang == 'th':
                 start_date_str = f"{start_date.day} {t['th']['month_names'][start_date.month - 1]} {start_date.year + 543}"
                 end_date_str = f"{end_date.day} {t['th']['month_names'][end_date.month - 1]} {end_date.year + 543}"
-            else: start_date_str, end_date_str = start_date.strftime('%b %d, %Y'), end_date.strftime('%b %d, %Y')
+                
+                # Create a custom label column for Thai dates on Axis
+                daily_avg_df['DateLabel'] = daily_avg_df['Date'].apply(
+                    lambda d: f"{d.day} {t['th']['month_names'][d.month-1]} {d.year+543}"
+                )
+                x_axis_data = daily_avg_df['DateLabel']
+            else: 
+                start_date_str, end_date_str = start_date.strftime('%b %d, %Y'), end_date.strftime('%b %d, %Y')
+                # For English, we can use the date objects directly
+                x_axis_data = daily_avg_df['Date']
+            
             title_text = f"{t[lang]['daily_avg_chart_title']} ({start_date_str} - {end_date_str})"
-            fig_hist = go.Figure(go.Bar(x=daily_avg_df['Date'], y=daily_avg_df['Avg PM2.5'], name=t[lang]['avg_pm25_unit'], marker_color=colors_hist, marker=dict(cornerradius=5)))
+            
+            fig_hist = go.Figure(go.Bar(
+                x=x_axis_data, 
+                y=daily_avg_df['Avg PM2.5'], 
+                name=t[lang]['avg_pm25_unit'], 
+                marker_color=colors_hist, 
+                marker=dict(cornerradius=5)
+            ))
+            
             fig_hist.update_layout(title_text=title_text, font=dict(family="Sarabun"), yaxis_title=t[lang]['avg_pm25_unit'], template="plotly_white", plot_bgcolor='rgba(0,0,0,0)', showlegend=False, xaxis=dict(fixedrange=True), yaxis=dict(fixedrange=True), dragmode=False)
             st.plotly_chart(fig_hist, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
