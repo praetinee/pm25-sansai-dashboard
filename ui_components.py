@@ -593,8 +593,12 @@ def display_historical_data(df, lang, t):
     today = datetime.now().date()
     default_start = today - pd.DateOffset(days=6)
     col_date1, col_date2 = st.columns(2)
-    with col_date1: start_date = st.date_input(t[lang]['start_date'], value=default_start, min_value=df['Datetime'].min().date(), max_value=today, key="start_date_hist")
-    with col_date2: end_date = st.date_input(t[lang]['end_date'], value=today, min_value=df['Datetime'].min().date(), max_value=today, key="end_date_hist")
+    # --- Date Input: Set format to DD/MM/YYYY ---
+    with col_date1: 
+        start_date = st.date_input(t[lang]['start_date'], value=default_start, min_value=df['Datetime'].min().date(), max_value=today, key="start_date_hist", format="DD/MM/YYYY")
+    with col_date2: 
+        end_date = st.date_input(t[lang]['end_date'], value=today, min_value=df['Datetime'].min().date(), max_value=today, key="end_date_hist", format="DD/MM/YYYY")
+        
     if start_date > end_date: st.error(t[lang]['date_error'])
     else:
         mask = (df['Datetime'].dt.date >= start_date) & (df['Datetime'].dt.date <= end_date)
@@ -643,5 +647,16 @@ def display_historical_data(df, lang, t):
                 marker=dict(cornerradius=5)
             ))
             
-            fig_hist.update_layout(title_text=title_text, font=dict(family="Sarabun"), yaxis_title=t[lang]['avg_pm25_unit'], template="plotly_white", plot_bgcolor='rgba(0,0,0,0)', showlegend=False, xaxis=dict(fixedrange=True), yaxis=dict(fixedrange=True), dragmode=False)
+            # --- Y-Axis Fix: Limit tick count (nticks) to make it less crowded ---
+            fig_hist.update_layout(
+                title_text=title_text, 
+                font=dict(family="Sarabun"), 
+                yaxis_title=t[lang]['avg_pm25_unit'], 
+                template="plotly_white", 
+                plot_bgcolor='rgba(0,0,0,0)', 
+                showlegend=False, 
+                xaxis=dict(fixedrange=True), 
+                yaxis=dict(fixedrange=True, nticks=6), # FIX: Reduce ticks to prevent overcrowding
+                dragmode=False
+            )
             st.plotly_chart(fig_hist, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
