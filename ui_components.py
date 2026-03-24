@@ -484,7 +484,7 @@ box-shadow: 0 6px 14px rgba(30, 144, 255, 0.3);
 </style>
 <div class="assessment-card">
 <p>{t[lang]['external_assessment_intro']}</p>
-<a href="https://www.pollutionclinic.com/home/diagnose/?gc=lampoon" target="_blank" class="assessment-button">
+<a href="https://4health.anamai.moph.go.th/assessform" target="_blank" class="assessment-button">
 {t[lang]['assessment_button_text']}
 </a>
 </div>
